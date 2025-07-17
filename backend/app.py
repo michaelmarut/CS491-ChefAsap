@@ -1,20 +1,13 @@
-from flask import Flask
+from flask import Flask, jsonify
+from database.config import db_config
+from database.setup import init_db
 import mysql.connector
 
 app = Flask(__name__)
 
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'your_password_here',
-    'database': 'chefasap'
-}
-
-
 @app.route('/')
 def index():
     try:
-        # Test MySQL connection
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
         cursor.close()
@@ -24,4 +17,5 @@ def index():
         return f'Error: {str(e)}'
 
 if __name__ == '__main__':
+    init_db()  # Initialize database tables
     app.run(debug=True, port=3000)
