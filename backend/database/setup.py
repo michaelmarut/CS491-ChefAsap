@@ -1,0 +1,229 @@
+import mysql.connector
+from mysql.connector import Error
+from .config import db_config
+
+def init_db():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        # Cuisine  
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cuisine_types (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(50) NOT NULL UNIQUE
+            )
+        ''')
+
+        # Chef 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chefs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                first_name VARCHAR(50) NOT NULL,
+                last_name VARCHAR(50) NOT NULL,
+                email VARCHAR(100) NOT NULL UNIQUE,
+                phone VARCHAR(20),
+                photo_url VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Chef documents
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_documents (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                document_type VARCHAR(50) NOT NULL,  -- e.g., 'certificate', 'license'
+                document_url VARCHAR(255) NOT NULL,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef cuisines (many-to-many relationship)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_cuisines (
+                chef_id INT NOT NULL,
+                cuisine_id INT NOT NULL,
+                PRIMARY KEY (chef_id, cuisine_id),
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                FOREIGN KEY (cuisine_id) REFERENCES cuisine_types(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef addresses
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_addresses (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                address_line1 VARCHAR(100) NOT NULL,
+                address_line2 VARCHAR(100),
+                city VARCHAR(50) NOT NULL,
+                state VARCHAR(2) NOT NULL,
+                zip_code VARCHAR(10) NOT NULL,
+                is_default BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef payment methods
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_payment_methods (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                payment_type ENUM('direct_deposit', 'paypal', 'check') NOT NULL,
+                is_default BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef bank accounts for direct deposit
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_bank_accounts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                payment_method_id INT NOT NULL,
+                bank_name VARCHAR(100) NOT NULL,
+                routing_number VARCHAR(9) NOT NULL,    -- Will be encrypted
+                account_number VARCHAR(17) NOT NULL,   -- Will be encrypted
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (payment_method_id) REFERENCES chef_payment_methods(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef PayPal accounts
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_paypal_accounts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                payment_method_id INT NOT NULL,
+                paypal_email VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (payment_method_id) REFERENCES chef_payment_methods(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef check payment
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_check_addresses (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                payment_method_id INT NOT NULL,
+                address_line1 VARCHAR(100) NOT NULL,
+                address_line2 VARCHAR(100),
+                city VARCHAR(50) NOT NULL,
+                state VARCHAR(2) NOT NULL,
+                zip_code VARCHAR(10) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (payment_method_id) REFERENCES chef_payment_methods(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef payment history
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_payments (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                status ENUM('pending', 'deposited') NOT NULL,
+                payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef schedule 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_availability_days (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                day_of_week ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday') NOT NULL,
+                start_time TIME NOT NULL,
+                end_time TIME NOT NULL,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_chef_day (chef_id, day_of_week)
+            )
+        ''')
+
+        # Customers
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customers (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                first_name VARCHAR(50) NOT NULL,
+                last_name VARCHAR(50) NOT NULL,
+                email VARCHAR(100) NOT NULL UNIQUE,
+                phone VARCHAR(20),
+                photo_url VARCHAR(255),
+                allergy_notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Customers Addresses 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customer_addresses (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_id INT NOT NULL,
+                address_line1 VARCHAR(100) NOT NULL,
+                address_line2 VARCHAR(100),
+                city VARCHAR(50) NOT NULL,
+                state VARCHAR(2) NOT NULL,
+                zip_code VARCHAR(10) NOT NULL,
+                is_default BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Customers Payment Methods 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS payment_methods (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_id INT NOT NULL,
+                payment_type ENUM('card', 'paypal', 'check') NOT NULL,
+                is_default BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Customers Credit Card Info
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS credit_cards (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                payment_method_id INT NOT NULL,
+                card_holder_first_name VARCHAR(50) NOT NULL,
+                card_holder_last_name VARCHAR(50) NOT NULL,
+                card_number VARCHAR(16) NOT NULL,        -- Will be encrypted 
+                expiration_date VARCHAR(5) NOT NULL,     -- Format: MM/YY
+                cvv VARCHAR(4) NOT NULL,                -- 3 or 4 digits, will be encrypted
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (payment_method_id) REFERENCES payment_methods(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Customers PayPal Info
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS paypal_accounts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                payment_method_id INT NOT NULL,
+                paypal_email VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (payment_method_id) REFERENCES payment_methods(id) ON DELETE CASCADE
+            )
+        ''')
+
+        conn.commit()
+        print("Database tables created successfully")
+
+    except Error as e:
+        print(f"Error creating tables: {e}")
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+if __name__ == "__main__":
+    init_db()
