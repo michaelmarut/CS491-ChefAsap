@@ -1,5 +1,5 @@
 # CS491-ChefAsap
-Frontend For ChefAsap 
+ChefAsap 
 
 For development, we are using React Expo
 
