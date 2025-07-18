@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import getEnvVars from '../config';
 
 export default function Signin() {
@@ -74,11 +76,11 @@ export default function Signin() {
   };
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text>Sign In</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Login</Text>
       
       <TextInput
-        style={{ borderWidth: 1, marginVertical: 10, padding: 5 }}
+        style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -87,14 +89,75 @@ export default function Signin() {
       />
 
       <TextInput
-        style={{ borderWidth: 1, marginVertical: 10, padding: 5 }}
+        style={styles.input}
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
-      <Button title="Sign In" onPress={handleSignin} />
+      <TouchableOpacity style={styles.signupButton} onPress={handleSignin}>
+        <Text style={styles.signupButtonText}>Login</Text>
+      </TouchableOpacity>
+
+      <Link href="/" asChild>
+        <TouchableOpacity style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+      </Link>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: '#FFF9C4',
+    flex:1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginVertical: 10,
+    fontSize: 16,
+  },
+
+  signupButton: {
+  backgroundColor: '#8000ff', // purple
+  paddingVertical: 14,
+  borderRadius: 25,
+  marginTop: 10,
+  alignItems: 'center',
+  },
+
+  signupButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  backButton: {
+  marginTop: 20,
+  alignSelf: 'center',
+  paddingVertical: 8,
+  paddingHorizontal: 16,
+  backgroundColor: '#eee',
+  borderRadius: 20,
+  },
+  
+  backButtonText: {
+    color: '#333',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+});
