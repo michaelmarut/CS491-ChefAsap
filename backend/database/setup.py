@@ -3,9 +3,23 @@ from mysql.connector import Error
 from .config import db_config
 
 def init_db():
+    conn = None
+    cursor = None
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
+
+        # Users table for authentication
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(100) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                user_type ENUM('chef', 'customer') NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        ''')
 
         # Cuisine  
         cursor.execute('''
