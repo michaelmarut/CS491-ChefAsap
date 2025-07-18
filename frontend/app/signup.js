@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert } from 'react-native';
+import { Link } from 'expo-router';
+import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import getEnvVars from '../config';
 
 const validatePassword = (password) => {
@@ -103,11 +104,11 @@ export default function Signup() {
   };
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text>Sign Up</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Sign Up</Text>
       
       <TextInput
-        style={{ borderWidth: 1, marginVertical: 10, padding: 5 }}
+        style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={(text) => {
@@ -121,10 +122,10 @@ export default function Signup() {
         keyboardType="email-address"
         autoCapitalize="none"
       />
-      {emailError ? <Text style={{ color: 'red' }}>{emailError}</Text> : null}
+      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
       <TextInput
-        style={{ borderWidth: 1, marginVertical: 10, padding: 5 }}
+        style={styles.input}
         placeholder="Password"
         value={password}
         onChangeText={(text) => {
@@ -137,29 +138,141 @@ export default function Signup() {
       {/* Password Requirements */}
       <View>
         {passwordRequirements.map((req, index) => (
-          <Text key={index} style={{ color: req.met ? 'green' : 'gray' }}>
+          <Text key={index} style={req.met ? styles.reqMet : styles.reqUnmet}>
             {req.met ? '✓' : '○'} {req.message}
           </Text>
         ))}
       </View>
 
-      <View style={{ flexDirection: 'row', marginVertical: 10 }}>
-        <Button
-          title="Customer"
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={[
+            styles.userTypeButton,
+            userType === 'customer' && styles.userTypeButtonSelected
+          ]}
           onPress={() => setUserType('customer')}
-          color={userType === 'customer' ? 'blue' : 'gray'}
-        />
-        <View style={{ width: 10 }} />
-        <Button
-          title="Chef"
+        >
+          <Text style={styles.userTypeText}>Customer</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.userTypeButton,
+            userType === 'chef' && styles.userTypeButtonSelected
+          ]}
           onPress={() => setUserType('chef')}
-          color={userType === 'chef' ? 'blue' : 'gray'}
-        />
+        >
+          <Text style={styles.userTypeText}>Chef</Text>
+        </TouchableOpacity>
       </View>
 
-      <Button title="Sign Up" onPress={handleSignup} />
+      <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+        <Text style={styles.signupButtonText}>Sign Up</Text>
+      </TouchableOpacity>
+
+      <Link href="/" asChild>
+        <TouchableOpacity style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+      </Link>
     </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: '#FFF9C4',
+    flex: 1,
+  },
 
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginVertical: 10,
+    fontSize: 16,
+  },
+
+  errorText: {
+    color: 'red',
+    marginBottom: 5,
+    marginLeft: 10,
+  },
+
+  reqMet: {
+    color: 'green',
+    marginLeft: 10,
+  },
+
+  reqUnmet: {
+    color: 'gray',
+    marginLeft: 10,
+  },
+
+  buttonRow: {
+    flexDirection: 'row',
+    marginVertical: 10,
+    justifyContent: 'center',
+  },
+
+  buttonSpacer: {
+    width: 10,
+    },
+    userTypeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: '#eee',
+    marginHorizontal: 5,
+  },
+
+  userTypeButtonSelected: {
+    backgroundColor: '#FFD54F', 
+  },
+
+  signupButton: {
+  backgroundColor: '#8000ff', // purple
+  paddingVertical: 14,
+  borderRadius: 25,
+  marginTop: 10,
+  alignItems: 'center',
+  },
+
+  signupButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  userTypeText: {
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+
+  backButton: {
+  marginTop: 20,
+  alignSelf: 'center',
+  paddingVertical: 8,
+  paddingHorizontal: 16,
+  backgroundColor: '#eee',
+  borderRadius: 20,
+  },
+  
+  backButtonText: {
+    color: '#333',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+
+});
