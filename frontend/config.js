@@ -1,8 +1,8 @@
 import Constants from 'expo-constants';
 
 const getApiUrl = () => {
-  // Using fixed IP address
-  const url = 'your_ip_address';
+  // Using local IP address for Expo Go testing
+  const url = 'enter_url';
   console.log('Using URL:', url);
   return url;
 };

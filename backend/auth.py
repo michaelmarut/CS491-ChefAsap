@@ -32,12 +32,20 @@ def signup():
     print('\n=== Signup Request Received ===\n')
     try:
         data = request.get_json()
+        first_name = data.get('firstName')
+        last_name = data.get('lastName')
         email = data.get('email')
         password = data.get('password')
         user_type = data.get('user_type')  # 'chef' or 'customer'
+        phone = data.get('phone')
+        address = data.get('address')
+        address2 = data.get('address2', '')  # Optional field
+        city = data.get('city')
+        state = data.get('state')
+        zip_code = data.get('zip')
 
         # Validate input
-        if not all([email, password, user_type]):
+        if not all([first_name, last_name, email, password, user_type, phone, address, city, state, zip_code]):
             return jsonify({'error': 'Missing required fields'}), 400
             
         if not validate_email(email):
@@ -70,6 +78,38 @@ def signup():
         ''', (email, hashed_password, user_type))
         
         user_id = cursor.lastrowid
+        
+        # Create chef or customer profile based on user type
+        if user_type == 'chef':
+            # Insert into chefs table
+            cursor.execute('''
+                INSERT INTO chefs (first_name, last_name, email, phone)
+                VALUES (%s, %s, %s, %s)
+            ''', (first_name, last_name, email, phone))
+            
+            chef_id = cursor.lastrowid
+            
+            # Insert chef address
+            cursor.execute('''
+                INSERT INTO chef_addresses (chef_id, address_line1, address_line2, city, state, zip_code, is_default)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ''', (chef_id, address, address2, city, state, zip_code, True))
+            
+        elif user_type == 'customer':
+            # Insert into customers table
+            cursor.execute('''
+                INSERT INTO customers (first_name, last_name, email, phone)
+                VALUES (%s, %s, %s, %s)
+            ''', (first_name, last_name, email, phone))
+            
+            customer_id = cursor.lastrowid
+            
+            # Insert customer address
+            cursor.execute('''
+                INSERT INTO customer_addresses (customer_id, address_line1, address_line2, city, state, zip_code, is_default)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ''', (customer_id, address, address2, city, state, zip_code, True))
+        
         conn.commit()
         
         print(f'\nNew user signed up - Email: {email}, Type: {user_type}, ID: {user_id}\n')
