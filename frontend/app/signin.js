@@ -7,6 +7,7 @@ import getEnvVars from '../config';
 export default function Signin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
   const { apiUrl } = getEnvVars();
 
@@ -69,6 +70,13 @@ export default function Signin() {
       
       console.log('Token:', data.token);
       console.log('User type:', data.user_type);
+      
+      // Navigate to appropriate dashboard based on user type
+      if (data.user_type === 'customer') {
+        router.push('/customer');
+      } else if (data.user_type === 'chef') {
+        router.push('/chef');
+      }
     } catch (error) {
       console.error('Error in handleSignin:', error);
       showAlert('Error', 'Network error: ' + error.message);

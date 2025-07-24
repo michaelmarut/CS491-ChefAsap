@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import getEnvVars from '../config';
 
@@ -39,6 +39,7 @@ export default function Signup() {
   const [zip, setZip] = useState('');
   const [userType, setUserType] = useState('customer');
   const [passwordRequirements, setPasswordRequirements] = useState([]);
+  const router = useRouter();
 
   const { apiUrl } = getEnvVars();
 
@@ -125,8 +126,17 @@ export default function Signup() {
         return;
       }
 
-      showAlert('Success', 'Account created successfully!');
       console.log('Token:', data.token);
+      console.log('User type:', userType);
+      
+      // Navigate to appropriate dashboard based on user type
+      showAlert('Success', 'Account created successfully!', () => {
+        if (userType === 'customer') {
+          router.push('/customer');
+        } else if (userType === 'chef') {
+          router.push('/chef');
+        }
+      });
     } catch (error) {
       console.error('Error in handleSignup:', error);
       showAlert('Error', 'Network error: ' + error.message);
