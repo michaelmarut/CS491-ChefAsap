@@ -11,7 +11,7 @@ export default function Page() {
       <View style={styles.container}>
         <View style={styles.titleContainer}>
           <Text style={styles.subtitle}>Find a Chef</Text>
-          <Text style={styles.brand}>Chefasap</Text>
+          <Text style={styles.brand}>ChefAsap</Text>
         </View>
 
         <Link href="/signup" asChild>

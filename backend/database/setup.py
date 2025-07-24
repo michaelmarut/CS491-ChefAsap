@@ -227,6 +227,58 @@ def init_db():
             )
         ''')
 
+        # Bookings table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bookings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_id INT NOT NULL,
+                chef_id INT,
+                cuisine_type VARCHAR(50) NOT NULL,
+                meal_type ENUM('breakfast', 'lunch', 'dinner') NOT NULL,
+                event_type ENUM('birthday', 'wedding', 'party', 'dinner', 'brunch') NOT NULL,
+                booking_date DATE NOT NULL,
+                booking_time TIME NOT NULL,
+                produce_supply ENUM('customer', 'chef') NOT NULL DEFAULT 'customer',
+                number_of_people INT NOT NULL,
+                special_notes TEXT,
+                status ENUM('pending', 'accepted', 'declined', 'completed', 'cancelled') DEFAULT 'pending',
+                total_cost DECIMAL(10,2),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE SET NULL
+            )
+        ''')
+
+        # Chef service areas (for location-based search)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_service_areas (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                city VARCHAR(50) NOT NULL,
+                state VARCHAR(2) NOT NULL,
+                zip_code VARCHAR(10) NOT NULL,
+                service_radius_miles INT DEFAULT 10,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chef pricing (base rates and produce supply extra cost)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_pricing (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                base_rate_per_person DECIMAL(10,2) NOT NULL,
+                produce_supply_extra_cost DECIMAL(10,2) DEFAULT 0.00,
+                minimum_people INT DEFAULT 1,
+                maximum_people INT DEFAULT 50,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+            )
+        ''')
+
         conn.commit()
         print("Database tables created successfully")
 
