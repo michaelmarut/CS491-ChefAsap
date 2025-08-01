@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Modal, FlatList } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useState } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import getEnvVars from '../config';
 
 export default function BookingPage() {
@@ -517,29 +517,35 @@ export default function BookingPage() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fefce8', // soft cream
+    borderRadius: 12,
     padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 30,
-    color: '#333',
+    color: '#3f3f1f', // earthy dark olive
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
+    color: '#3f3f1f',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#4d7c0f', // rich olive
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -551,7 +557,7 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#4d7c0f',
     borderRadius: 8,
     backgroundColor: '#fff',
   },
@@ -560,17 +566,17 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#4d7c0f',
     borderRadius: 8,
     padding: 12,
     backgroundColor: '#fff',
   },
   dateButtonText: {
     fontSize: 16,
-    color: '#333',
+    color: '#3f3f1f',
   },
   searchButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#65a30d', // olive green
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -601,7 +607,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#3f3f1f',
   },
   closeButton: {
     padding: 10,
@@ -646,7 +652,7 @@ const styles = StyleSheet.create({
   chefName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#3f3f1f',
     marginBottom: 5,
   },
   chefLocation: {
@@ -671,7 +677,7 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 16,
-    color: '#333',
+    color: '#3f3f1f',
     marginBottom: 3,
   },
   extraCostText: {
@@ -682,10 +688,10 @@ const styles = StyleSheet.create({
   totalCostText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#4d7c0f',
   },
   bookButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#4d7c0f', // match olive tone
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -695,7 +701,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Modal Dropdown Styles
   dropdownButton: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -708,7 +713,7 @@ const styles = StyleSheet.create({
   },
   dropdownButtonText: {
     fontSize: 16,
-    color: '#333',
+    color: '#3f3f1f',
     flex: 1,
   },
   placeholderText: {
@@ -741,7 +746,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#3f3f1f',
   },
   modalCloseButton: {
     padding: 5,
@@ -762,20 +767,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalItemSelected: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: '#e7f5d3',
   },
   modalItemText: {
     fontSize: 16,
-    color: '#333',
+    color: '#3f3f1f',
     flex: 1,
   },
   modalItemTextSelected: {
-    color: '#007AFF',
+    color: '#4d7c0f',
     fontWeight: '600',
   },
   checkmark: {
     fontSize: 16,
-    color: '#007AFF',
+    color: '#4d7c0f',
     fontWeight: 'bold',
   },
 });
+
