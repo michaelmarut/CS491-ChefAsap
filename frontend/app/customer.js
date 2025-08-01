@@ -704,19 +704,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   menuContainer: {
-    gap: 18,
+    gap: 24, // increased spacing between boxes
+    paddingHorizontal: 4,
   },
   menuButton: {
-    backgroundColor: '#fffbea', // lighter cream for cards
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderRadius: 18,
+    backgroundColor: '#ffffff', // white for visibility
+    paddingVertical: 24, // increased vertical padding
+    paddingHorizontal: 20, // increased horizontal padding
+    borderRadius: 20, // slightly more rounded
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
     flexDirection: 'column',
+    marginBottom: 8, // additional bottom margin
+    borderWidth: 1,
+    borderColor: '#d9f99d', // light olive highlight border
   },
   menuButtonText: {
     fontSize: 20,
@@ -734,89 +738,110 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 50,
   },
-<<<<<<< HEAD
   profileContainer: {
     flex: 1,
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 20,
+    backgroundColor: '#ffffff', // white for visibility
+    padding: 24, // increased padding to match dashboard
+    borderRadius: 20, // increased border radius to match dashboard
+    marginBottom: 24, // increased margin to match dashboard spacing
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#d9f99d', // light olive highlight border
   },
   avatarContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4d7c0f', // rich olive text
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: 18, // slightly increased margin
   },
   avatarText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#fefce8', // soft cream base
   },
   profileHeaderText: {
     flex: 1,
   },
   profileName: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    fontWeight: '700',
+    color: '#3f3f1f', // earthy dark olive
+    marginBottom: 6,
   },
   profileEmail: {
     fontSize: 16,
-    color: '#666',
+    color: '#78716c', // warm gray
   },
   profileActions: {
-    marginBottom: 20,
+    marginBottom: 24, // increased margin to match dashboard spacing
   },
   editButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#4d7c0f', // rich olive text
+    paddingVertical: 16, // increased padding
+    paddingHorizontal: 20,
+    borderRadius: 20, // increased border radius to match dashboard
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   editButtonText: {
-    color: '#fff',
+    color: '#fefce8', // soft cream base
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   editActions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12, // increased gap
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#34C759',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#4d7c0f', // rich olive text
+    paddingVertical: 16, // increased padding
+    paddingHorizontal: 20,
+    borderRadius: 20, // increased border radius
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   saveButtonText: {
-    color: '#fff',
+    color: '#fefce8', // soft cream base
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#FF3B30',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#d9f99d', // light olive highlight
+    paddingVertical: 16, // increased padding
+    paddingHorizontal: 20,
+    borderRadius: 20, // increased border radius
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4d7c0f', // rich olive text
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   cancelButtonText: {
-    color: '#fff',
+    color: '#4d7c0f', // rich olive text
     fontSize: 16,
     fontWeight: '600',
   },
@@ -905,42 +930,47 @@ const styles = StyleSheet.create({
   },
   modalFullScreen: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#fefce8', // soft cream base (olive theme)
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#fefce8', // soft cream base (olive theme)
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: 24, // increased padding to match dashboard
+    backgroundColor: '#fffbea', // lighter cream for cards (olive theme)
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#d9f99d', // light olive highlight
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   modalCloseButton: {
-    padding: 10,
+    padding: 12, // increased padding
   },
   modalCloseText: {
     fontSize: 18,
-    color: '#007AFF',
+    color: '#4d7c0f', // rich olive text
     fontWeight: '600',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 22, // slightly larger
+    fontWeight: '700',
+    color: '#3f3f1f', // earthy dark olive
   },
   addButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    backgroundColor: '#4d7c0f', // rich olive text
+    paddingHorizontal: 18, // increased padding
+    paddingVertical: 10,
     borderRadius: 6,
   },
   addButtonText: {
-    color: '#fff',
+    color: '#fefce8', // soft cream base
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1082,6 +1112,19 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     overflow: 'hidden',
   },
+  // Partner's styles merged in
+  iconBubble: {
+    backgroundColor: '#bef264', // olive accent
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  iconText: {
+    fontSize: 18,
+  },
 });
 
 export default function CustomerPage() {
@@ -1101,18 +1144,3 @@ export default function CustomerPage() {
   );
   */
 }
-=======
-  iconBubble: {
-    backgroundColor: '#bef264', // olive accent
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  iconText: {
-    fontSize: 18,
-  },
-});
->>>>>>> 7b6497a54d3d66d7347bf6250a9acd60aed97c71

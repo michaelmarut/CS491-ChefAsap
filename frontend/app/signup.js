@@ -348,6 +348,8 @@ export default function Signup() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fefce8', // soft cream base (olive theme)
     borderRadius: 12,
     padding: 16,
     marginVertical: 10,
@@ -356,7 +358,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    backgroundColor: '#FFF9C4', // Original yellow background
   },
 
   scrollContent: {
@@ -366,18 +367,19 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: 20,
-    color: '#333',
+    color: '#3f3f1f', // earthy dark olive
+    textTransform: 'capitalize',
   },
 
   section: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
+    backgroundColor: '#fffbea', // lighter cream for cards (olive theme)
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 18,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -400,19 +402,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 5,
     marginTop: 8,
-    color: '#555',
+    color: '#4d7c0f', // rich olive text
   },
 
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#f9f9f9',
+    borderColor: '#d9f99d', // light olive highlight
+    backgroundColor: '#ffffff', // white for visibility
     borderRadius: 25,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     marginBottom: 8,
     fontSize: 16,
-    color: '#333',
+    color: '#3f3f1f', // earthy dark olive
   },
 
   nameRow: {
@@ -434,26 +436,26 @@ const styles = StyleSheet.create({
 
   passwordRequirements: {
     marginTop: 8,
-    padding: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#d9f99d', // light olive highlight
+    borderRadius: 10,
   },
 
   requirementsTitle: {
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 5,
-    color: '#555',
+    color: '#4d7c0f', // rich olive text
   },
 
   reqMet: {
-    color: 'green',
+    color: '#4d7c0f', // rich olive text
     fontSize: 12,
     marginBottom: 2,
   },
 
   reqUnmet: {
-    color: 'gray',
+    color: '#78716c', // warm gray
     fontSize: 12,
     marginBottom: 2,
   },
@@ -492,60 +494,70 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderRadius: 20,
-    backgroundColor: '#eee',
+    backgroundColor: '#d9f99d', // light olive highlight
     marginHorizontal: 3,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#bef264', // olive accent
   },
 
   userTypeButtonSelected: {
-    backgroundColor: '#FFD54F', // Original yellow selection
+    backgroundColor: '#bef264', // olive accent
+    borderColor: '#4d7c0f', // rich olive text
   },
 
   userTypeText: {
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#333',
+    color: '#4d7c0f', // rich olive text
     marginBottom: 3,
   },
 
   userTypeTextSelected: {
-    color: '#333',
+    color: '#3f3f1f', // earthy dark olive
   },
 
   userTypeDescription: {
     fontSize: 10,
     textAlign: 'center',
-    color: '#666',
+    color: '#78716c', // warm gray
   },
 
   signupButton: {
-    backgroundColor: '#8000ff', // Original purple
-    paddingVertical: 14,
+    backgroundColor: '#4d7c0f', // rich olive text
+    paddingVertical: 16,
     borderRadius: 25,
-    marginTop: 15,
-    marginBottom: 10,
+    marginTop: 20,
+    marginBottom: 15,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   signupButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: '#fefce8', // soft cream base
+    fontWeight: '700',
     fontSize: 16,
   },
 
   backButton: {
     alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#eee',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#d9f99d', // light olive highlight
     borderRadius: 20,
-    marginBottom: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#bef264', // olive accent
   },
 
   backButtonText: {
-    color: '#333',
-    fontWeight: 'bold',
+    color: '#4d7c0f', // rich olive text
+    fontWeight: '600',
     fontSize: 14,
   },
 
