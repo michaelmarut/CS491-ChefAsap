@@ -168,6 +168,7 @@ def init_db():
                 phone VARCHAR(20),
                 photo_url VARCHAR(255),
                 allergy_notes TEXT,
+                stripe_customer_id VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )

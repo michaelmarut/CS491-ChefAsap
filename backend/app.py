@@ -5,6 +5,7 @@ from database.config import db_config
 from database.setup import init_db
 from auth import auth
 from booking import booking
+from payments import payments
 import mysql.connector
 import socket
 
@@ -27,6 +28,9 @@ app.register_blueprint(auth, url_prefix='/auth')
 
 
 app.register_blueprint(booking, url_prefix='/booking')
+
+
+app.register_blueprint(payments, url_prefix='/payments')
 
 @app.route('/')
 def index():

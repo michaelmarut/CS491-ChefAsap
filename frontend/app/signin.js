@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import getEnvVars from '../config';
 
 export default function Signin() {
@@ -66,17 +67,21 @@ export default function Signin() {
         return;
       }
 
-      showAlert('Success', 'Signed in successfully!');
+      // Store authentication token
+      await AsyncStorage.setItem('authToken', data.token);
+      await AsyncStorage.setItem('userType', data.user_type);
       
-      console.log('Token:', data.token);
-      console.log('User type:', data.user_type);
-      
-      // Navigate to appropriate dashboard based on user type
-      if (data.user_type === 'customer') {
-        router.push('/customer');
-      } else if (data.user_type === 'chef') {
-        router.push('/chef');
-      }
+      showAlert('Success', 'Signed in successfully!', () => {
+        console.log('Token:', data.token);
+        console.log('User type:', data.user_type);
+        
+        // Navigate to appropriate dashboard based on user type
+        if (data.user_type === 'customer') {
+          router.push('/customer');
+        } else if (data.user_type === 'chef') {
+          router.push('/chef');
+        }
+      });
     } catch (error) {
       console.error('Error in handleSignin:', error);
       showAlert('Error', 'Network error: ' + error.message);

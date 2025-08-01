@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import getEnvVars from '../config';
 
 const validatePassword = (password) => {
@@ -128,6 +129,10 @@ export default function Signup() {
 
       console.log('Token:', data.token);
       console.log('User type:', userType);
+      
+      // Store authentication token
+      await AsyncStorage.setItem('authToken', data.token);
+      await AsyncStorage.setItem('userType', userType);
       
       // Navigate to appropriate dashboard based on user type
       showAlert('Success', 'Account created successfully!', () => {

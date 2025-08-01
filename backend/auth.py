@@ -180,3 +180,95 @@ def signin():
             cursor.close()
         if conn:
             conn.close()
+@auth.route('/profile', methods=['GET'])
+def get_profile():
+    """Get user profile data"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid authorization header'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        try:
+            # Decode JWT token
+            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            user_id = payload['user_id']
+            user_type = payload['user_type']
+            email = payload['email']
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        
+        if user_type == 'customer':
+            # Get customer profile data
+            cursor.execute('''
+                SELECT c.first_name, c.last_name, c.email, c.phone,
+                       ca.address_line1, ca.address_line2, ca.city, ca.state, ca.zip_code
+                FROM customers c
+                LEFT JOIN customer_addresses ca ON c.id = ca.customer_id AND ca.is_default = 1
+                WHERE c.email = %s
+            ''', (email,))
+            
+            profile_data = cursor.fetchone()
+            
+            if not profile_data:
+                return jsonify({'error': 'Profile not found'}), 404
+            
+            return jsonify({
+                'firstName': profile_data['first_name'],
+                'lastName': profile_data['last_name'],
+                'email': profile_data['email'],
+                'phone': profile_data['phone'],
+                'address': profile_data['address_line1'] or '',
+                'address2': profile_data['address_line2'] or '',
+                'city': profile_data['city'] or '',
+                'state': profile_data['state'] or '',
+                'zipCode': profile_data['zip_code'] or '',
+                'userType': user_type
+            }), 200
+            
+        elif user_type == 'chef':
+            # Get chef profile data
+            cursor.execute('''
+                SELECT c.first_name, c.last_name, c.email, c.phone,
+                       ca.address_line1, ca.address_line2, ca.city, ca.state, ca.zip_code
+                FROM chefs c
+                LEFT JOIN chef_addresses ca ON c.id = ca.chef_id AND ca.is_default = 1
+                WHERE c.email = %s
+            ''', (email,))
+            
+            profile_data = cursor.fetchone()
+            
+            if not profile_data:
+                return jsonify({'error': 'Profile not found'}), 404
+            
+            return jsonify({
+                'firstName': profile_data['first_name'],
+                'lastName': profile_data['last_name'],
+                'email': profile_data['email'],
+                'phone': profile_data['phone'],
+                'address': profile_data['address_line1'] or '',
+                'address2': profile_data['address_line2'] or '',
+                'city': profile_data['city'] or '',
+                'state': profile_data['state'] or '',
+                'zipCode': profile_data['zip_code'] or '',
+                'userType': user_type
+            }), 200
+        
+        else:
+            return jsonify({'error': 'Invalid user type'}), 400
+            
+    except Exception as e:
+        print(f'Error in get_profile: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
