@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { Link, useRouter } from 'expo-router';
-import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import getEnvVars from '../config';
 
 const validatePassword = (password) => {
@@ -343,7 +343,14 @@ export default function Signup() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
     backgroundColor: '#FFF9C4', // Original yellow background
   },
 
