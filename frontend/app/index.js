@@ -7,6 +7,8 @@ export default function Page() {
       source={require('../assets/images/landingPage.png')}
       style={styles.background}
       resizeMode="cover"
+      onError={(error) => console.log('Image loading error:', error)}
+      onLoad={() => console.log('Image loaded successfully')}
     >
       <View style={styles.container}>
         <View style={styles.titleContainer}>
@@ -36,7 +38,8 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center", 
+    alignItems: "center",
+    backgroundColor: '#2c3e50', // Fallback background color
   },
 
   container: {

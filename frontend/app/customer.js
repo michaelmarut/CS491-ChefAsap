@@ -28,6 +28,13 @@ function CustomerPageContent() {
   const [showAddCard, setShowAddCard] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
   
   const { apiUrl } = getEnvVars();
   const { confirmSetupIntent } = useStripe();
@@ -303,6 +310,66 @@ function CustomerPageContent() {
     }
   };
 
+  const handleChangePassword = async () => {
+    try {
+      setChangingPassword(true);
+      
+      // Validate form
+      if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+        Alert.alert('Error', 'Please fill in all password fields');
+        return;
+      }
+      
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        Alert.alert('Error', 'New passwords do not match');
+        return;
+      }
+      
+      if (passwordData.newPassword.length < 8) {
+        Alert.alert('Error', 'Password must be at least 8 characters long');
+        return;
+      }
+      
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found');
+        return;
+      }
+      
+      const response = await fetch(`${apiUrl}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+          confirmPassword: passwordData.confirmPassword
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        Alert.alert('Success', 'Password changed successfully!');
+        setShowPasswordModal(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        Alert.alert('Error', result.error || 'Failed to change password');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      Alert.alert('Error', 'Network error. Please try again.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const renderProfile = () => {
     if (isLoading) {
       return (
@@ -518,7 +585,10 @@ function CustomerPageContent() {
         <View style={styles.profileSection}>
           <Text style={styles.sectionTitle}>Account Actions</Text>
           
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => setShowPasswordModal(true)}
+          >
             <Text style={styles.actionButtonText}>🔒 Change Password</Text>
           </TouchableOpacity>
           
@@ -627,7 +697,72 @@ function CustomerPageContent() {
         </View>
       </Modal>
       
-
+      {/* Password Change Modal */}
+      <Modal
+        visible={showPasswordModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Change Password - Customer</Text>
+            
+            <Text style={styles.inputLabel}>Current Password</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter your current password"
+              secureTextEntry={true}
+              value={passwordData.currentPassword}
+              onChangeText={(text) => setPasswordData({...passwordData, currentPassword: text})}
+            />
+            
+            <Text style={styles.inputLabel}>New Password</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter your new password"
+              secureTextEntry={true}
+              value={passwordData.newPassword}
+              onChangeText={(text) => setPasswordData({...passwordData, newPassword: text})}
+            />
+            
+            <Text style={styles.inputLabel}>Confirm New Password</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Re-enter your new password"
+              secureTextEntry={true}
+              value={passwordData.confirmPassword}
+              onChangeText={(text) => setPasswordData({...passwordData, confirmPassword: text})}
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowPasswordModal(false);
+                  setPasswordData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                  });
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleChangePassword}
+                disabled={changingPassword}
+              >
+                <Text style={styles.saveButtonText}>
+                  {changingPassword ? 'Changing...' : 'Change Password'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       
     </ScrollView>
     );
@@ -1124,6 +1259,51 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 18,
+  },
+  // Modal styles for password change
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#3f3f1f',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginHorizontal: 5,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3f3f1f',
+    marginBottom: 8,
+    marginTop: 12,
   },
 });
 

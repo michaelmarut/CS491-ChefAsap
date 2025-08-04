@@ -102,6 +102,10 @@ def search_chefs():
         if not all([cuisine_type, booking_date, booking_time, customer_zip]):
             return jsonify({'error': 'Missing required search criteria'}), 400
         
+        print(f'\n=== Chef Search Request ===')
+        print(f'Cuisine: {cuisine_type}, Date: {booking_date}, Time: {booking_time}')
+        print(f'Customer ZIP: {customer_zip}, People: {number_of_people}')
+        
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
         
@@ -141,6 +145,11 @@ def search_chefs():
         ''', (cuisine_type, number_of_people, number_of_people))
         
         chefs = cursor.fetchall()
+        print(f'Found {len(chefs)} chefs matching criteria:')
+        for chef in chefs:
+            print(f'  - Chef: {chef["first_name"]} {chef["last_name"]} ({chef["email"]})')
+            print(f'    Cuisines: {chef["cuisines"]}')
+            print(f'    Location: {chef["city"]}, {chef["state"]} {chef["zip_code"]}')
         
       
         available_chefs = []
@@ -257,7 +266,64 @@ def get_customer_bookings(customer_id):
         cursor.close()
         conn.close()
         
-        return jsonify({'bookings': bookings}), 200
+        return jsonify(bookings), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f'Error fetching customer bookings: {e}')
+        return jsonify({'error': 'Failed to fetch bookings'}), 500
+
+@booking.route('/chef/<int:chef_id>', methods=['GET'])
+def get_chef_bookings(chef_id):
+    """Get all booking requests for a specific chef"""
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute('''
+            SELECT 
+                b.id,
+                b.cuisine_type,
+                b.meal_type,
+                b.event_type,
+                b.booking_date,
+                b.booking_time,
+                b.produce_supply,
+                b.number_of_people,
+                b.special_notes,
+                b.status,
+                b.total_cost,
+                b.created_at,
+                c.first_name as customer_first_name,
+                c.last_name as customer_last_name,
+                c.email as customer_email,
+                c.phone as customer_phone,
+                ca.street_address,
+                ca.city,
+                ca.state,
+                ca.zip_code
+            FROM bookings b
+            JOIN customers c ON b.customer_id = c.id
+            LEFT JOIN customer_addresses ca ON c.id = ca.customer_id
+            WHERE b.chef_id = %s
+            ORDER BY b.created_at DESC
+        ''', (chef_id,))
+        
+        bookings = cursor.fetchall()
+        
+        # Convert datetime objects to strings for JSON serialization
+        for booking in bookings:
+            if booking['booking_date']:
+                booking['booking_date'] = booking['booking_date'].strftime('%Y-%m-%d')
+            if booking['booking_time']:
+                booking['booking_time'] = str(booking['booking_time'])
+            if booking['created_at']:
+                booking['created_at'] = booking['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify(bookings), 200
+        
+    except Exception as e:
+        print(f'Error fetching chef bookings: {e}')
+        return jsonify({'error': 'Failed to fetch booking requests'}), 500
