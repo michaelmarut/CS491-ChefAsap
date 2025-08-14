@@ -1,6 +1,10 @@
 import mysql.connector
 from mysql.connector import Error
-from .config import db_config
+
+try:
+    from .config import db_config
+except ImportError:
+    from config import db_config
 
 def init_db():
     conn = None
