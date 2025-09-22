@@ -1,3 +1,4 @@
+import { Picker } from "@react-native-picker/picker";
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -40,8 +41,61 @@ export default function Signup() {
   const [userType, setUserType] = useState('customer');
   const [passwordRequirements, setPasswordRequirements] = useState([]);
   const router = useRouter();
-
   const { apiUrl } = getEnvVars();
+
+  const US_STATES = [
+    { label: "Select a state...", value: "" },
+    { label: "Alabama", value: "AL" },
+    { label: "Alaska", value: "AK" },
+    { label: "Arizona", value: "AZ" },
+    { label: "Arkansas", value: "AR" },
+    { label: "California", value: "CA" },
+    { label: "Colorado", value: "CO" },
+    { label: "Connecticut", value: "CT" },
+    { label: "Delaware", value: "DE" },
+    { label: "Florida", value: "FL" },
+    { label: "Georgia", value: "GA" },
+    { label: "Hawaii", value: "HI" },
+    { label: "Idaho", value: "ID" },
+    { label: "Illinois", value: "IL" },
+    { label: "Indiana", value: "IN" },
+    { label: "Iowa", value: "IA" },
+    { label: "Kansas", value: "KS" },
+    { label: "Kentucky", value: "KY" },
+    { label: "Louisiana", value: "LA" },
+    { label: "Maine", value: "ME" },
+    { label: "Maryland", value: "MD" },
+    { label: "Massachusetts", value: "MA" },
+    { label: "Michigan", value: "MI" },
+    { label: "Minnesota", value: "MN" },
+    { label: "Mississippi", value: "MS" },
+    { label: "Missouri", value: "MO" },
+    { label: "Montana", value: "MT" },
+    { label: "Nebraska", value: "NE" },
+    { label: "Nevada", value: "NV" },
+    { label: "New Hampshire", value: "NH" },
+    { label: "New Jersey", value: "NJ" },
+    { label: "New Mexico", value: "NM" },
+    { label: "New York", value: "NY" },
+    { label: "North Carolina", value: "NC" },
+    { label: "North Dakota", value: "ND" },
+    { label: "Ohio", value: "OH" },
+    { label: "Oklahoma", value: "OK" },
+    { label: "Oregon", value: "OR" },
+    { label: "Pennsylvania", value: "PA" },
+    { label: "Rhode Island", value: "RI" },
+    { label: "South Carolina", value: "SC" },
+    { label: "South Dakota", value: "SD" },
+    { label: "Tennessee", value: "TN" },
+    { label: "Texas", value: "TX" },
+    { label: "Utah", value: "UT" },
+    { label: "Vermont", value: "VT" },
+    { label: "Virginia", value: "VA" },
+    { label: "Washington", value: "WA" },
+    { label: "West Virginia", value: "WV" },
+    { label: "Wisconsin", value: "WI" },
+    { label: "Wyoming", value: "WY" },
+  ];
 
   const showAlert = (title, message, onPress = null) => {
     const buttons = [
@@ -276,13 +330,17 @@ export default function Signup() {
         <View style={styles.stateZipRow}>
           <View style={styles.stateContainer}>
             <Text style={styles.fieldLabel}>State</Text>
-            <TextInput
-              style={[styles.input, styles.stateInput]}
-              placeholder="California"
-              value={state}
-              onChangeText={setState}
-              autoCapitalize="words"
-            />
+            <View style={[styles.input, styles.stateInput, { padding: 0 }]}>
+              <Picker
+                selectedValue={state}
+                onValueChange={(val) => setState(val)}
+                prompt="Select a state"
+              >
+                {US_STATES.map((s) => (
+                  <Picker.Item key={s.value} label={s.label} value={s.value} />
+                ))}
+              </Picker>
+            </View>
           </View>
           
           <View style={styles.zipContainer}>
@@ -326,7 +384,8 @@ export default function Signup() {
           </TouchableOpacity>
         </View>
       </View>
-
+      
+      {/*Create Account and Back Button */}
       <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
         <Text style={styles.signupButtonText}>Create Account</Text>
       </TouchableOpacity>
@@ -343,6 +402,8 @@ export default function Signup() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fefce8', // soft cream base (olive theme)
     borderRadius: 12,
     padding: 16,
     marginVertical: 10,
@@ -351,7 +412,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    backgroundColor: '#FFF9C4', // Original yellow background
   },
 
   scrollContent: {
@@ -361,18 +421,19 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: 20,
-    color: '#333',
+    color: '#3f3f1f', // earthy dark olive
+    textTransform: 'capitalize',
   },
 
   section: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
+    backgroundColor: '#fffbea', // lighter cream for cards (olive theme)
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 18,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -395,19 +456,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 5,
     marginTop: 8,
-    color: '#555',
+    color: '#4d7c0f', // rich olive text
   },
 
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#f9f9f9',
+    borderColor: '#d9f99d', // light olive highlight
+    backgroundColor: '#ffffff', // white for visibility
     borderRadius: 25,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     marginBottom: 8,
     fontSize: 16,
-    color: '#333',
+    color: '#3f3f1f', // earthy dark olive
   },
 
   nameRow: {
@@ -429,26 +490,26 @@ const styles = StyleSheet.create({
 
   passwordRequirements: {
     marginTop: 8,
-    padding: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#d9f99d', // light olive highlight
+    borderRadius: 10,
   },
 
   requirementsTitle: {
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 5,
-    color: '#555',
+    color: '#4d7c0f', // rich olive text
   },
 
   reqMet: {
-    color: 'green',
+    color: '#4d7c0f', // rich olive text
     fontSize: 12,
     marginBottom: 2,
   },
 
   reqUnmet: {
-    color: 'gray',
+    color: '#78716c', // warm gray
     fontSize: 12,
     marginBottom: 2,
   },
@@ -487,60 +548,70 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderRadius: 20,
-    backgroundColor: '#eee',
+    backgroundColor: '#d9f99d', // light olive highlight
     marginHorizontal: 3,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#bef264', // olive accent
   },
 
   userTypeButtonSelected: {
-    backgroundColor: '#FFD54F', // Original yellow selection
+    backgroundColor: '#bef264', // olive accent
+    borderColor: '#4d7c0f', // rich olive text
   },
 
   userTypeText: {
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#333',
+    color: '#4d7c0f', // rich olive text
     marginBottom: 3,
   },
 
   userTypeTextSelected: {
-    color: '#333',
+    color: '#3f3f1f', // earthy dark olive
   },
 
   userTypeDescription: {
     fontSize: 10,
     textAlign: 'center',
-    color: '#666',
+    color: '#78716c', // warm gray
   },
 
   signupButton: {
-    backgroundColor: '#8000ff', // Original purple
-    paddingVertical: 14,
+    backgroundColor: '#4d7c0f', // rich olive text
+    paddingVertical: 16,
     borderRadius: 25,
-    marginTop: 15,
-    marginBottom: 10,
+    marginTop: 20,
+    marginBottom: 15,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   signupButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: '#fefce8', // soft cream base
+    fontWeight: '700',
     fontSize: 16,
   },
 
   backButton: {
     alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#eee',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#d9f99d', // light olive highlight
     borderRadius: 20,
-    marginBottom: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#bef264', // olive accent
   },
 
   backButtonText: {
-    color: '#333',
-    fontWeight: 'bold',
+    color: '#4d7c0f', // rich olive text
+    fontWeight: '600',
     fontSize: 14,
   },
 

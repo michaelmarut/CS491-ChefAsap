@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from 'expo-router';
-import { useRouter } from 'expo-router';
-import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import getEnvVars from '../config';
 
 export default function Signin() {
@@ -120,47 +119,58 @@ export default function Signin() {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: '#FFF9C4',
-    flex:1,
+    backgroundColor: '#fefce8', // soft cream base (olive theme)
+    flex: 1,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: 20,
+    color: '#3f3f1f', // earthy dark olive
+    textTransform: 'capitalize',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#f9f9f9',
+    borderColor: '#d9f99d', // light olive highlight
+    backgroundColor: '#ffffff', // white for visibility
     borderRadius: 25,
     paddingVertical: 12,
     paddingHorizontal: 20,
     marginVertical: 10,
     fontSize: 16,
+    color: '#3f3f1f', // earthy dark olive
   },
 
   signupButton: {
-  backgroundColor: '#8000ff', // purple
-  paddingVertical: 14,
-  borderRadius: 25,
-  marginTop: 10,
-  alignItems: 'center',
+    backgroundColor: '#4d7c0f', // rich olive text
+    paddingVertical: 16,
+    borderRadius: 25,
+    marginTop: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   signupButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: '#fefce8', // soft cream base
+    fontWeight: '700',
     fontSize: 16,
   },
 
   backButton: {
-  marginTop: 20,
-  alignSelf: 'center',
-  paddingVertical: 8,
-  paddingHorizontal: 16,
-  backgroundColor: '#eee',
-  borderRadius: 20,
+    marginTop: 20,
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#d9f99d', // light olive highlight
+    borderRadius: 20,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#bef264', // olive accent
   },
   
   backButtonText: {

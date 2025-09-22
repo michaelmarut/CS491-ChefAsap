@@ -1,7 +1,7 @@
 
 const getApiUrl = () => {
   // Using local IP address for Expo Go testing
-  const url = 'http://192.168.68.54:5000';
+  const url = 'http://192.168.68.51:3000';
   console.log('Using URL:', url);
   return url;
 };
