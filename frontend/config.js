@@ -1,15 +1,13 @@
-
-const getApiUrl = () => {
-  // Using local IP address for Expo Go testing
-  const url = 'http://192.168.68.51:3000';
-  console.log('Using URL:', url);
-  return url;
-};
+import { Platform } from "react-native";
 
 export default function getEnvVars() {
-  const config = {
-    apiUrl: getApiUrl()
+
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return { apiUrl: process.env.EXPO_PUBLIC_API_URL };
+  }
+
+
+  return {
+    apiUrl: "http://192.168.1.181:3000", // need to match with flask api link
   };
-  console.log('Config:', config);
-  return config;
 }

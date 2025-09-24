@@ -1,7 +1,7 @@
 import { Picker } from "@react-native-picker/picker";
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform, ToastAndroid } from 'react-native';
 import getEnvVars from '../config';
 
 const validatePassword = (password) => {
@@ -104,24 +104,63 @@ export default function Signup() {
         onPress: () => {
           console.log('Alert pressed:', title);
           if (onPress) onPress();
-        }
-      }
+        },
+      },
     ];
 
     Alert.alert(title, message, buttons, { cancelable: false });
   };
 
-  const tryFetch = async () => {
+  // AFTER:
+  const tryFetch = async (payload) => {
     try {
       const response = await fetch(`${apiUrl}/auth/signup`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return { response, error: null };
+    } catch (error) {
+      return { response: null, error };
+    }
+  };
+
+      const handleSignup = async () => {
+        setEmailError('');
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        // Validation checks
+        const allRequirementsMet = passwordRequirements.every(req => req.met);
+        if (!allRequirementsMet) {
+          showAlert('Error', 'Please meet all password requirements');
+          return;
+        }
+        if (password !== confirmPassword) {
+          showAlert('Error', 'Passwords do not match');
+          return;
+        }
+        if (
+          !firstName.trim() ||
+          !lastName.trim() ||
+          !phone.trim() ||
+          !address.trim() ||
+          !city.trim() ||
+          !state.trim() ||
+          !zip.trim()
+        ) {
+          showAlert('Error', 'Please fill in all required fields');
+          return;
+        }
+        if (!validateEmail(normalizedEmail)) {
+          setEmailError('Please enter a valid email address');
+          return;
+        }
+
+        const payload = {
           firstName,
           lastName,
-          email,
+          email: normalizedEmail,
           password,
           user_type: userType,
           phone,
@@ -130,72 +169,60 @@ export default function Signup() {
           city,
           state,
           zip,
-        }),
-      });
-      return { response, error: null };
-    } catch (error) {
-      return { response: null, error };
-    }
-  };
+        };
 
-  const handleSignup = async () => {
-    // Check if all password requirements are met
-    const allRequirementsMet = passwordRequirements.every(req => req.met);
-    if (!allRequirementsMet) {
-      showAlert('Error', 'Please meet all password requirements');
-      return;
-    }
+        try {
+          console.log('Trying to connect to:', apiUrl);
+          const result = await tryFetch(payload);
 
-    // Check if passwords match
-    if (password !== confirmPassword) {
-      showAlert('Error', 'Passwords do not match');
-      return;
-    }
+          if (!result.response) {
+            const errorMsg = result.error?.message || 'Unknown error';
+            console.error('Connection error:', errorMsg);
+            showAlert('Error', `Could not connect to server: ${errorMsg}`);
+            return;
+          }
 
-    // Check if required fields are filled
-    if (!firstName.trim() || !lastName.trim() || !phone.trim() || !address.trim() || !city.trim() || !state.trim() || !zip.trim()) {
-      showAlert('Error', 'Please fill in all required fields');
-      return;
-    }
+          const { response } = result;
+          const data = await response.json().catch(() => ({}));
+          console.log('Signup status:', response.status, 'data:', data);
 
-    try {
-      console.log('Trying to connect to:', apiUrl);
-      console.log('Attempting signup...');
-      const result = await tryFetch();
-      
-      if (!result.response) {
-        const errorMsg = result.error?.message || 'Unknown error';
-        console.error('Connection error:', errorMsg);
-        showAlert('Error', `Could not connect to server: ${errorMsg}`);
-        return;
-      }
+          if (!response.ok) {
+            // handle duplicate email nicely
+            const msg = (data?.error || '').toLowerCase();
+            if (
+              response.status === 409 ||
+              msg.includes('exists') ||
+              msg.includes('taken') ||
+              msg.includes('used')
+            ) {
+              setEmailError('This email is already registered');
+              showAlert('Error', 'This email is already registered');
+            } else {
+              showAlert('Error', data.error || 'Signup failed');
+            }
+            return;
+          }
+          
+          // ✅ Show a success message & redirect automatically
+          if (Platform.OS === 'android') {
+            ToastAndroid.show('Account created! Redirecting to login…', ToastAndroid.SHORT);
+          } else {
+            console.log('Account created! Redirecting to login…');
+          }
 
-      const response = result.response;
-      console.log('Got response:', response.status);
-      const data = await response.json();
-      console.log('Response data:', data);
+          setTimeout(() => {
+            router.replace('/'); // or '/login' if that is your login page
+          }, 1200);
 
-      if (!response.ok) {
-        Alert.alert('Error', data.error || 'Signup failed');
-        return;
-      }
 
-      console.log('Token:', data.token);
-      console.log('User type:', userType);
-      
-      // Navigate to appropriate dashboard based on user type
-      showAlert('Success', 'Account created successfully!', () => {
-        if (userType === 'customer') {
-          router.push('/customer');
-        } else if (userType === 'chef') {
-          router.push('/chef');
+
+        } catch (error) {
+          console.error('Error in handleSignup:', error);
+          showAlert('Error', 'Network error: ' + error.message);
         }
-      });
-    } catch (error) {
-      console.error('Error in handleSignup:', error);
-      showAlert('Error', 'Network error: ' + error.message);
-    }
-  };
+      };
+
+
 
   return (
     <View style={styles.container}>
@@ -229,12 +256,12 @@ export default function Signup() {
           value={email}
           onChangeText={(text) => {
             setEmail(text);
-            if (text.length > 0 && !validateEmail(text)) {
+            setEmailError(''); // <-- clear any prior “already registered” error immediately
+            if (text.length > 0 && !validateEmail(text.trim().toLowerCase())) {
               setEmailError('Please enter a valid email address');
-            } else {
-              setEmailError('');
             }
           }}
+
           keyboardType="email-address"
           autoCapitalize="none"
         />
@@ -253,7 +280,6 @@ export default function Signup() {
       {/* Password Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Create Password</Text>
-        
         <Text style={styles.fieldLabel}>Password</Text>
         <TextInput
           style={styles.input}
@@ -300,62 +326,79 @@ export default function Signup() {
       </View>
 
       {/* Address Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Address</Text>
-        
-        <Text style={styles.fieldLabel}>Street Address</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="123 Main Street"
-          value={address}
-          onChangeText={setAddress}
-        />
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Your Address</Text>
 
-        <Text style={styles.fieldLabel}>Apartment, Suite, etc. (Optional)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Apt 4B, Suite 200, etc."
-          value={address2}
-          onChangeText={setAddress2}
-        />
+              <Text style={styles.fieldLabel}>Street Address</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="123 Main Street"
+                value={address}
+                onChangeText={setAddress}
+              />
 
-        <Text style={styles.fieldLabel}>City</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="City"
-          value={city}
-          onChangeText={setCity}
-        />
-        
-        <View style={styles.stateZipRow}>
-          <View style={styles.stateContainer}>
-            <Text style={styles.fieldLabel}>State</Text>
-            <View style={[styles.input, styles.stateInput, { padding: 0 }]}>
-              <Picker
-                selectedValue={state}
-                onValueChange={(val) => setState(val)}
-                prompt="Select a state"
-              >
-                {US_STATES.map((s) => (
-                  <Picker.Item key={s.value} label={s.label} value={s.value} />
-                ))}
-              </Picker>
+              <Text style={styles.fieldLabel}>Apartment, Suite, etc. (Optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Apt 4B, Suite 200, etc."
+                value={address2}
+                onChangeText={setAddress2}
+              />
+
+              <Text style={styles.fieldLabel}>City</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="City"
+                value={city}
+                onChangeText={setCity}
+              />
+
+                <View style={styles.stateZipRow}>
+                  {/* STATE */}
+                  <View style={styles.stateContainer}>
+                    <Text style={styles.fieldLabel}>State</Text>
+                      <View
+                          style={[
+                            styles.input,
+                            styles.stateInput,
+                            {
+                              padding: 0,
+                              height: 40,
+                              justifyContent: 'center',
+                            },
+                          ]}
+                        >
+                          <Picker
+                            selectedValue={state}
+                            onValueChange={(val) => setState(val)}
+                            // 'mode' is Android-only; keep 'dialog' to avoid dropdown clipping there
+                            mode={Platform.OS === 'android' ? 'dialog' : undefined}
+                            // iOS: use itemStyle to control wheel text size/line height
+                            itemStyle={{ fontSize: 16 }}
+                            style={{ width: '100%' }} // color doesn't affect iOS wheel; that's normal
+                          >
+                            {US_STATES.map(({ label, value }) => (
+                              <Picker.Item key={value || label} label={label} value={value} />
+                            ))}
+                          </Picker>
+                        </View>
+                      </View>
+
+                {/* ZIP */}
+                <View style={styles.zipContainer}>
+                  <Text style={styles.fieldLabel}>Zip Code</Text>
+                  <TextInput
+                    style={[styles.input, styles.zipInput]}
+                    placeholder="12345"
+                    value={zip}
+                    onChangeText={setZip}
+                    keyboardType="numeric"
+                    maxLength={5}
+                  />
+                </View>
+              </View>
             </View>
-          </View>
-          
-          <View style={styles.zipContainer}>
-            <Text style={styles.fieldLabel}>Zip Code</Text>
-            <TextInput
-              style={[styles.input, styles.zipInput]}
-              placeholder="12345"
-              value={zip}
-              onChangeText={setZip}
-              keyboardType="numeric"
-              maxLength={5}
-            />
-          </View>
-        </View>
-      </View>
+         
 
       {/* User Type Section */}
       <View style={styles.section}>
