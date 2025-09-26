@@ -59,3 +59,7 @@ In backend terminal, run "python app.py"
 
 Thats it!
 
+
+## need to fix before run.
+in backend: config.js
+the link need to change to the backend link
