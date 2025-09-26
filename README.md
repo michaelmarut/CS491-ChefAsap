@@ -63,3 +63,6 @@ Thats it!
 ## need to fix before run.
 in backend: config.js
 the link need to change to the backend link
+
+for backend- database -config.py
+the host name, user,password, and database need to change
