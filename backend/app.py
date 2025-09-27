@@ -4,7 +4,8 @@ from flask_bcrypt import Bcrypt
 from database.config import db_config
 from database.init_db import init_db
 from auth import auth
-from booking import booking
+from blueprint.booking import bookings_bp
+from blueprint.chat import chat_bp
 import mysql.connector
 import socket
 
@@ -24,9 +25,8 @@ bcrypt = Bcrypt(app)
 
 
 app.register_blueprint(auth, url_prefix='/auth')
-
-
-app.register_blueprint(booking, url_prefix='/booking')
+app.register_blueprint(bookings_bp)  # New booking system with /api/bookings routes
+app.register_blueprint(chat_bp)
 
 @app.route('/')
 def index():

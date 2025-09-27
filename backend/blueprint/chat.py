@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 import mysql.connector
 from mysql.connector import Error
-from config import DB_CONFIG
+from database.config import db_config as DB_CONFIG
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/api/chat")
 
@@ -38,9 +38,9 @@ def send_message():
 
         # Optional: ensure booking exists and sender belongs to booking
         cursor.execute("""
-            SELECT b.booking_id, b.customer_id, b.chef_id
+            SELECT b.id, b.customer_id, b.chef_id
               FROM bookings b
-             WHERE b.booking_id = %s
+             WHERE b.id = %s
             """, (booking_id,))
         booking = cursor.fetchone()
         if not booking:
@@ -53,13 +53,23 @@ def send_message():
         if sender_role == "customer" and sender_user_id != customer_id:
             return bad_request("sender_user_id does not match the booking's customer")
 
+        # Find or create conversation
+        cursor.execute("""
+            INSERT INTO conversations (customer_id, chef_id, booking_id) 
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE conversation_id=LAST_INSERT_ID(conversation_id)
+        """, (customer_id, chef_id, booking_id))
+        
+        cursor.execute("SELECT LAST_INSERT_ID()")
+        conversation_id = cursor.fetchone()[0]
+        
         cursor.execute(
             """
             INSERT INTO chat_messages
-                (booking_id, sender_user_id, sender_role, message)
+                (conversation_id, sender_user_id, sender_role, message)
             VALUES (%s, %s, %s, %s)
             """,
-            (booking_id, sender_user_id, sender_role, message)
+            (conversation_id, sender_user_id, sender_role, message)
         )
         conn.commit()
         return jsonify(message="Message sent"), 201
@@ -91,15 +101,20 @@ def get_chat_history():
             """
             SELECT
                 m.message_id,
-                m.booking_id,
+                c.booking_id,
                 m.sender_user_id,
                 m.sender_role,
-                u.full_name AS sender_name,
+                CASE 
+                    WHEN m.sender_role = 'chef' THEN CONCAT(ch.first_name, ' ', ch.last_name)
+                    WHEN m.sender_role = 'customer' THEN CONCAT(cu.first_name, ' ', cu.last_name)
+                END AS sender_name,
                 m.message,
                 m.sent_at
             FROM chat_messages m
-            JOIN users u ON u.id = m.sender_user_id
-            WHERE m.booking_id = %s
+            JOIN conversations c ON c.conversation_id = m.conversation_id
+            LEFT JOIN chefs ch ON ch.id = m.sender_user_id AND m.sender_role = 'chef'
+            LEFT JOIN customers cu ON cu.id = m.sender_user_id AND m.sender_role = 'customer'
+            WHERE c.booking_id = %s
             ORDER BY m.sent_at ASC, m.message_id ASC
             """,
             (booking_id,)
@@ -136,8 +151,9 @@ def list_bookings():
 
         sql = """
             SELECT
-                booking_id,
-                scheduled_at,
+                id as booking_id,
+                start_time,
+                end_time,
                 status
             FROM bookings
             WHERE chef_id = %s
@@ -148,7 +164,7 @@ def list_bookings():
             sql += " AND status = %s"
             params.append(status)
 
-        sql += " ORDER BY scheduled_at DESC"
+        sql += " ORDER BY start_time DESC"
 
         cursor.execute(sql, params)
         rows = cursor.fetchall()
@@ -187,24 +203,24 @@ def list_contacts():
             # find customers this chef has chatted with
             cursor.execute("""
                 SELECT DISTINCT
-                    b.customer_id AS id,
-                    u.full_name   AS name
+                    c.customer_id AS id,
+                    CONCAT(cu.first_name, ' ', cu.last_name) AS name
                 FROM chat_messages m
-                JOIN bookings b ON b.booking_id = m.booking_id
-                JOIN users u    ON u.id = b.customer_id
-                WHERE b.chef_id = %s
+                JOIN conversations c ON c.conversation_id = m.conversation_id
+                JOIN customers cu ON cu.id = c.customer_id
+                WHERE c.chef_id = %s
                 ORDER BY name ASC
             """, (user_id,))
         else:
             # find chefs this customer has chatted with
             cursor.execute("""
                 SELECT DISTINCT
-                    b.chef_id  AS id,
-                    u.full_name AS name
+                    c.chef_id AS id,
+                    CONCAT(ch.first_name, ' ', ch.last_name) AS name
                 FROM chat_messages m
-                JOIN bookings b ON b.booking_id = m.booking_id
-                JOIN users u    ON u.id = b.chef_id
-                WHERE b.customer_id = %s
+                JOIN conversations c ON c.conversation_id = m.conversation_id
+                JOIN chefs ch ON ch.id = c.chef_id
+                WHERE c.customer_id = %s
                 ORDER BY name ASC
             """, (user_id,))
 

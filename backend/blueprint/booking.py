@@ -1,8 +1,8 @@
-# bookings.py
 from flask import Blueprint, request, jsonify
 import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
+from database.config import db_config as DB_CONFIG
 
 bookings_bp = Blueprint("bookings", __name__, url_prefix="/api/bookings")
 
