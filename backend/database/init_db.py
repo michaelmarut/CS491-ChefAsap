@@ -293,3 +293,11 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
+
+
+
+# CREATE DATABASE chefasap   -on the database for first time
+#  CHARACTER SET utf8mb4
+#  COLLATE utf8mb4_unicode_ci;
+
+#python -m database.init_db ||| run at terminal to create the database

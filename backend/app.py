@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from database.config import db_config
-from database.setup import init_db
+from database.init_db import init_db
 from auth import auth
 from booking import booking
 import mysql.connector

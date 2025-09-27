@@ -6,6 +6,15 @@ import re
 from datetime import datetime, timedelta
 from database.config import db_config
 
+auth = Blueprint('auth', __name__)
+bcrypt = Bcrypt()
+
+@auth.record_once
+def on_load(state):
+    bcrypt.init_app(state.app)
+
+JWT_SECRET ='your-secret-key'
+
 def validate_email(email):
     email_regex = r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return bool(re.match(email_regex, email))
@@ -22,14 +31,11 @@ def validate_password(password):
         return False, "Password must contain at least one special character"
     return True, "Password is valid"
 
-auth = Blueprint('auth', __name__)
-bcrypt = Bcrypt()
-
-JWT_SECRET = 'your-secret-key'  
-
 @auth.route('/signup', methods=['POST'])
 def signup():
     print('\n=== Signup Request Received ===\n')
+    conn = None
+    cursor = None
     try:
         data = request.get_json()
         first_name = data.get('firstName')
@@ -127,23 +133,30 @@ def signup():
             'token': token,
             'user_type': user_type
         }), 201
-
+    except InterruptedError:
+        if conn:
+            conn.rollback()
+        return jsonify({'error': 'Email already exists'}), 409
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        if cursor is not None:
+            try:cursor.close()
+            except Exception:pass
+        if conn is not None:
+            try: conn.close()
+            except Exception:pass
 
 @auth.route('/signin', methods=['POST'])
 def signin():
+    conn = None
+    cursor = None
     try:
         data = request.get_json()
         email = data.get('email')
         password = data.get('password')
 
-        if not all([email, password]):
+        if not email or not password:
             return jsonify({'error': 'Missing email or password'}), 400
 
         
@@ -154,7 +167,16 @@ def signin():
         cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
         user = cursor.fetchone()
 
-        if not user or not bcrypt.check_password_hash(user['password'], password):
+        if not user or not user.get('password'):
+            return jsonify({'error': 'Invalid email or password'}), 401
+
+        #check password
+        try:
+            ok = bcrypt.check_password_hash(user['password'], password)
+        except Exception as e:
+            return jsonify({'error': 'Password hashing error'}), 401
+        
+        if not ok:
             return jsonify({'error': 'Invalid email or password'}), 401
 
         # Generate JWT token
@@ -176,7 +198,9 @@ def signin():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        if cursor is not None:
+            try:cursor.close()
+            except Exception:pass
+        if conn is not None:
+            try: conn.close()
+            except Exception:pass

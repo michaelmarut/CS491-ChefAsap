@@ -1,6 +1,6 @@
 db_config = {
-    'host': 'localhost',
+    'host': '127.0.0.1', #change to your localhost IP 
     'user': 'root',
-    'password': 'your_password',
+    'password': 'xiaobailei1943', #change to your own mysql password
     'database': 'chefasap'
 }
