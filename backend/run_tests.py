@@ -33,6 +33,7 @@ def main():
     tests = [
         ("test_connection.py", "Database Connection Test"),
         ("test_flask.py", "Flask Application Test"),
+        ("test_chef_search.py", "Chef Search API Test"),
     ]
     
     results = []

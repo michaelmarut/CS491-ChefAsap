@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BookingPage from './booking';
+import ChefBookingsPage from './chef-bookings';
+import ProfilePage from './profile';
+import ChefAvailabilityPage from './chef-availability';
 
 export default function ChefPage() {
   const [currentView, setCurrentView] = useState('dashboard');
+  
+  // Get the actual logged-in user's profile_id
+  const currentUser = global.currentUser || {};
+  const userProfileId = currentUser.profile_id || 9; // fallback to 9 if not found
+  
+  console.log('🧑‍🍳 ChefPage - Current User:', currentUser);
+  console.log('🧑‍🍳 ChefPage - Using Profile ID:', userProfileId);
 
   const renderDashboard = () => (
   <ScrollView style={styles.container}>
@@ -26,12 +36,26 @@ export default function ChefPage() {
 
       <TouchableOpacity 
         style={styles.menuButton}
-        onPress={() => setCurrentView('reviews')}
+        onPress={() => setCurrentView('availability')}
         activeOpacity={0.85}
       >
         <View style={styles.menuButtonHeader}>
           <View style={[styles.iconBubble, { backgroundColor: '#fde68a' }]}>
             <Text style={styles.iconText}>📅</Text>
+          </View>
+          <Text style={styles.menuButtonText}>My Schedule</Text>
+        </View>
+        <Text style={styles.menuButtonSubtext}>Set your availability hours</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.menuButton}
+        onPress={() => setCurrentView('reviews')}
+        activeOpacity={0.85}
+      >
+        <View style={styles.menuButtonHeader}>
+          <View style={[styles.iconBubble, { backgroundColor: '#c7d2fe' }]}>
+            <Text style={styles.iconText}>⭐</Text>
           </View>
           <Text style={styles.menuButtonText}>Reviews</Text>
         </View>
@@ -64,9 +88,8 @@ export default function ChefPage() {
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>My Bookings</Text>
       </View>
-      <Text style={styles.comingSoon}>Booking history coming soon...</Text>
+      <ChefBookingsPage userId={userProfileId} />
     </View>
   );
 
@@ -94,9 +117,22 @@ export default function ChefPage() {
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Profile</Text>
       </View>
-      <Text style={styles.comingSoon}>Profile management coming soon...</Text>
+      <ProfilePage userType="chef" userId={userProfileId} />
+    </View>
+  );
+
+  const renderAvailability = () => (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => setCurrentView('dashboard')}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+      </View>
+      <ChefAvailabilityPage userId={userProfileId} />
     </View>
   );
 
@@ -119,6 +155,8 @@ export default function ChefPage() {
       return renderBooking();
     case 'bookings':
       return renderBookings();
+    case 'availability':
+      return renderAvailability();
     case 'reviews':
       return renderReviews();
     case 'profile':
@@ -191,12 +229,6 @@ const styles = StyleSheet.create({
   menuButtonSubtext: {
     fontSize: 14,
     color: '#6b7280', // neutral slate
-  },
-  comingSoon: {
-    fontSize: 16,
-    color: '#78716c', // warm gray
-    textAlign: 'center',
-    marginTop: 50,
   },
   iconBubble: {
     backgroundColor: '#bef264', // olive accent

@@ -179,20 +179,37 @@ def signin():
         if not ok:
             return jsonify({'error': 'Invalid email or password'}), 401
 
+        # Get the actual customer_id or chef_id based on user_type
+        profile_id = None
+        if user['user_type'] == 'customer':
+            cursor.execute('SELECT id FROM customers WHERE email = %s', (email,))
+            customer_result = cursor.fetchone()
+            if customer_result:
+                profile_id = customer_result['id']
+        elif user['user_type'] == 'chef':
+            cursor.execute('SELECT id FROM chefs WHERE email = %s', (email,))
+            chef_result = cursor.fetchone()
+            if chef_result:
+                profile_id = chef_result['id']
+
         # Generate JWT token
         token = jwt.encode({
             'user_id': user['id'],
+            'profile_id': profile_id,
             'email': user['email'],
             'user_type': user['user_type'],
             'exp': datetime.utcnow() + timedelta(days=1)
         }, JWT_SECRET, algorithm='HS256')
 
-        print(f'\nUser signed in - Email: {user["email"]}, Type: {user["user_type"]}, ID: {user["id"]}\n')
+        print(f'\nUser signed in - Email: {user["email"]}, Type: {user["user_type"]}, User ID: {user["id"]}, Profile ID: {profile_id}\n')
         
         return jsonify({
             'message': 'Login successful',
             'token': token,
-            'user_type': user['user_type']
+            'user_type': user['user_type'],
+            'user_id': user['id'],
+            'profile_id': profile_id,
+            'email': user['email']
         }), 200
 
     except Exception as e:

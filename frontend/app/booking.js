@@ -1,6 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
 import getEnvVars from '../config';
 
 export default function BookingPage() {
@@ -132,22 +132,46 @@ export default function BookingPage() {
   };
 
   const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
+    console.log('Date change event:', event, selectedDate);
+    
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (selectedDate && event?.type !== 'dismissed') {
+      console.log('Setting new date:', selectedDate);
       setFormData(prev => ({
         ...prev,
         booking_date: selectedDate
       }));
+      
+      if (Platform.OS === 'ios') {
+        setShowDatePicker(false);
+      }
+    } else if (Platform.OS === 'ios') {
+      setShowDatePicker(false);
     }
   };
 
   const handleTimeChange = (event, selectedTime) => {
-    setShowTimePicker(false);
-    if (selectedTime) {
+    console.log('Time change event:', event, selectedTime);
+    
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    
+    if (selectedTime && event?.type !== 'dismissed') {
+      console.log('Setting new time:', selectedTime);
       setFormData(prev => ({
         ...prev,
         booking_time: selectedTime
       }));
+      
+      if (Platform.OS === 'ios') {
+        setShowTimePicker(false);
+      }
+    } else if (Platform.OS === 'ios') {
+      setShowTimePicker(false);
     }
   };
 
@@ -164,45 +188,99 @@ export default function BookingPage() {
       Alert.alert('Error', 'Number of people must be at least 1');
       return false;
     }
-    if (formData.booking_date <= new Date()) {
-      Alert.alert('Error', 'Please select a future date');
+    // Fix date validation - compare just the date parts
+    const today = new Date();
+    const bookingDate = new Date(formData.booking_date);
+    today.setHours(0, 0, 0, 0);
+    bookingDate.setHours(0, 0, 0, 0);
+    if (bookingDate < today) {
+      Alert.alert('Error', 'Please select today or a future date');
       return false;
     }
     return true;
   };
 
   const searchChefs = async () => {
-    if (!validateForm()) return;
+    console.log('🔍 Search button pressed!');
+    console.log('Form data:', formData);
+    console.log('API URL:', apiUrl);
+    
+    if (!validateForm()) {
+      console.log('❌ Form validation failed');
+      return;
+    }
 
     setLoading(true);
     try {
-      const searchData = {
+      // Build query parameters for GET request
+      const params = new URLSearchParams({
         cuisine_type: formData.cuisine_type,
-        booking_date: formData.booking_date.toISOString().split('T')[0],
-        booking_time: formData.booking_time.toTimeString().split(' ')[0].substring(0, 5),
-        customer_zip: formData.customer_zip,
-        number_of_people: parseInt(formData.number_of_people)
-      };
+        availability_date: formData.booking_date.toISOString().split('T')[0],
+        min_rating: '3.0', // Default minimum rating
+        sort_by: 'rating'
+      });
 
-      const response = await fetch(`${apiUrl}/booking/search-chefs`, {
-        method: 'POST',
+      const searchUrl = `${apiUrl}/api/bookings/search-chefs?${params}`;
+      console.log('🌐 Calling API:', searchUrl);
+
+      // Create manual AbortController for React Native compatibility
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(searchUrl, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(searchData),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
+      console.log('📡 Response status:', response.status);
       const result = await response.json();
+      console.log('📋 API Response:', result);
 
       if (response.ok) {
-        setAvailableChefs(result.available_chefs);
+        // Map the new API response format to the expected format
+        const mappedChefs = (result.chefs || []).map(chef => ({
+          chef_id: chef.chef_id,
+          name: `${chef.first_name} ${chef.last_name}`,
+          location: `${chef.city || ''}, ${chef.residency || ''}`.replace(/^,\s*|,\s*$/g, ''),
+          distance_miles: chef.distance_miles || 0,
+          cuisines: chef.cuisines || [formData.cuisine_type],
+          base_rate_per_person: chef.hourly_rate || 50,
+          produce_supply_extra_cost: 20, // Default extra cost
+          estimated_total_cost: (chef.hourly_rate || 50) * parseInt(formData.number_of_people)
+        }));
+        
+        console.log('👨‍🍳 Mapped chefs:', mappedChefs);
+        setAvailableChefs(mappedChefs);
         setShowChefResults(true);
+        
+        if (mappedChefs.length === 0) {
+          Alert.alert('No Results', 'No chefs found matching your criteria. Try different filters or check back later.');
+        } else {
+          Alert.alert('Success!', `Found ${mappedChefs.length} chef${mappedChefs.length > 1 ? 's' : ''} for you!`);
+        }
       } else {
+        console.error('❌ API Error:', result);
         Alert.alert('Error', result.error || 'Failed to search for chefs');
       }
     } catch (error) {
-      Alert.alert('Error', 'Network error. Please check your connection.');
-      console.error('Search error:', error);
+      console.error('🚨 Network error:', error);
+      
+      let errorMessage = 'Unable to connect to server. Please check your connection.';
+      
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (error.message.includes('Network request failed')) {
+        errorMessage = 'Network connection failed. Please check your internet connection.';
+      } else if (error.message.includes('Premature close')) {
+        errorMessage = 'Connection closed unexpectedly. Please try again.';
+      }
+      
+      Alert.alert('Connection Error', `${errorMessage}\n\nTechnical details: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -351,7 +429,10 @@ export default function BookingPage() {
         <Text style={styles.label}>Date *</Text>
         <TouchableOpacity 
           style={styles.dateButton}
-          onPress={() => setShowDatePicker(true)}
+          onPress={() => {
+            console.log('Date picker button pressed');
+            setShowDatePicker(true);
+          }}
         >
           <Text style={styles.dateButtonText}>{formatDate(formData.booking_date)}</Text>
         </TouchableOpacity>
@@ -359,9 +440,10 @@ export default function BookingPage() {
           <DateTimePicker
             value={formData.booking_date}
             mode="date"
-            display="default"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={handleDateChange}
             minimumDate={new Date()}
+            maximumDate={new Date(2030, 11, 31)}
           />
         )}
       </View>
@@ -371,7 +453,10 @@ export default function BookingPage() {
         <Text style={styles.label}>Time *</Text>
         <TouchableOpacity 
           style={styles.dateButton}
-          onPress={() => setShowTimePicker(true)}
+          onPress={() => {
+            console.log('Time picker button pressed');
+            setShowTimePicker(true);
+          }}
         >
           <Text style={styles.dateButtonText}>{formatTime(formData.booking_time)}</Text>
         </TouchableOpacity>
@@ -379,8 +464,9 @@ export default function BookingPage() {
           <DateTimePicker
             value={formData.booking_time}
             mode="time"
-            display="default"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={handleTimeChange}
+            is24Hour={false}
           />
         )}
       </View>
@@ -439,11 +525,15 @@ export default function BookingPage() {
       {/* Search Button */}
       <TouchableOpacity 
         style={[styles.searchButton, loading && styles.disabledButton]}
-        onPress={searchChefs}
+        onPress={() => {
+          console.log('🔘 Search button touched!');
+          searchChefs();
+        }}
         disabled={loading}
+        activeOpacity={0.7}
       >
         <Text style={styles.searchButtonText}>
-          {loading ? 'Searching...' : 'Find Available Chefs'}
+          {loading ? '🔍 Searching...' : '🔍 Find Available Chefs'}
         </Text>
       </TouchableOpacity>
 
@@ -521,10 +611,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.05)',
     elevation: 2,
   },
   title: {
@@ -640,10 +727,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   chefInfo: {

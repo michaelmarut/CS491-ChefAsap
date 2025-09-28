@@ -69,6 +69,16 @@ export default function Signin() {
       
       console.log('Token:', data.token);
       console.log('User type:', data.user_type);
+      console.log('Profile ID:', data.profile_id);
+      
+      // Store user data globally (simple approach)
+      global.currentUser = {
+        user_id: data.user_id,
+        profile_id: data.profile_id,
+        email: data.email,
+        user_type: data.user_type,
+        token: data.token
+      };
       
       // Navigate to appropriate dashboard based on user type
       if (data.user_type === 'customer') {
@@ -148,10 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginTop: 15,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
 

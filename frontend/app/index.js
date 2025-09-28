@@ -56,18 +56,14 @@ const styles = StyleSheet.create({
     fontSize: 36,
     color: '#3f3f1f', // earthy dark olive
     fontWeight: '600',
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8)',
   },
 
   brand: {
     fontSize: 32,
     color: '#4d7c0f', // rich olive text
     fontWeight: 'bold',
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    textShadow: '1px 1px 2px rgba(255, 255, 255, 0.8)',
   },
 
   signupButton: { 
@@ -76,10 +72,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
     backgroundColor: "#4d7c0f", // rich olive text
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
     elevation: 4,
   },
 
@@ -91,8 +84,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#d9f99d", // light olive highlight
     borderWidth: 2,
     borderColor: "#4d7c0f", // rich olive text
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,

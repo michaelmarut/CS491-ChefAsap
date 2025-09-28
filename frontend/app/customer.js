@@ -1,9 +1,18 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BookingPage from './booking';
+import CustomerBookingsPage from './customer-bookings';
+import ProfilePage from './profile';
 
 export default function CustomerPage() {
   const [currentView, setCurrentView] = useState('dashboard');
+  
+  // Get the actual logged-in user's profile_id
+  const currentUser = global.currentUser || {};
+  const userProfileId = currentUser.profile_id || 1; // fallback to 1 if not found
+  
+  console.log('👤 CustomerPage - Current User:', currentUser);
+  console.log('👤 CustomerPage - Using Profile ID:', userProfileId);
 
   const renderDashboard = () => (
   <ScrollView style={styles.container}>
@@ -64,9 +73,8 @@ export default function CustomerPage() {
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>My Bookings</Text>
       </View>
-      <Text style={styles.comingSoon}>Booking history coming soon...</Text>
+      <CustomerBookingsPage userId={userProfileId} />
     </View>
   );
 
@@ -79,9 +87,8 @@ export default function CustomerPage() {
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Profile</Text>
       </View>
-      <Text style={styles.comingSoon}>Profile management coming soon...</Text>
+      <ProfilePage userType="customer" userId={userProfileId} />
     </View>
   );
 
@@ -174,12 +181,6 @@ const styles = StyleSheet.create({
   menuButtonSubtext: {
     fontSize: 14,
     color: '#6b7280', // neutral slate
-  },
-  comingSoon: {
-    fontSize: 16,
-    color: '#78716c', // warm gray
-    textAlign: 'center',
-    marginTop: 50,
   },
   iconBubble: {
     backgroundColor: '#bef264', // olive accent

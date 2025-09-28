@@ -39,6 +39,10 @@ def init_db():
                 phone VARCHAR(20),
                 photo_url VARCHAR(255),
                 bio TEXT,
+                city VARCHAR(100),
+                residency VARCHAR(100),
+                gender ENUM('male', 'female', 'nonbinary', 'prefer_not_say') DEFAULT 'prefer_not_say',
+                hourly_rate DECIMAL(10,2) DEFAULT 50.00,
                 average_rating DECIMAL(3,2) DEFAULT 0.00,
                 total_reviews INT DEFAULT 0,
                 facebook_link VARCHAR(255),
@@ -48,6 +52,27 @@ def init_db():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
         ''')
+        
+        # Add missing columns if they don't exist (for existing databases)
+        try:
+            cursor.execute("ALTER TABLE chefs ADD COLUMN city VARCHAR(100)")
+        except Error:
+            pass  # Column already exists
+            
+        try:
+            cursor.execute("ALTER TABLE chefs ADD COLUMN residency VARCHAR(100)")
+        except Error:
+            pass
+            
+        try:
+            cursor.execute("ALTER TABLE chefs ADD COLUMN gender ENUM('male', 'female', 'nonbinary', 'prefer_not_say') DEFAULT 'prefer_not_say'")
+        except Error:
+            pass
+            
+        try:
+            cursor.execute("ALTER TABLE chefs ADD COLUMN hourly_rate DECIMAL(10,2) DEFAULT 50.00")
+        except Error:
+            pass
 
         # Chef documents
         cursor.execute('''
