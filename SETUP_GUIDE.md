@@ -17,10 +17,32 @@
 
 2. **Install Python dependencies:**
    ```cmd
-   pip install flask flask-cors mysql-connector-python
+   pip install -r requirements.txt
    ```
 
-3. **Start the Flask server:**
+3. **⚠️ IMPORTANT: Set up database (New installations only):**
+   
+   **First time setup:**
+   - Make sure MySQL server is running
+   - Update `backend/database/config.py` with your MySQL credentials:
+     ```python
+     db_config = {
+         'host': 'localhost',
+         'user': 'your_mysql_username', 
+         'password': 'your_mysql_password',
+         'database': 'chefasap'
+     }
+     ```
+   - Run the automated setup script:
+     ```cmd
+     python setup_database.py
+     ```
+   
+   This creates all tables, relationships, and adds test data:
+   - 🧪 Test Chef: `chef1@example.com` / `password123`
+   - 🧪 Test Customer: `customer1@example.com` / `password123`
+
+4. **Start the Flask server:**
    ```cmd
    python app.py
    ```
@@ -110,8 +132,16 @@ The database now includes:
 
 #### Backend Issues:
 - **Port already in use?** Make sure no other Flask app is running on port 3000
-- **Database connection failed?** Check your MySQL server is running
+- **Database connection failed?** Check your MySQL server is running and credentials in `config.py` are correct
 - **Import errors?** Make sure you're in the correct backend directory
+- **Tables don't exist?** Run `python setup_database.py` to create all required tables
+
+#### Database Setup Issues:
+- **"Database 'chefasap' doesn't exist"?** The setup script will create it automatically
+- **"Access denied for user"?** Update your MySQL username/password in `backend/database/config.py`
+- **"Can't connect to MySQL server"?** Make sure MySQL service is running on your system
+- **Setup script fails?** Try running MySQL commands manually or check MySQL error logs
+- **Sample data missing?** Re-run `python setup_database.py` - it's safe to run multiple times
 
 #### Frontend Issues:
 - **Metro bundler error?** Try `npx expo start --clear` to clear cache
