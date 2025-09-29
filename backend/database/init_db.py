@@ -514,8 +514,6 @@ def init_db():
         add_column_if_not_exists(cursor, 'customers', 'gender',    "ENUM('male','female','nonbinary','prefer_not_say') NULL")
 
         # ------------------------------
-        # 注意：触发器不要在这里用 DELIMITER 执行
-        # 请改为在 MySQL 客户端/Workbench 单独执行下面这段（一次即可）：
         #
         # DELIMITER $$
         # CREATE TRIGGER bookings_no_overlap_bi ... END$$

@@ -197,11 +197,19 @@ def check_chef_availability():
         })
         
     except ValueError as e:
-        print(f"❌ Invalid date/time format: {e}")
+        print(f"Invalid date/time format: {e}")
         return jsonify({'error': 'Invalid date or time format'}), 400
     except mysql.connector.Error as e:
-        print(f"❌ Database error: {e}")
+        print(f" Database error: {e}")
         return jsonify({'error': 'Database error occurred'}), 500
     except Exception as e:
-        print(f"🚨 Unexpected error: {e}")
+        print(f" Unexpected error: {e}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
+
+
+
+
+
+
+
+#abca
