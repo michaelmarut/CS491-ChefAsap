@@ -250,6 +250,146 @@ def init_db():
             )
         ''')
 
+        # Booking status history table to track all status changes
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS booking_status_history (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                booking_id INT NOT NULL,
+                previous_status ENUM('pending', 'accepted', 'declined', 'completed', 'cancelled'),
+                new_status ENUM('pending', 'accepted', 'declined', 'completed', 'cancelled') NOT NULL,
+                changed_by_type ENUM('customer', 'chef', 'system') NOT NULL,
+                changed_by_id INT,
+                reason TEXT,
+                notes TEXT,
+                changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+                INDEX idx_booking_changed_at (booking_id, changed_at)
+            )
+        ''')
+
+        # User deletion requests table for handling account deletion and data removal
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_deletion_requests (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_type ENUM('customer', 'chef') NOT NULL,
+                user_id INT NOT NULL,
+                user_email VARCHAR(100) NOT NULL,
+                request_reason TEXT,
+                status ENUM('pending', 'in_progress', 'completed', 'failed', 'cancelled') DEFAULT 'pending',
+                deletion_type ENUM('soft_delete', 'hard_delete', 'anonymize') DEFAULT 'soft_delete',
+                scheduled_deletion_date DATE,
+                actual_deletion_date DATE,
+                data_backup_location VARCHAR(255),
+                deletion_confirmation_code VARCHAR(50),
+                admin_notes TEXT,
+                requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                started_at TIMESTAMP NULL,
+                completed_at TIMESTAMP NULL,
+                processed_by_admin_id INT,
+                INDEX idx_user_deletion (user_type, user_id),
+                INDEX idx_deletion_status (status),
+                INDEX idx_scheduled_deletion (scheduled_deletion_date)
+            )
+        ''')
+
+        # Agreements table for storing all app policies and terms
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS agreements (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                agreement_type ENUM('terms_of_service', 'privacy_policy', 'chef_agreement', 'customer_agreement', 'cancellation_policy', 'payment_terms', 'data_usage_policy') NOT NULL,
+                title VARCHAR(200) NOT NULL,
+                content LONGTEXT NOT NULL,
+                version VARCHAR(20) NOT NULL,
+                is_active BOOLEAN DEFAULT TRUE,
+                is_required BOOLEAN DEFAULT TRUE,
+                applicable_to ENUM('all', 'customers', 'chefs') DEFAULT 'all',
+                effective_date DATE NOT NULL,
+                expiry_date DATE,
+                created_by_admin_id INT,
+                admin_notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_agreement_active (agreement_type, is_active),
+                INDEX idx_effective_date (effective_date),
+                INDEX idx_applicable_to (applicable_to)
+            )
+        ''')
+
+        # User agreement acceptances table to track which users accepted which agreements
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_agreement_acceptances (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                agreement_id INT NOT NULL,
+                user_type ENUM('customer', 'chef') NOT NULL,
+                user_id INT NOT NULL,
+                user_email VARCHAR(100) NOT NULL,
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                acceptance_method ENUM('signup', 'update_prompt', 'forced_update') NOT NULL,
+                accepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (agreement_id) REFERENCES agreements(id) ON DELETE CASCADE,
+                INDEX idx_user_agreements (user_type, user_id),
+                INDEX idx_agreement_acceptances (agreement_id),
+                UNIQUE KEY unique_user_agreement (agreement_id, user_type, user_id)
+            )
+        ''')
+
+        # Chef ratings table - customers rate chefs after completed appointments
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_ratings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                booking_id INT NOT NULL,
+                chef_id INT NOT NULL,
+                customer_id INT NOT NULL,
+                rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                review_text TEXT,
+                food_quality_rating INT CHECK (food_quality_rating >= 1 AND food_quality_rating <= 5),
+                service_rating INT CHECK (service_rating >= 1 AND service_rating <= 5),
+                punctuality_rating INT CHECK (punctuality_rating >= 1 AND punctuality_rating <= 5),
+                professionalism_rating INT CHECK (professionalism_rating >= 1 AND professionalism_rating <= 5),
+                would_recommend BOOLEAN DEFAULT TRUE,
+                is_anonymous BOOLEAN DEFAULT FALSE,
+                admin_flagged BOOLEAN DEFAULT FALSE,
+                admin_notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_customer_chef_booking_rating (booking_id, customer_id),
+                INDEX idx_chef_ratings (chef_id, rating),
+                INDEX idx_booking_rating (booking_id)
+            )
+        ''')
+
+        # Customer ratings table - chefs rate customers after completed appointments
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customer_ratings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                booking_id INT NOT NULL,
+                customer_id INT NOT NULL,
+                chef_id INT NOT NULL,
+                rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                review_text TEXT,
+                communication_rating INT CHECK (communication_rating >= 1 AND communication_rating <= 5),
+                payment_promptness_rating INT CHECK (payment_promptness_rating >= 1 AND payment_promptness_rating <= 5),
+                respect_rating INT CHECK (respect_rating >= 1 AND respect_rating <= 5),
+                kitchen_cleanliness_rating INT CHECK (kitchen_cleanliness_rating >= 1 AND kitchen_cleanliness_rating <= 5),
+                would_work_again BOOLEAN DEFAULT TRUE,
+                is_anonymous BOOLEAN DEFAULT FALSE,
+                admin_flagged BOOLEAN DEFAULT FALSE,
+                admin_notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_chef_customer_booking_rating (booking_id, chef_id),
+                INDEX idx_customer_ratings (customer_id, rating),
+                INDEX idx_booking_customer_rating (booking_id)
+            )
+        ''')
+
         # Chef service areas (for location-based search)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS chef_service_areas (
@@ -276,6 +416,45 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Chats table for managing chat sessions between customers and chefs
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chats (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_id INT NOT NULL,
+                chef_id INT NOT NULL,
+                booking_id INT,
+                status ENUM('active', 'closed', 'archived') DEFAULT 'active',
+                closed_by_type ENUM('customer', 'chef'),
+                closed_by_id INT,
+                closed_at TIMESTAMP NULL,
+                last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL,
+                UNIQUE KEY unique_customer_chef_booking (customer_id, chef_id, booking_id)
+            )
+        ''')
+
+        # Chat messages table for storing chat history
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chat_id INT NOT NULL,
+                sender_type ENUM('customer', 'chef') NOT NULL,
+                sender_id INT NOT NULL,
+                message_text TEXT NOT NULL,
+                message_type ENUM('text', 'image', 'file') DEFAULT 'text',
+                file_url VARCHAR(255),
+                is_read BOOLEAN DEFAULT FALSE,
+                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE,
+                INDEX idx_chat_sent_at (chat_id, sent_at),
+                INDEX idx_sender (sender_type, sender_id)
             )
         ''')
 
