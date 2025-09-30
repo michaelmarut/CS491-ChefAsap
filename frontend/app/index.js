@@ -1,113 +1,58 @@
-import { ImageBackground, Text, View, TouchableOpacity, StyleSheet } from "react-native";
+import { ImageBackground, Text, View, TouchableOpacity } from "react-native";
 import { Link } from "expo-router";
 
-export default function Page() {
+export default function LandingScreen() {
   return (
     <ImageBackground
-      source={require('../assets/images/landingPage.png')}
-      style={styles.background}
+      source={require('./assets/images/landingPage.png')}
+      className="flex-1 justify-center items-center bg-base-300"
       resizeMode="cover"
     >
-      <View style={styles.container}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.subtitle}>Find a Chef</Text>
-          <Text style={styles.brand}>ChefAsap</Text>
+      <View className="p-5 flex-1 justify-center items-center w-full">
+
+        <View className="mb-10 items-center">
+
+          <Text
+            className="text-4xl text-olive-500 font-semibold"
+            style={{
+              textShadowColor: 'rgba(255, 255, 255, 0.8)',
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 2,
+            }}
+          >
+            Find a Chef
+          </Text>
+
+          <Text
+            className="text-3xl text-olive-400 font-bold"
+            style={{
+              textShadowColor: 'rgba(255, 255, 255, 0.8)',
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 2,
+            }}
+          >
+            ChefAsap
+          </Text>
         </View>
 
-        <Link href="/signup" asChild>
-          <TouchableOpacity style={styles.signupButton}>
-            <Text style={styles.buttonText}>Sign Up</Text>
+        <Link href="/SignUpScreen" asChild>
+          <TouchableOpacity
+            className="py-4 px-8 rounded-full items-center bg-olive-400 border-2 border-olive-100 shadow-lg"
+          >
+            <Text className="text-lg font-bold text-olive-100">Sign Up</Text>
           </TouchableOpacity>
         </Link>
 
-        <View style={{ height: 10 }} />
+        <View className="h-2.5" />
 
-        <Link href="/signin" asChild>
-          <TouchableOpacity style={styles.loginButton}>
-            <Text style={styles.buttonText}>Log In</Text>
+        <Link href="/SignInScreen" asChild>
+          <TouchableOpacity
+            className="py-4 px-8 rounded-full items-center bg-olive-100 border-2 border-olive-400 shadow-lg"
+          >
+            <Text className="text-lg font-bold text-olive-400">Log In</Text>
           </TouchableOpacity>
         </Link>
       </View>
     </ImageBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: '#2c3e50', // Fallback background color
-  },
-
-  container: {
-    padding: 20,
-    justifyContent: "center",
-    alignItems: "center", 
-    flex: 1,
-  },
-
-  titleContainer: {
-  marginBottom: 40,
-  alignItems: 'center',
-  },
-
-  subtitle: {
-    fontSize: 36,
-    color: '#3f3f1f', // earthy dark olive
-    fontWeight: '600',
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-
-  brand: {
-    fontSize: 32,
-    color: '#4d7c0f', // rich olive text
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-
-  signupButton: { 
-    paddingVertical: 16,
-    paddingHorizontal: 30,
-    borderRadius: 30,
-    alignItems: "center",
-    backgroundColor: "#4d7c0f", // rich olive text
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-
-  loginButton: { 
-    paddingVertical: 16,
-    paddingHorizontal: 30,
-    borderRadius: 30,
-    alignItems: "center",
-    backgroundColor: "#d9f99d", // light olive highlight
-    borderWidth: 2,
-    borderColor: "#4d7c0f", // rich olive text
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-
-  buttonText: {
-    color: "#fefce8", // soft cream base for signup button
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  
-  loginButtonText: {
-    color: "#4d7c0f", // rich olive text for login button
-    fontSize: 18,
-    fontWeight: "700",
-  },
-});
-

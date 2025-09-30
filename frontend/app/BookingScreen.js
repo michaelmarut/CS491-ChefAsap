@@ -1,6 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import getEnvVars from '../config';
 
 export default function BookingPage() {
@@ -22,7 +22,7 @@ export default function BookingPage() {
   const [showChefResults, setShowChefResults] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedChef, setSelectedChef] = useState(null);
-  
+
 
   const [showCuisineDropdown, setShowCuisineDropdown] = useState(false);
   const [showMealTypeDropdown, setShowMealTypeDropdown] = useState(false);
@@ -57,62 +57,66 @@ export default function BookingPage() {
 
   // Modal-based Dropdown Component
   const ModalDropdown = ({ value, options, onSelect, showModal, setShowModal, placeholder, title }) => {
-    const displayValue = options.find(option => 
+    const displayValue = options.find(option =>
       typeof option === 'string' ? option === value : option.value === value
     );
-    const displayText = displayValue ? 
-      (typeof displayValue === 'string' ? displayValue : displayValue.label) : 
+    const displayText = displayValue ?
+      (typeof displayValue === 'string' ? displayValue : displayValue.label) :
       placeholder;
 
     return (
       <>
-        <TouchableOpacity 
-          style={styles.dropdownButton}
+        <TouchableOpacity
+          className="border border-gray-300 rounded-lg p-3 bg-white flex-row justify-between items-center"
           onPress={() => setShowModal(true)}
         >
-          <Text style={[styles.dropdownButtonText, !displayValue && styles.placeholderText]}>
+          <Text
+            className={`text-base flex-1 ${!displayValue ? 'text-warm-gray' : 'text-olive-500'}`}
+          >
             {displayText}
           </Text>
-          <Text style={styles.dropdownArrow}>▼</Text>
+          <Text className="text-sm text-gray-600 ml-2">▼</Text>
         </TouchableOpacity>
-        
+
         <Modal
           visible={showModal}
           animationType="slide"
           presentationStyle="pageSheet"
           transparent={true}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{title}</Text>
-                <TouchableOpacity 
-                  style={styles.modalCloseButton}
+          <View className="flex-1 bg-black/50 justify-end">
+            <View className="bg-white border-t rounded-t-xl max-h-3/4">
+              <View className="flex-row justify-between items-center p-5 border-b border-gray-100">
+                <Text className="text-xl font-bold text-olive-500">{title}</Text>
+                <TouchableOpacity
+                  className="p-1"
                   onPress={() => setShowModal(false)}
                 >
-                  <Text style={styles.modalCloseText}>✕</Text>
+                  <Text className="text-2xl text-gray-600">✕</Text>
                 </TouchableOpacity>
               </View>
-              
-              <ScrollView style={styles.modalList}>
+
+              <ScrollView className="max-h-[300px]">
                 {options.map((option, index) => {
                   const optionValue = typeof option === 'string' ? option : option.value;
                   const optionLabel = typeof option === 'string' ? option : option.label;
                   const isSelected = optionValue === value;
-                  
+
                   return (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.modalItem, isSelected && styles.modalItemSelected]}
+                      className={`p-4 border-b border-gray-100 flex-row justify-between items-center ${isSelected ? 'bg-olive-100' : ''}`}
                       onPress={() => {
                         onSelect(optionValue);
                         setShowModal(false);
                       }}
                     >
-                      <Text style={[styles.modalItemText, isSelected && styles.modalItemTextSelected]}>
+                      <Text
+                        className={`text-base flex-1 ${isSelected ? 'text-olive-400 font-semibold' : 'text-olive-500'}`}
+                      >
                         {optionLabel}
                       </Text>
-                      {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                      {isSelected && <Text className="text-base text-olive-400 font-bold">✓</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -211,7 +215,7 @@ export default function BookingPage() {
   const createBooking = async () => {
     try {
       const bookingData = {
-        customer_id: 1, 
+        customer_id: 1,
         cuisine_type: formData.cuisine_type,
         meal_type: formData.meal_type,
         event_type: formData.event_type,
@@ -253,7 +257,7 @@ export default function BookingPage() {
         return;
       }
 
-  
+
       const response = await fetch(`${apiUrl}/booking/book-chef`, {
         method: 'POST',
         headers: {
@@ -269,7 +273,7 @@ export default function BookingPage() {
 
       if (response.ok) {
         Alert.alert(
-          'Success!', 
+          'Success!',
           `Your booking request has been sent to ${chef.name}. They will contact you soon!`,
           [{ text: 'OK', onPress: () => setShowChefResults(false) }]
         );
@@ -301,12 +305,14 @@ export default function BookingPage() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Book a Chef</Text>
+    <ScrollView
+      className="bg-base-100 rounded-xl p-5 mb-5 shadow-md shadow-black"
+    >
+      <Text className="text-3xl font-bold text-center mb-7 text-olive-500">Book a Chef</Text>
 
       {/* Cuisine Selection */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Cuisine Type *</Text>
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Cuisine Type *</Text>
         <ModalDropdown
           value={formData.cuisine_type}
           options={cuisineTypes}
@@ -319,8 +325,8 @@ export default function BookingPage() {
       </View>
 
       {/* Meal Type */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Meal Type</Text>
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Meal Type</Text>
         <ModalDropdown
           value={formData.meal_type}
           options={mealTypes}
@@ -333,8 +339,8 @@ export default function BookingPage() {
       </View>
 
       {/* Event Type */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Event Type</Text>
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Event Type</Text>
         <ModalDropdown
           value={formData.event_type}
           options={eventTypes}
@@ -347,13 +353,13 @@ export default function BookingPage() {
       </View>
 
       {/* Date Selection */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Date *</Text>
-        <TouchableOpacity 
-          style={styles.dateButton}
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Date *</Text>
+        <TouchableOpacity
+          className="border border-olive-400 rounded-lg p-3 bg-white"
           onPress={() => setShowDatePicker(true)}
         >
-          <Text style={styles.dateButtonText}>{formatDate(formData.booking_date)}</Text>
+          <Text className="text-base text-olive-500">{formatDate(formData.booking_date)}</Text>
         </TouchableOpacity>
         {showDatePicker && (
           <DateTimePicker
@@ -367,13 +373,13 @@ export default function BookingPage() {
       </View>
 
       {/* Time Selection */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Time *</Text>
-        <TouchableOpacity 
-          style={styles.dateButton}
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Time *</Text>
+        <TouchableOpacity
+          className="border border-olive-400 rounded-lg p-3 bg-white"
           onPress={() => setShowTimePicker(true)}
         >
-          <Text style={styles.dateButtonText}>{formatTime(formData.booking_time)}</Text>
+          <Text className="text-base text-olive-500">{formatTime(formData.booking_time)}</Text>
         </TouchableOpacity>
         {showTimePicker && (
           <DateTimePicker
@@ -386,8 +392,8 @@ export default function BookingPage() {
       </View>
 
       {/* Produce Supply */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Produce Supply</Text>
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Produce Supply</Text>
         <ModalDropdown
           value={formData.produce_supply}
           options={produceSupplyOptions}
@@ -400,49 +406,52 @@ export default function BookingPage() {
       </View>
 
       {/* Number of People */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Number of People *</Text>
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Number of People *</Text>
         <TextInput
-          style={styles.input}
+          className="border border-olive-400 rounded-lg p-3 text-base bg-white"
           value={formData.number_of_people}
           onChangeText={(value) => handleInputChange('number_of_people', value)}
           keyboardType="numeric"
           placeholder="Enter number of people"
+          placeholderTextColor="#6b7280"
         />
       </View>
 
       {/* Customer Zip Code */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Your Zip Code *</Text>
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Your Zip Code *</Text>
         <TextInput
-          style={styles.input}
+          className="border border-olive-400 rounded-lg p-3 text-base bg-white"
           value={formData.customer_zip}
           onChangeText={(value) => handleInputChange('customer_zip', value)}
           placeholder="Enter your zip code"
           maxLength={10}
+          placeholderTextColor="#6b7280"
         />
       </View>
 
       {/* Special Notes */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Special Notes</Text>
+      <View className="mb-6">
+        <Text className="text-base font-semibold mb-2 text-olive-500">Special Notes</Text>
         <TextInput
-          style={[styles.input, styles.textArea]}
+          className="border border-olive-400 rounded-lg p-3 text-base bg-white h-24 text-top"
           value={formData.special_notes}
           onChangeText={(value) => handleInputChange('special_notes', value)}
           placeholder="Any allergies, dietary restrictions, or special requests..."
           multiline
           numberOfLines={4}
+          placeholderTextColor="#6b7280"
         />
       </View>
 
       {/* Search Button */}
-      <TouchableOpacity 
-        style={[styles.searchButton, loading && styles.disabledButton]}
+      <TouchableOpacity
+        className={`p-4 rounded-lg items-center mt-5 mb-10 ${loading ? 'bg-gray-400' : 'bg-olive-300'}`}
         onPress={searchChefs}
         disabled={loading}
       >
-        <Text style={styles.searchButtonText}>
+        <Text className="text-xl text-white font-semibold">
           {loading ? 'Searching...' : 'Find Available Chefs'}
         </Text>
       </TouchableOpacity>
@@ -453,55 +462,55 @@ export default function BookingPage() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Available Chefs</Text>
-            <TouchableOpacity 
-              style={styles.closeButton}
+        <View className="flex-1 bg-gray-100">
+          <View className="flex-row justify-between items-center p-5 bg-white border-b border-gray-200">
+            <Text className="text-2xl font-bold text-olive-500">Available Chefs</Text>
+            <TouchableOpacity
+              className="p-2"
               onPress={() => setShowChefResults(false)}
             >
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Text className="text-3xl text-gray-500">✕</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.chefList}>
+          <ScrollView className="flex-1 p-5">
             {availableChefs.length === 0 ? (
-              <View style={styles.noChefs}>
-                <Text style={styles.noChefText}>No chefs available for your criteria</Text>
-                <Text style={styles.noChefSubtext}>Try adjusting your date, time, or location</Text>
+              <View className="items-center mt-12">
+                <Text className="text-lg font-semibold text-gray-600 mb-2">No chefs available for your criteria</Text>
+                <Text className="text-base text-gray-500 text-center">Try adjusting your date, time, or location</Text>
               </View>
             ) : (
               availableChefs.map((chef) => (
-                <View key={chef.chef_id} style={styles.chefCard}>
-                  <View style={styles.chefInfo}>
-                    <Text style={styles.chefName}>{chef.name}</Text>
-                    <Text style={styles.chefLocation}>{chef.location}</Text>
-                    <Text style={styles.chefDistance}>{chef.distance_miles} miles away</Text>
-                    <Text style={styles.chefCuisines}>
+                <View key={chef.chef_id} className="bg-white rounded-xl p-5 mb-4 shadow-md shadow-black/10">
+                  <View className="mb-4">
+                    <Text className="text-xl font-bold text-olive-500 mb-1">{chef.name}</Text>
+                    <Text className="text-base text-gray-600 mb-0.5">{chef.location}</Text>
+                    <Text className="text-sm text-gray-500 mb-2">{chef.distance_miles} miles away</Text>
+                    <Text className="text-sm text-gray-600 mb-3">
                       Specializes in: {chef.cuisines.join(', ')}
                     </Text>
-                    
-                    <View style={styles.pricingInfo}>
-                      <Text style={styles.priceText}>
+
+                    <View className="bg-gray-50 p-3 rounded-lg">
+                      <Text className="text-base text-olive-500 mb-1">
                         ${chef.base_rate_per_person}/person
                       </Text>
                       {formData.produce_supply === 'chef' && chef.produce_supply_extra_cost > 0 && (
-                        <Text style={styles.extraCostText}>
+                        <Text className="text-sm text-gray-600 mb-1">
                           +${chef.produce_supply_extra_cost} for ingredients
                         </Text>
                       )}
-                      <Text style={styles.totalCostText}>
+                      <Text className="text-lg font-bold text-olive-400">
                         Total: ${calculateTotalCost(chef)}
                       </Text>
                     </View>
                   </View>
-                  
-                  <TouchableOpacity 
-                    style={[styles.bookButton, loading && styles.disabledButton]}
+
+                  <TouchableOpacity
+                    className={`p-3 rounded-lg items-center ${loading ? 'bg-gray-400' : 'bg-olive-400'}`}
                     onPress={() => bookChef(chef)}
                     disabled={loading}
                   >
-                    <Text style={styles.bookButtonText}>
+                    <Text className="text-base text-white font-semibold">
                       {loading ? 'Booking...' : 'Book This Chef'}
                     </Text>
                   </TouchableOpacity>
@@ -514,274 +523,3 @@ export default function BookingPage() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fefce8', // soft cream
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#3f3f1f', // earthy dark olive
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#3f3f1f',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#4d7c0f', // rich olive
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#4d7c0f',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-  },
-  picker: {
-    height: 50,
-  },
-  dateButton: {
-    borderWidth: 1,
-    borderColor: '#4d7c0f',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#fff',
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: '#3f3f1f',
-  },
-  searchButton: {
-    backgroundColor: '#65a30d', // olive green
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#3f3f1f',
-  },
-  closeButton: {
-    padding: 10,
-  },
-  closeButtonText: {
-    fontSize: 24,
-    color: '#666',
-  },
-  chefList: {
-    flex: 1,
-    padding: 20,
-  },
-  noChefs: {
-    alignItems: 'center',
-    marginTop: 50,
-  },
-  noChefText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 10,
-  },
-  noChefSubtext: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
-  },
-  chefCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  chefInfo: {
-    marginBottom: 15,
-  },
-  chefName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#3f3f1f',
-    marginBottom: 5,
-  },
-  chefLocation: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 3,
-  },
-  chefDistance: {
-    fontSize: 14,
-    color: '#999',
-    marginBottom: 8,
-  },
-  chefCuisines: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
-  },
-  pricingInfo: {
-    backgroundColor: '#f8f8f8',
-    padding: 10,
-    borderRadius: 8,
-  },
-  priceText: {
-    fontSize: 16,
-    color: '#3f3f1f',
-    marginBottom: 3,
-  },
-  extraCostText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 3,
-  },
-  totalCostText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4d7c0f',
-  },
-  bookButton: {
-    backgroundColor: '#4d7c0f', // match olive tone
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  bookButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  dropdownButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dropdownButtonText: {
-    fontSize: 16,
-    color: '#3f3f1f',
-    flex: 1,
-  },
-  placeholderText: {
-    color: '#999',
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 10,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3f3f1f',
-  },
-  modalCloseButton: {
-    padding: 5,
-  },
-  modalCloseText: {
-    fontSize: 18,
-    color: '#666',
-  },
-  modalList: {
-    maxHeight: 300,
-  },
-  modalItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modalItemSelected: {
-    backgroundColor: '#e7f5d3',
-  },
-  modalItemText: {
-    fontSize: 16,
-    color: '#3f3f1f',
-    flex: 1,
-  },
-  modalItemTextSelected: {
-    color: '#4d7c0f',
-    fontWeight: '600',
-  },
-  checkmark: {
-    fontSize: 16,
-    color: '#4d7c0f',
-    fontWeight: 'bold',
-  },
-});
-

@@ -1,6 +1,6 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import getEnvVars from '../config';
 
 export default function Signin() {
@@ -47,7 +47,7 @@ export default function Signin() {
       console.log('Trying to connect to:', apiUrl);
       console.log('Attempting signin...');
       const result = await tryFetch();
-      
+
       if (!result.response) {
         const errorMsg = result.error?.message || 'Unknown error';
         console.error('Connection error:', errorMsg);
@@ -66,15 +66,14 @@ export default function Signin() {
       }
 
       showAlert('Success', 'Signed in successfully!');
-      
+
       console.log('Token:', data.token);
       console.log('User type:', data.user_type);
-      
-      // Navigate to appropriate dashboard based on user type
+
       if (data.user_type === 'customer') {
-        router.push('/customer');
+        router.push('/CustomerDashboard');
       } else if (data.user_type === 'chef') {
-        router.push('/chef');
+        router.push('/ChefDashboard');
       }
     } catch (error) {
       console.error('Error in handleSignin:', error);
@@ -83,99 +82,45 @@ export default function Signin() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      
+    <View className="p-5 bg-base-100 flex-1">
+
+      <Text className="text-2xl font-bold text-center mb-5 text-olive-500 uppercase mt-8">
+        Login
+      </Text>
+
       <TextInput
-        style={styles.input}
+        className="border border-olive-100 bg-white rounded-full py-3 px-5 my-2.5 text-base text-olive-500"
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
+        placeholderTextColor="#6b7280"
       />
 
       <TextInput
-        style={styles.input}
+        className="border border-olive-100 bg-white rounded-full py-3 px-5 my-2.5 text-base text-olive-500"
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        placeholderTextColor="#6b7280"
       />
 
-      <TouchableOpacity style={styles.signupButton} onPress={handleSignin}>
-        <Text style={styles.signupButtonText}>Login</Text>
+      <TouchableOpacity
+        className="bg-olive-400 py-4 rounded-full mt-4 items-center shadow-md shadow-black/30 border-2 border-olive-100"
+        onPress={handleSignin}
+      >
+        <Text className="text-base font-bold text-olive-100 ">Login</Text>
       </TouchableOpacity>
 
       <Link href="/" asChild>
-        <TouchableOpacity style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+        <TouchableOpacity
+          className="mt-5 self-center py-2.5 px-5 bg-olive-100 rounded-full border-2 border-olive-400"
+        >
+          <Text className="text-sm font-bold text-olive-400">← Back</Text>
         </TouchableOpacity>
       </Link>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#fefce8', // soft cream base (olive theme)
-    flex: 1,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#3f3f1f', // earthy dark olive
-    textTransform: 'capitalize',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d9f99d', // light olive highlight
-    backgroundColor: '#ffffff', // white for visibility
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginVertical: 10,
-    fontSize: 16,
-    color: '#3f3f1f', // earthy dark olive
-  },
-
-  signupButton: {
-    backgroundColor: '#4d7c0f', // rich olive text
-    paddingVertical: 16,
-    borderRadius: 25,
-    marginTop: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-
-  signupButtonText: {
-    color: '#fefce8', // soft cream base
-    fontWeight: '700',
-    fontSize: 16,
-  },
-
-  backButton: {
-    marginTop: 20,
-    alignSelf: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#d9f99d', // light olive highlight
-    borderRadius: 20,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#bef264', // olive accent
-  },
-  
-  backButtonText: {
-    color: '#333',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-});

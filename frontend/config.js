@@ -1,9 +1,20 @@
+import Constants from 'expo-constants';
 
 const getApiUrl = () => {
-  // Using local IP address for Expo Go testing
-  const url = 'http://192.168.68.51:3000';
-  console.log('Using URL:', url);
-  return url;
+  const hostUri = Constants.expoConfig?.hostUri;
+
+  if (hostUri) {
+    // If running in Expo Go or a dev build
+    const ipAddress = hostUri.split(':')[0];
+    const url = `http://${ipAddress}:3000`;
+    console.log('Using URL:', url);
+    return url;
+  } else {
+    // Fallback for web or other environments
+    const url = 'http://localhost:3000';
+    console.log('Using URL:', url);
+    return url;
+  }
 };
 
 export default function getEnvVars() {
