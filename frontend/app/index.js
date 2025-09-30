@@ -18,7 +18,7 @@ export default function Page() {
           <Text className="text-3xl font-bold text-olive-500">ChefAsap</Text>
         </View>
 
-        <Link href="/signup" asChild>
+        <Link href="/SignUpScreen" asChild>
           <TouchableOpacity className="bg-olive-300 py-3 px-8 rounded-lg mb-2">
             <Text className="text-base-300 font-bold text-lg">Sign Up</Text>
           </TouchableOpacity>
@@ -26,7 +26,7 @@ export default function Page() {
 
         <View className="h-2" />
 
-        <Link href="/signin" asChild>
+        <Link href="/SignInScreen" asChild>
           <TouchableOpacity className="bg-olive-300 py-3 px-8 rounded-lg">
             <Text className="text-base-300 font-bold text-lg">Log In</Text>
           </TouchableOpacity>
