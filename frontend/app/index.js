@@ -19,16 +19,16 @@ export default function Page() {
         </View>
 
         <Link href="/SignUpScreen" asChild>
-          <TouchableOpacity className="bg-olive-300 py-3 px-8 rounded-lg mb-2">
-            <Text className="text-base-300 font-bold text-lg">Sign Up</Text>
+          <TouchableOpacity className="bg-olive-300 py-3 px-8 rounded-lg mb-2 border-2 border-olive-100">
+            <Text className="text-olive-100 font-bold text-lg">Sign Up</Text>
           </TouchableOpacity>
         </Link>
 
         <View className="h-2" />
 
         <Link href="/SignInScreen" asChild>
-          <TouchableOpacity className="bg-olive-300 py-3 px-8 rounded-lg">
-            <Text className="text-base-300 font-bold text-lg">Log In</Text>
+          <TouchableOpacity className="bg-olive-300 py-3 px-8 rounded-lg border-2 border-olive-100">
+            <Text className="text-olive-100 font-bold text-lg">Log In</Text>
           </TouchableOpacity>
         </Link>
       </View>
