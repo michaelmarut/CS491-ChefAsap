@@ -458,6 +458,162 @@ def init_db():
             )
         ''')
 
+        # Online meetings table for virtual meetings between customers and chefs
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS online_meetings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_id INT NOT NULL,
+                chef_id INT NOT NULL,
+                booking_id INT,
+                meeting_date DATE NOT NULL,
+                meeting_time TIME NOT NULL,
+                duration_minutes INT DEFAULT 15,
+                meeting_url VARCHAR(255),
+                meeting_platform ENUM('zoom', 'google_meet', 'teams', 'webex', 'other') DEFAULT 'zoom',
+                status ENUM('scheduled', 'in_progress', 'completed', 'cancelled', 'no_show') DEFAULT 'scheduled',
+                cancelled_by_type ENUM('customer', 'chef', 'system'),
+                cancelled_by_id INT,
+                cancelled_at TIMESTAMP NULL,
+                cancellation_reason TEXT,
+                customer_wants_to_end BOOLEAN DEFAULT FALSE,
+                customer_end_requested_at TIMESTAMP NULL,
+                chef_wants_to_end BOOLEAN DEFAULT FALSE,
+                chef_end_requested_at TIMESTAMP NULL,
+                early_end_agreed BOOLEAN DEFAULT FALSE,
+                early_end_reason TEXT,
+                actual_duration_minutes INT,
+                started_at TIMESTAMP NULL,
+                ended_at TIMESTAMP NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL,
+                INDEX idx_customer_meetings (customer_id, meeting_date),
+                INDEX idx_chef_meetings (chef_id, meeting_date),
+                INDEX idx_meeting_status (status)
+            )
+        ''')
+
+        # Meeting feedback table for post-meeting evaluations
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS meeting_feedback (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                meeting_id INT NOT NULL,
+                user_type ENUM('customer', 'chef') NOT NULL,
+                user_id INT NOT NULL,
+                rating INT CHECK (rating >= 1 AND rating <= 5),
+                feedback_text TEXT,
+                meeting_quality_rating INT CHECK (meeting_quality_rating >= 1 AND meeting_quality_rating <= 5),
+                communication_rating INT CHECK (communication_rating >= 1 AND communication_rating <= 5),
+                technical_issues BOOLEAN DEFAULT FALSE,
+                would_meet_again BOOLEAN DEFAULT TRUE,
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (meeting_id) REFERENCES online_meetings(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_user_meeting_feedback (meeting_id, user_type, user_id),
+                INDEX idx_meeting_feedback (meeting_id)
+            )
+        ''')
+
+        # Customer meeting usage tracking (3 meeting limit)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customer_meeting_usage (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_id INT NOT NULL,
+                chef_id INT NOT NULL,
+                meetings_used INT DEFAULT 0,
+                meetings_limit INT DEFAULT 3,
+                period_start DATE NOT NULL,
+                period_end DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_customer_chef_period (customer_id, chef_id, period_start),
+                INDEX idx_customer_usage (customer_id),
+                INDEX idx_chef_usage (chef_id)
+            )
+        ''')
+
+        # Chef cancellation tracking (record after 3 cancellations)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_cancellation_records (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                record_type ENUM('booking_cancellations', 'meeting_cancellations') NOT NULL,
+                cancellation_count INT NOT NULL,
+                period_start DATE NOT NULL,
+                period_end DATE,
+                threshold_reached_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                penalty_applied BOOLEAN DEFAULT FALSE,
+                penalty_type ENUM('warning', 'suspension', 'fee', 'profile_flag') DEFAULT 'warning',
+                notes TEXT,
+                admin_reviewed BOOLEAN DEFAULT FALSE,
+                admin_notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                INDEX idx_chef_cancellations (chef_id, record_type),
+                INDEX idx_threshold_date (threshold_reached_at)
+            )
+        ''')
+
+        # Notifications table for all user notifications and alerts
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_type ENUM('customer', 'chef') NOT NULL,
+                user_id INT NOT NULL,
+                notification_type ENUM('booking_update', 'meeting_reminder', 'payment_alert', 'new_message', 'rating_request', 'promotional', 'system_alert') NOT NULL,
+                title VARCHAR(200) NOT NULL,
+                message TEXT NOT NULL,
+                send_push BOOLEAN DEFAULT TRUE,
+                send_email BOOLEAN DEFAULT FALSE,
+                send_sms BOOLEAN DEFAULT FALSE,
+                is_read BOOLEAN DEFAULT FALSE,
+                is_sent BOOLEAN DEFAULT FALSE,
+                sent_at TIMESTAMP NULL,
+                read_at TIMESTAMP NULL,
+                action_type VARCHAR(50),
+                action_data JSON,
+                priority ENUM('low', 'normal', 'high', 'urgent') DEFAULT 'normal',
+                expires_at TIMESTAMP NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_user_notifications (user_type, user_id, is_read),
+                INDEX idx_notification_type (notification_type),
+                INDEX idx_priority_created (priority, created_at),
+                INDEX idx_expires_at (expires_at)
+            )
+        ''')
+
+        # Customer cancellation fees for late cancellations (less than 24 hours)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customer_cancellation_fees (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                booking_id INT NOT NULL,
+                customer_id INT NOT NULL,
+                cancellation_time TIMESTAMP NOT NULL,
+                booking_scheduled_time TIMESTAMP NOT NULL,
+                hours_before_booking DECIMAL(4,1) NOT NULL,
+                fee_amount DECIMAL(10,2) NOT NULL,
+                fee_percentage DECIMAL(5,2),
+                booking_total_cost DECIMAL(10,2),
+                fee_reason TEXT DEFAULT 'Late cancellation (less than 24 hours notice)',
+                status ENUM('pending', 'charged', 'waived', 'disputed') DEFAULT 'pending',
+                charged_at TIMESTAMP NULL,
+                waived_at TIMESTAMP NULL,
+                waived_reason TEXT,
+                payment_transaction_id VARCHAR(100),
+                admin_notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                INDEX idx_customer_fees (customer_id, status),
+                INDEX idx_booking_fee (booking_id),
+                INDEX idx_fee_status (status)
+            )
+        ''')
+
         conn.commit()
         print("Database tables created successfully")
 
