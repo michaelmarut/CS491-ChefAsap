@@ -27,8 +27,8 @@ export default function Page() {
         <View className="h-2" />
 
         <Link href="/SignInScreen" asChild>
-          <TouchableOpacity className="bg-olive-300 py-3 px-8 rounded-lg border-2 border-olive-100">
-            <Text className="text-olive-100 font-bold text-lg">Log In</Text>
+          <TouchableOpacity className="bg-olive-100 py-3 px-8 rounded-lg border-2 border-olive-300">
+            <Text className="text-olive-300 font-bold text-lg">Log In</Text>
           </TouchableOpacity>
         </Link>
       </View>
