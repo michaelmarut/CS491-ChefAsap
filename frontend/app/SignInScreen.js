@@ -1,6 +1,7 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Button from './components/Button';
 import getEnvVars from '../config';
 
 export default function Signin() {
@@ -107,20 +108,17 @@ export default function Signin() {
         placeholderTextColor="#6b7280"
       />
 
-      <TouchableOpacity
-        className="bg-olive-400 py-4 rounded-full mt-4 items-center shadow-md shadow-black/30 border-2 border-olive-100"
+      <Button
+        title="Log in"
+        style="primary"
         onPress={handleSignin}
-      >
-        <Text className="text-base font-bold text-olive-100 ">Login</Text>
-      </TouchableOpacity>
+      />
 
-      <Link href="/" asChild>
-        <TouchableOpacity
-          className="mt-5 self-center py-2.5 px-5 bg-olive-100 rounded-full border-2 border-olive-400"
-        >
-          <Text className="text-sm font-bold text-olive-400">← Back</Text>
-        </TouchableOpacity>
-      </Link>
+      <Button
+        title="← Back"
+        style="secondary"
+        href="/"
+      />
     </View>
   );
 }

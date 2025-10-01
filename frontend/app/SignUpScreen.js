@@ -2,6 +2,7 @@ import { Picker } from "@react-native-picker/picker";
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Button from './components/Button';
 import getEnvVars from '../config';
 
 const validatePassword = (password) => {
@@ -376,8 +377,8 @@ export default function Signup() {
 
             <TouchableOpacity
               className={`flex-1 py-4 px-2 rounded-2xl mx-0.5 items-center border ${userType === 'customer'
-                  ? 'bg-olive-200 border-olive-400'
-                  : 'bg-olive-100 border-olive-200'
+                ? 'bg-olive-200 border-olive-400'
+                : 'bg-olive-100 border-olive-200'
                 }`}
               onPress={() => setUserType('customer')}
             >
@@ -392,8 +393,8 @@ export default function Signup() {
 
             <TouchableOpacity
               className={`flex-1 py-4 px-2 rounded-2xl mx-0.5 items-center border ${userType === 'chef'
-                  ? 'bg-olive-200 border-olive-400'
-                  : 'bg-olive-100 border-olive-200'
+                ? 'bg-olive-200 border-olive-400'
+                : 'bg-olive-100 border-olive-200'
                 }`}
               onPress={() => setUserType('chef')}
             >
@@ -408,18 +409,17 @@ export default function Signup() {
           </View>
         </View>
 
-        <TouchableOpacity
-          className="bg-olive-400 py-4 rounded-full mt-5 mb-4 items-center shadow-md shadow-black/20"
+        <Button
+          title="Create Account"
+          style="primary"
           onPress={handleSignup}
-        >
-          <Text className="text-base font-bold text-base-100">Create Account</Text>
-        </TouchableOpacity>
+        />
 
-        <Link href="/" asChild>
-          <TouchableOpacity className="self-center py-2.5 px-5 bg-olive-100 rounded-xl mb-4 border border-olive-200">
-            <Text className="text-sm font-semibold text-olive-400">← Back to Home</Text>
-          </TouchableOpacity>
-        </Link>
+        <Button
+          title="← Back"
+          style="secondary"
+          href="/"
+        />
       </ScrollView>
     </View>
   );
