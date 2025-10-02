@@ -30,6 +30,8 @@ JWT_SECRET = 'your-secret-key'
 @auth.route('/signup', methods=['POST'])
 def signup():
     print('\n=== Signup Request Received ===\n')
+    conn = None
+    cursor = None
     try:
         data = request.get_json()
         first_name = data.get('firstName')
@@ -138,13 +140,32 @@ def signup():
 
 @auth.route('/signin', methods=['POST'])
 def signin():
+    conn = None
+    cursor = None
     try:
+        # Check if request has JSON data
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Email and password are required'}), 400
+            
         email = data.get('email')
         password = data.get('password')
 
-        if not all([email, password]):
-            return jsonify({'error': 'Missing email or password'}), 400
+        # Validate input fields
+        if not email or not password:
+            return jsonify({'error': 'Email and password are required'}), 400
+            
+        # Clean and validate email
+        email = email.strip().lower()
+        if not email:
+            return jsonify({'error': 'Email cannot be empty'}), 400
+            
+        if not validate_email(email):
+            return jsonify({'error': 'Invalid email format'}), 400
+            
+        # Validate password
+        if len(password.strip()) == 0:
+            return jsonify({'error': 'Password cannot be empty'}), 400
 
         
         conn = mysql.connector.connect(**db_config)
