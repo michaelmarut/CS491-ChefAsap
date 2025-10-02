@@ -1,5 +1,8 @@
 import Constants from 'expo-constants';
 
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
 const getApiUrl = () => {
   const hostUri = Constants.expoConfig?.hostUri;
 

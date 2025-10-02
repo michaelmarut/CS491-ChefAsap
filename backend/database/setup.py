@@ -597,7 +597,7 @@ def init_db():
                 fee_amount DECIMAL(10,2) NOT NULL,
                 fee_percentage DECIMAL(5,2),
                 booking_total_cost DECIMAL(10,2),
-                fee_reason TEXT DEFAULT 'Late cancellation (less than 24 hours notice)',
+                fee_reason TEXT,
                 status ENUM('pending', 'charged', 'waived', 'disputed') DEFAULT 'pending',
                 charged_at TIMESTAMP NULL,
                 waived_at TIMESTAMP NULL,
