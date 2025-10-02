@@ -6,6 +6,7 @@ from database.setup import init_db
 from blueprints.auth_bp import auth_bp
 from blueprints.booking_bp import booking_bp
 from blueprints.profile_bp import profile_bp
+from blueprints.chat_bp import chat_bp
 import mysql.connector
 import socket
 
@@ -31,6 +32,8 @@ app.register_blueprint(booking_bp, url_prefix='/booking')
 
 
 app.register_blueprint(profile_bp, url_prefix='/profile')
+
+app.register_blueprint(chat_bp)
 
 @app.route('/')
 def index():
