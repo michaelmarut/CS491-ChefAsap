@@ -3,8 +3,9 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from database.config import db_config
 from database.setup import init_db
-from auth import auth
-from booking import booking
+from blueprints.auth_bp import auth_bp
+from blueprints.booking_bp import booking_bp
+from blueprints.profile_bp import profile_bp
 import mysql.connector
 import socket
 
@@ -23,10 +24,13 @@ app.after_request(add_cors_headers)
 bcrypt = Bcrypt(app)
 
 
-app.register_blueprint(auth, url_prefix='/auth')
+app.register_blueprint(auth_bp, url_prefix='/auth')
 
 
-app.register_blueprint(booking, url_prefix='/booking')
+app.register_blueprint(booking_bp, url_prefix='/booking')
+
+
+app.register_blueprint(profile_bp, url_prefix='/profile')
 
 @app.route('/')
 def index():

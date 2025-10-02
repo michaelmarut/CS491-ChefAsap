@@ -22,12 +22,13 @@ def validate_password(password):
         return False, "Password must contain at least one special character"
     return True, "Password is valid"
 
-auth = Blueprint('auth', __name__)
+# Create the blueprint
+auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
 
 JWT_SECRET = 'your-secret-key'  
 
-@auth.route('/signup', methods=['POST'])
+@auth_bp.route('/signup', methods=['POST'])
 def signup():
     print('\n=== Signup Request Received ===\n')
     conn = None
@@ -138,7 +139,7 @@ def signup():
         if conn:
             conn.close()
 
-@auth.route('/signin', methods=['POST'])
+@auth_bp.route('/signin', methods=['POST'])
 def signin():
     conn = None
     cursor = None

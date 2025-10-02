@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 from database.config import db_config
 import math
 
-booking = Blueprint('booking', __name__)
+# Create the blueprint
+booking_bp = Blueprint('booking', __name__)
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance between two points using Haversine formula"""
@@ -34,7 +35,7 @@ def get_zip_coordinates(zip_code):
     }
     return zip_coords.get(zip_code, (40.7128, -74.0060))  # Default to NYC
 
-@booking.route('/create', methods=['POST'])
+@booking_bp.route('/create', methods=['POST'])
 def create_booking():
     """Create a new booking request"""
     try:
@@ -87,7 +88,7 @@ def create_booking():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@booking.route('/search-chefs', methods=['POST'])
+@booking_bp.route('/search-chefs', methods=['POST'])
 def search_chefs():
     """Search for available chefs based on booking criteria"""
     try:
@@ -199,7 +200,7 @@ def search_chefs():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@booking.route('/book-chef', methods=['POST'])
+@booking_bp.route('/book-chef', methods=['POST'])
 def book_chef():
     """Book a specific chef for a booking request"""
     try:
@@ -233,7 +234,7 @@ def book_chef():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@booking.route('/customer/<int:customer_id>', methods=['GET'])
+@booking_bp.route('/customer/<int:customer_id>', methods=['GET'])
 def get_customer_bookings(customer_id):
     """Get all bookings for a customer"""
     try:
