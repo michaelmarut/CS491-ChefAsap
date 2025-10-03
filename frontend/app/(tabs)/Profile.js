@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import { Alert, View } from "react-native";
 
 export default function ProfileScreen() {
-    const { logout, token, userType, userId } = useAuth(); 
+    const { logout, token, userType, userId } = useAuth();
     const { apiUrl } = getEnvVars();
-    
+
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -73,15 +73,16 @@ export default function ProfileScreen() {
     }*/
 
     return (
-        <ScrollView className="flex-1 bg-base-100 p-5">
-            <Text className="text-base text-warm-gray text-center mt-12"> Profile Picture </Text>
-            <Text className="text-base text-warm-gray text-center mt-12"> {profileData?.first_name} {profileData?.last_name} </Text>
-            <Text className="text-base text-warm-gray text-center mt-12"> Description </Text>
+        <ScrollView className="flex-1 bg-base-100 pt-16 gap-y-6">
+            <Text className="text-base text-warm-gray text-center"> Profile Picture </Text>
+            <Text className="text-base text-warm-gray text-center"> Name {profileData?.first_name} {profileData?.last_name} </Text>
+            <Text className="text-base text-warm-gray text-center"> Description </Text>
             <Button
                 title="Log out"
                 style="primary"
                 onPress={logout}
             />
+            <View className="h-24" />
         </ScrollView>
     );
 
