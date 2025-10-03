@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import BookingPage from './BookingScreen';
+import ProfilePage from './ProfilePage';
 
 export default function CustomerPage() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -83,9 +84,7 @@ export default function CustomerPage() {
     <Text className="text-base text-warm-gray text-center mt-12">Booking history coming soon...</Text>
   );
 
-  const renderProfile = () => renderBackableView('Profile',
-    <Text className="text-base text-warm-gray text-center mt-12">Profile management coming soon...</Text>
-  );
+  const renderProfile = () => renderBackableView('Profile', <ProfilePage />);
 
   const renderBooking = () => (
     <View className="flex-1 bg-base-100 p-5">
