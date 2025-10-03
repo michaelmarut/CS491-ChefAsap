@@ -2,8 +2,8 @@ import { Picker } from "@react-native-picker/picker";
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Button from './components/Button';
-import getEnvVars from '../config';
+import Button from '../components/Button';
+import getEnvVars from '../../config';
 
 const validatePassword = (password) => {
   const requirements = [

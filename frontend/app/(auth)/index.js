@@ -1,17 +1,17 @@
-import { Text, View, TouchableOpacity, Image } from "react-native";
+import { Text, View, Image } from "react-native";
 import { Link } from "expo-router";
 import { NativeWindStyleSheet } from "nativewind";
-import Button from './components/Button'; 
+import Button from '../components/Button'; 
 
 NativeWindStyleSheet.setOutput({ default: "native" });
 
 export default function Page() {
   return (
     <View className="flex-1 justify-center items-center bg-base-100">
-      <View className="p-6 rounded-2xl bg-olive-200 items-center">
+      <View className="p-6 rounded-2xl bg-olive-200 items-center w-[80%] h-[80%] shadow-lg shadow-olive-400">
         <View className="mb-8 items-center">
           <Image
-            source={require('./assets/images/chefAsapLogo.png')}
+            source={require('../assets/images/chefAsapLogo.png')}
             className="w-16 h-16 mb-4"
             resizeMode="contain"
           />

@@ -1,8 +1,8 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Button from './components/Button';
-import getEnvVars from '../config';
+import Button from '../components/Button';
+import getEnvVars from '../../config';
 
 export default function Signin() {
   const [email, setEmail] = useState('');
