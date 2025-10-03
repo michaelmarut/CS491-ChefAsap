@@ -192,7 +192,8 @@ def signin():
         return jsonify({
             'message': 'Login successful',
             'token': token,
-            'user_type': user['user_type']
+            'user_type': user['user_type'],
+            'user_id': user['id'],
         }), 200
 
     except Exception as e:

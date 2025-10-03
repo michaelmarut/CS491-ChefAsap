@@ -1,8 +1,9 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Button from './components/Button';
-import getEnvVars from '../config';
+import Button from '../components/Button';
+import getEnvVars from '../../config';
+import { useAuth } from '../context/AuthContext';
 
 export default function Signin() {
   const [email, setEmail] = useState('');
@@ -10,6 +11,7 @@ export default function Signin() {
   const router = useRouter();
 
   const { apiUrl } = getEnvVars();
+  const { login } = useAuth();
 
   const showAlert = (title, message, onPress = null) => {
     const buttons = [
@@ -70,12 +72,16 @@ export default function Signin() {
 
       console.log('Token:', data.token);
       console.log('User type:', data.user_type);
+      console.log('User id:', data.user_id);
 
+      await login(data.token, data.user_type, data.user_id); 
       if (data.user_type === 'customer') {
-        router.push('/CustomerDashboard');
-      } else if (data.user_type === 'chef') {
-        router.push('/ChefDashboard');
+        router.replace('/(tabs)/SearchScreen'); 
       }
+      else if (data.user_type === 'chef') {
+        router.replace('/(tabs)/BookingsScreen'); 
+      }
+
     } catch (error) {
       console.error('Error in handleSignin:', error);
       showAlert('Error', 'Network error: ' + error.message);

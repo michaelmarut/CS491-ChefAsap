@@ -2,8 +2,8 @@ import { Picker } from "@react-native-picker/picker";
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Button from './components/Button';
-import getEnvVars from '../config';
+import Button from '../components/Button';
+import getEnvVars from '../../config';
 
 const validatePassword = (password) => {
   const requirements = [
@@ -184,14 +184,10 @@ export default function Signup() {
       console.log('Token:', data.token);
       console.log('User type:', userType);
 
-      // Navigate to appropriate dashboard based on user type
       showAlert('Success', 'Account created successfully!', () => {
-        if (userType === 'customer') {
-          router.push('/CustomerDashboard');
-        } else if (userType === 'chef') {
-          router.push('/ChefDashboard');
-        }
+        router.push('/SignInScreen');
       });
+
     } catch (error) {
       console.error('Error in handleSignup:', error);
       showAlert('Error', 'Network error: ' + error.message);
