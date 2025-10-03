@@ -348,7 +348,7 @@ export default function Signup() {
                   selectedValue={state}
                   onValueChange={(val) => setState(val)}
                   prompt="Select a state"
-                  style={{ color: '#3f3f1f' }} // Removed height property to revert to original size
+                  style={{ color: '#3f3f1f' }}
                 >
                   {US_STATES.map((s) => (
                     <Picker.Item key={s.value} label={s.label} value={s.value} />
