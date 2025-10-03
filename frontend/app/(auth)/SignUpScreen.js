@@ -334,7 +334,7 @@ export default function Signup() {
           />
 
           <View className="flex-row justify-between">
-            <View className="flex-2 mr-3">
+            <View className="flex-1 mr-3">
               <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">State</Text>
               <View
                 className="border border-olive-100 bg-white rounded-full py-0 mb-2"
@@ -344,7 +344,7 @@ export default function Signup() {
                   selectedValue={state}
                   onValueChange={(val) => setState(val)}
                   prompt="Select a state"
-                  style={{ height: 48, color: '#3f3f1f' }}
+                  style={{ color: '#3f3f1f' }}
                 >
                   {US_STATES.map((s) => (
                     <Picker.Item key={s.value} label={s.label} value={s.value} />
@@ -352,8 +352,7 @@ export default function Signup() {
                 </Picker>
               </View>
             </View>
-
-            <View className="flex-1">
+            <View className="flex-1 ml-3">
               <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Zip Code</Text>
               <TextInput
                 className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500 text-center"

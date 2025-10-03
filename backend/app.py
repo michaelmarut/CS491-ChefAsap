@@ -46,6 +46,23 @@ def index():
     except Exception as e:
         return f'Error: {str(e)}'
 
+# API endpoint to get user profile information
+@app.route('/api/profile/<int:user_id>', methods=['GET'])
+def get_profile(user_id):
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT name, email, phone, address FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if user:
+            return jsonify(user)
+        else:
+            return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     init_db() 
     
