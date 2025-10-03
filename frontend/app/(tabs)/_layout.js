@@ -1,11 +1,20 @@
-import { Tabs } from 'expo-router';
 import { View} from "react-native";
-import { useGlobalSearchParams } from 'expo-router';
+import { Tabs, useGlobalSearchParams, useRouter } from 'expo-router';
 import Octicons from '@expo/vector-icons/Octicons';
 import { TransitionPresets } from '@react-navigation/bottom-tabs';
+import { useAuth } from '../context/AuthContext';
+import { useEffect, useState } from 'react';
 
 export default function TabLayout() {
-    const userType = 'chef';
+    const { isAuthenticated, userType, isLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.replace('/(auth)'); 
+        }
+    }, [isLoading, isAuthenticated, router]);
+
     const iconSize = 24;
 
     const tabBarOptions = {
@@ -33,6 +42,7 @@ export default function TabLayout() {
     return (
         <View className="bg-base-100 flex-1">
         <Tabs screenOptions={tabBarOptions}>
+
             <Tabs.Screen
                 name="SearchScreen"
                 options={{

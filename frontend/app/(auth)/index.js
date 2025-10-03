@@ -1,5 +1,4 @@
 import { Text, View, Image } from "react-native";
-import { Link } from "expo-router";
 import { NativeWindStyleSheet } from "nativewind";
 import Button from '../components/Button'; 
 
