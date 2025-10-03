@@ -96,9 +96,28 @@ def add_sample_data():
                 VALUES (%s, %s, %s, %s)
             ''', (first_name, last_name, email, phone))
 
-        # Get chef IDs and cuisine IDs for relationships
+        # Update users table with chef_id and customer_id foreign keys
+        print("Linking users with chef and customer profiles...")
+        
+        # Get chef IDs and link them to users
         cursor.execute('SELECT id, email FROM chefs')
         chefs = {email: chef_id for chef_id, email in cursor.fetchall()}
+        
+        for chef_email, chef_id in chefs.items():
+            cursor.execute('''
+                UPDATE users SET chef_id = %s WHERE email = %s AND user_type = 'chef'
+            ''', (chef_id, chef_email))
+
+        # Get customer IDs and link them to users
+        cursor.execute('SELECT id, email FROM customers')
+        customers = {email: customer_id for customer_id, email in cursor.fetchall()}
+        
+        for customer_email, customer_id in customers.items():
+            cursor.execute('''
+                UPDATE users SET customer_id = %s WHERE email = %s AND user_type = 'customer'
+            ''', (customer_id, customer_email))
+
+        # Get chef IDs and cuisine IDs for relationships
 
         cursor.execute('SELECT id, name FROM cuisine_types')
         cuisine_ids = {name: cuisine_id for cuisine_id, name in cursor.fetchall()}

@@ -16,8 +16,12 @@ def init_db():
                 email VARCHAR(100) NOT NULL UNIQUE,
                 password VARCHAR(255) NOT NULL,
                 user_type ENUM('chef', 'customer') NOT NULL,
+                chef_id INT NULL,
+                customer_id INT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_chef_id (chef_id),
+                INDEX idx_customer_id (customer_id)
             )
         ''')
 
@@ -613,6 +617,50 @@ def init_db():
                 INDEX idx_fee_status (status)
             )
         ''')
+
+        # Add new columns to users table if they don't exist (for existing databases)
+        try:
+            # Check if chef_id column exists
+            cursor.execute("SHOW COLUMNS FROM users LIKE 'chef_id'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE users ADD COLUMN chef_id INT NULL")
+                cursor.execute("ALTER TABLE users ADD INDEX idx_chef_id (chef_id)")
+                print("Added chef_id column to users table")
+        except mysql.connector.Error as e:
+            print(f"Note: chef_id column handling: {e}")
+
+        try:
+            # Check if customer_id column exists
+            cursor.execute("SHOW COLUMNS FROM users LIKE 'customer_id'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE users ADD COLUMN customer_id INT NULL")
+                cursor.execute("ALTER TABLE users ADD INDEX idx_customer_id (customer_id)")
+                print("Added customer_id column to users table")
+        except mysql.connector.Error as e:
+            print(f"Note: customer_id column handling: {e}")
+
+        # Add foreign key constraints for users table after all tables are created
+        try:
+            cursor.execute('''
+                ALTER TABLE users 
+                ADD CONSTRAINT fk_users_chef_id 
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+            ''')
+            print("Added foreign key constraint for chef_id")
+        except mysql.connector.Error as e:
+            if "Duplicate" not in str(e):
+                print(f"Note: chef_id foreign key constraint: {e}")
+        
+        try:
+            cursor.execute('''
+                ALTER TABLE users 
+                ADD CONSTRAINT fk_users_customer_id 
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            ''')
+            print("Added foreign key constraint for customer_id")
+        except mysql.connector.Error as e:
+            if "Duplicate" not in str(e):
+                print(f"Note: customer_id foreign key constraint: {e}")
 
         conn.commit()
         print("Database tables created successfully")
