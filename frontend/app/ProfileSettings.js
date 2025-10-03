@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 
-// Replace with the actual user ID and backend IP/port
+// Replace with the actual user ID and backend IP if needed
 const USER_ID = 1;
 const API_URL = "http://127.0.0.1:3000/api/profile/" + USER_ID;
 
@@ -17,7 +17,7 @@ export default function ProfilePage() {
         if (data.error) setError(data.error);
         else setProfile(data);
       })
-      .catch((err) => setError("Network error"));
+      .catch(() => setError("Network error"));
   }, []);
 
   if (error) return <Text className="text-red-500">{error}</Text>;
@@ -31,6 +31,7 @@ export default function ProfilePage() {
         <Text className="text-lg text-olive-400 mb-2">Email: {profile.email}</Text>
         <Text className="text-lg text-olive-400 mb-2">Phone: {profile.phone}</Text>
         <Text className="text-lg text-olive-400 mb-2">Address: {profile.address}</Text>
+        {/* Add more profile fields as needed */}
       </View>
     </View>
   );
