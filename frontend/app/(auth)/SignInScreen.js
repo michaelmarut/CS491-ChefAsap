@@ -2,6 +2,7 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
+import Input from '../components/Input';
 import getEnvVars from '../../config';
 import { useAuth } from '../context/AuthContext';
 
@@ -75,12 +76,12 @@ export default function Signin() {
       console.log('User id:', data.user_id);
       console.log('Profile id:', data.profile_id);
 
-      await login(data.token, data.user_type, data.profile_id); 
+      await login(data.token, data.user_type, data.profile_id);
       if (data.user_type === 'customer') {
-        router.replace('/(tabs)/SearchScreen'); 
+        router.replace('/(tabs)/SearchScreen');
       }
       else if (data.user_type === 'chef') {
-        router.replace('/(tabs)/BookingsScreen'); 
+        router.replace('/(tabs)/BookingsScreen');
       }
 
     } catch (error) {
@@ -96,23 +97,20 @@ export default function Signin() {
         Login
       </Text>
 
-      <TextInput
-        className="border border-olive-100 bg-white rounded-full py-3 px-5 my-2.5 text-base text-olive-500"
+      <Input
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
-        placeholderTextColor="#6b7280"
       />
 
-      <TextInput
-        className="border border-olive-100 bg-white rounded-full py-3 px-5 my-2.5 text-base text-olive-500"
+      <Input
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
+
         secureTextEntry
-        placeholderTextColor="#6b7280"
       />
 
       <Button

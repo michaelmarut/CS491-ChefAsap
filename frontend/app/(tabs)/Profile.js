@@ -105,6 +105,7 @@ export default function ProfileScreen() {
                     style="primary"
                     onPress={logout}
                 />
+                <View className="h-24" />
             </ScrollView>
         </View>
     );

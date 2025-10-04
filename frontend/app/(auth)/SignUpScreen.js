@@ -3,6 +3,8 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
+import Input from '../components/Input';
+import Card from '../components/Card';
 import getEnvVars from '../../config';
 
 const validatePassword = (password) => {
@@ -23,6 +25,23 @@ const validatePassword = (password) => {
 const validateEmail = (email) => {
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailRegex.test(email);
+};
+
+const filterNameCharacters = (text) => {
+  const filteredText = text.replace(/[^a-zA-Z\s'-]/g, '');
+  return filteredText;
+};
+
+const filterDigits = (text) => {
+  return text.replace(/[^0-9]/g, '');
+};
+
+const filterAddressCharacters = (text) => {
+  return text.replace(/[^a-zA-Z0-9\s.,\-\/#]/g, '');
+};
+
+const filterAlphabeticCharacters = (text) => {
+  return text.replace(/[^a-zA-Z\s'-]/g, '');
 };
 
 export default function Signup() {
@@ -195,7 +214,7 @@ export default function Signup() {
   };
 
   return (
-    <View className="flex-1 bg-base-100 rounded-xl p-4 my-2.5 shadow-md shadow-black/10">
+    <View className="flex-1 bg-base-100 rounded-xl p-2 pb-0">
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -205,33 +224,30 @@ export default function Signup() {
           paddingBottom: 30,
         }}
       >
-        <Text className="text-2xl font-bold text-center mb-5 text-olive-500 capitalize">
+        <Text className="text-2xl font-bold text-center mb-4 mt-4 text-olive-500 capitalize">
           Create Your Account
         </Text>
 
-        <View className="bg-white rounded-xl p-4 mb-4 shadow-md shadow-black/10">
-          <Text className="text-xl font-bold mb-3 text-gray-700">Personal Information</Text>
-
+        <Card title={"Personal Information"}>
           <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Name</Text>
           <View className="flex-row justify-between">
-            <TextInput
-              className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500 flex-1 mx-0.5"
+            <Input
               placeholder="First Name"
               value={firstName}
-              onChangeText={setFirstName}
+              onChangeText={(text) => setFirstName(filterNameCharacters(text))}
+              containerClasses="flex-1 mx-0.5 mb-2 mt-0"
             />
-            <TextInput
-              className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500 flex-1 mx-0.5"
+
+            <Input
               placeholder="Last Name"
               value={lastName}
-              onChangeText={setLastName}
+              onChangeText={(text) => setLastName(filterNameCharacters(text))}
+              containerClasses="flex-1 mx-0.5 mb-2 mt-0"
             />
           </View>
 
-          <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Email Address</Text>
-          <TextInput
-            className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500"
-            placeholder="your.email@example.com"
+          <Input
+            label="Email Address"
             value={email}
             onChangeText={(text) => {
               setEmail(text);
@@ -243,25 +259,22 @@ export default function Signup() {
             }}
             keyboardType="email-address"
             autoCapitalize="none"
+            error={emailError}
+            placeholder="your.email@example.com"
           />
-          {emailError ? <Text className="text-red-500 text-xs mb-1 ml-1">{emailError}</Text> : null}
 
-          <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Phone Number</Text>
-          <TextInput
-            className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500"
-            placeholder="(555) 123-4567"
+          <Input label="Phone Number"
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(text) => setPhone(filterDigits(text))}
             keyboardType="phone-pad"
+            placeholder="(555) 123-4567"
+            maxLength={10}
           />
-        </View>
+        </Card>
 
-        <View className="bg-white rounded-xl p-4 mb-4 shadow-md shadow-black/10">
-          <Text className="text-xl font-bold mb-3 text-gray-700">Create Password</Text>
-
-          <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Password</Text>
-          <TextInput
-            className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500"
+        <Card title={"Create Password"}>
+          <Input
+            label="Password"
             placeholder="Enter a secure password"
             value={password}
             onChangeText={(text) => {
@@ -276,9 +289,8 @@ export default function Signup() {
             secureTextEntry
           />
 
-          <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Confirm Password</Text>
-          <TextInput
-            className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500"
+          <Input
+            label="Confirm Password"
             placeholder="Re-enter your password"
             value={confirmPassword}
             onChangeText={(text) => {
@@ -290,8 +302,9 @@ export default function Signup() {
               }
             }}
             secureTextEntry
+            error={passwordMatchError}
+            containerClasses="mb-1"
           />
-          {passwordMatchError ? <Text className="text-red-500 text-xs mb-1 ml-1">{passwordMatchError}</Text> : null}
 
           <View className="mt-2 p-3 bg-olive-100 rounded-xl">
             <Text className="text-sm font-semibold mb-1 text-olive-400">Password must have:</Text>
@@ -304,33 +317,29 @@ export default function Signup() {
               </Text>
             ))}
           </View>
-        </View>
+        </Card>
 
-        <View className="bg-white rounded-xl p-4 mb-4 shadow-md shadow-black/10">
-          <Text className="text-xl font-bold mb-3 text-gray-700">Your Address</Text>
+        <Card title={"Your Address"}>
 
-          <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Street Address</Text>
-          <TextInput
-            className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500"
+          <Input
+            label="Street Address"
             placeholder="123 Main Street"
             value={address}
-            onChangeText={setAddress}
+            onChangeText={(text) => setAddress(filterAddressCharacters(text))}
           />
 
-          <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Apartment, Suite, etc. (Optional)</Text>
-          <TextInput
-            className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500"
+          <Input
+            label="Apartment, Suite, etc. (Optional)"
             placeholder="Apt 4B, Suite 200, etc."
             value={address2}
-            onChangeText={setAddress2}
+            onChangeText={(text) => setAddress2(filterAddressCharacters(text))}
           />
 
-          <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">City</Text>
-          <TextInput
-            className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500"
+          <Input
+            label="City"
             placeholder="City"
             value={city}
-            onChangeText={setCity}
+            onChangeText={(text) => setCity(filterAlphabeticCharacters(text))}
           />
 
           <View className="flex-row justify-between">
@@ -352,22 +361,23 @@ export default function Signup() {
                 </Picker>
               </View>
             </View>
+
             <View className="flex-1 ml-3">
-              <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Zip Code</Text>
-              <TextInput
-                className="border border-olive-100 bg-white rounded-full py-3 px-4 mb-2 text-base text-olive-500 text-center"
+              <Input
+                label="Zip Code"
                 placeholder="12345"
                 value={zip}
-                onChangeText={setZip}
+                onChangeText={(text) => setZip(filterDigits(text))}
                 keyboardType="numeric"
                 maxLength={5}
+                customClasses="text-center"
+                containerClasses="mb-2"
               />
             </View>
           </View>
-        </View>
+        </Card>
 
-        <View className="bg-white rounded-xl p-4 mb-4 shadow-md shadow-black/10">
-          <Text className="text-xl font-bold mb-3 text-gray-700">I am a...</Text>
+        <Card title={"I am a..."}>
           <View className="flex-row justify-between mt-2">
 
             <TouchableOpacity
@@ -402,7 +412,7 @@ export default function Signup() {
               <Text className="text-xs text-center text-warm-gray">Offering services</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Card>
 
         <Button
           title="Create Account"
@@ -415,6 +425,8 @@ export default function Signup() {
           style="secondary"
           href="/"
         />
+        <View className="h-4" />
+
       </ScrollView>
     </View>
   );
