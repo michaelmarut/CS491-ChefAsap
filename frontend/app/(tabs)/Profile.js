@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 
 export default function ProfileScreen() {
-    const { logout, token, userType, userId } = useAuth(); 
+    const { logout, token, userType, userId } = useAuth();
     const { apiUrl } = getEnvVars();
     const navigation = useNavigation();
 
