@@ -197,14 +197,21 @@ def signin():
             'exp': datetime.utcnow() + timedelta(days=1)
         }, JWT_SECRET, algorithm='HS256')
 
-        print(f'\nUser signed in - Email: {user["email"]}, Type: {user["user_type"]}, ID: {user["id"]}\n')
+        print(f'\nUser signed in - Email: {user["email"]}, Type: {user["user_type"]}, ID: {user["id"]}')
+        print(f'Chef ID: {user["chef_id"]}, Customer ID: {user["customer_id"]}\n')
         
-        return jsonify({
+        profile_id = user['chef_id'] if user['user_type'] == 'chef' else user['customer_id']
+        print(f'Returning profile_id: {profile_id}')
+        
+        response_data = {
             'message': 'Login successful',
             'token': token,
             'user_type': user['user_type'],
-            'user_id': user['id'],
-        }), 200
+            'profile_id': profile_id,
+        }
+        print(f'Response data: {response_data}')
+        
+        return jsonify(response_data), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
