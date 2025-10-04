@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Text } from 'react-native';
+import LoadingIcon from './components/LoadingIcon';
 
 export default function RootLayout() {
     return (
@@ -14,7 +15,7 @@ function RootStack() {
     const { isAuthenticated, userType, isLoading } = useAuth();
 
     if (isLoading) {
-        return <Text>Loading Session...</Text>;
+        return <LoadingIcon/>;
     }
 
     return (

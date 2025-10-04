@@ -1,4 +1,4 @@
-import { View} from "react-native";
+import { View } from "react-native";
 import { Tabs, useGlobalSearchParams, useRouter } from 'expo-router';
 import Octicons from '@expo/vector-icons/Octicons';
 import { TransitionPresets } from '@react-navigation/bottom-tabs';
@@ -11,7 +11,7 @@ export default function TabLayout() {
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
-            router.replace('/(auth)'); 
+            router.replace('/(auth)');
         }
     }, [isLoading, isAuthenticated, router]);
 
@@ -38,45 +38,80 @@ export default function TabLayout() {
             animation: 'shift', //doesnt seem to work
         },
     };
+    
+    if (userType === 'chef') return (
+        <View className="bg-base-100 flex-1">
+            <Tabs screenOptions={tabBarOptions}>
+                <Tabs.Screen
+                    name="BookingsScreen"
+                    options={{
+                        title: 'Bookings',
+                        tabBarIcon: ({ color }) =>
+                            <Octicons name="calendar" size={iconSize} color={color} />,
+                        ...TransitionPresets.ShiftTransition,
+
+                    }}
+                />
+
+                <Tabs.Screen
+                    name="Profile"
+                    options={{
+                        title: 'Profile',
+                        tabBarIcon: ({ color }) =>
+                            <Octicons name="person" size={iconSize} color={color} />,
+                        ...TransitionPresets.ShiftTransition,
+
+                    }}
+                />
+
+                <Tabs.Screen
+                    name="SearchScreen"
+                    options={{
+                        href: null,
+                    }}
+                />
+            </Tabs>
+        </View>
+    );
 
     return (
         <View className="bg-base-100 flex-1">
-        <Tabs screenOptions={tabBarOptions}>
+            <Tabs screenOptions={tabBarOptions}>
 
-            <Tabs.Screen
-                name="SearchScreen"
-                options={{
-                    href: userType === 'customer' ? 'SearchScreen' : null,
-                    title: 'Search',
-                    tabBarIcon: ({ color }) =>
-                        <Octicons name="search" size={iconSize} color={color} />,
-                    ...TransitionPresets.ShiftTransition,
+                <Tabs.Screen
+                    name="SearchScreen"
+                    options={{
+                        href: 'SearchScreen',
+                        title: 'Search',
+                        tabBarIcon: ({ color }) =>
+                            <Octicons name="search" size={iconSize} color={color} />,
+                        ...TransitionPresets.ShiftTransition,
 
-                }}
-            />
+                    }}
+                />
 
-            <Tabs.Screen
-                name="BookingsScreen"
-                options={{
-                    title: 'Bookings',
-                    tabBarIcon: ({ color }) =>
-                        <Octicons name="calendar" size={iconSize} color={color} />,
-                    ...TransitionPresets.ShiftTransition,
+                <Tabs.Screen
+                    name="BookingsScreen"
+                    options={{
+                        title: 'Bookings',
+                        tabBarIcon: ({ color }) =>
+                            <Octicons name="calendar" size={iconSize} color={color} />,
+                        ...TransitionPresets.ShiftTransition,
 
-                }}
-            />
+                    }}
+                />
 
-            <Tabs.Screen
-                name="Profile"
-                options={{
-                    title: 'Profile',
-                    tabBarIcon: ({ color }) =>
-                        <Octicons name="person" size={iconSize} color={color} />,
-                    ...TransitionPresets.ShiftTransition,
+                <Tabs.Screen
+                    name="Profile"
+                    options={{
+                        title: 'Profile',
+                        tabBarIcon: ({ color }) =>
+                            <Octicons name="person" size={iconSize} color={color} />,
+                        ...TransitionPresets.ShiftTransition,
 
-                }}
-            />
-        </Tabs>
+                    }}
+                />
+            </Tabs>
         </View>
     );
 }

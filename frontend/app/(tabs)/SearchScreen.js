@@ -1,11 +1,22 @@
 import { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Card from "../components/Card";
+import Button from '../components/Button';
+import LoadingIcon from "../components/LoadingIcon";
 
 export default function SearchScreen() {
     return (
-        <ScrollView className="flex-1 bg-base-100 p-5 gap-y-12 pt-16">
-            <Text className="text-base text-warm-gray text-center">Searchbar / Booking Screen Button</Text>
+        <ScrollView className="flex-1 bg-base-100 p-5 gap-y-12 pt-24">
+
+            <Button
+                title="Start a New Booking"
+                variant="primary"
+                href="/BookingScreen"
+                customClasses="w-full mt-4 mb-4"
+            />
+
+<LoadingIcon message="Finding Chefs Near You..." />
+
             <Card
                 title="Favorite Chefs"
                 headerIcon="heart"

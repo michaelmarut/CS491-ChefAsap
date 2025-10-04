@@ -76,7 +76,7 @@ export default function Signin() {
       console.log('User id:', data.user_id);
       console.log('Profile id:', data.profile_id);
 
-      await login(data.token, data.user_type, data.profile_id);
+      await login(data.token, data.user_type, data.user_id, data.profile_id);
       if (data.user_type === 'customer') {
         router.replace('/(tabs)/SearchScreen');
       }

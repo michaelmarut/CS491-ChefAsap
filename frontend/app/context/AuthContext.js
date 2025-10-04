@@ -31,11 +31,13 @@ export function AuthProvider({ children}) {
                 const storedToken = await SecureStore.getItemAsync('auth_token');
                 const storedUserType = await AsyncStorage.getItem('user_type');
                 const storedUserId = await AsyncStorage.getItem('user_id');
+                const storedProfileId = await AsyncStorage.getItem('profile_id');
 
-                if (storedToken && storedUserType && storedUserId) {
+                if (storedToken && storedUserType && storedUserId && storedProfileId) {
                     setToken(storedToken);
                     setUserType(storedUserType);
                     setUserId(storedUserId);
+                    setProfileId(storedProfileId);
                     setIsAuthenticated(true);
                 }
             } catch (e) {
@@ -47,17 +49,17 @@ export function AuthProvider({ children}) {
         loadSession();
     }, []);
 
-    const login = async (newToken, newUserType, newUserId) => {
+    const login = async (newToken, newUserType, newUserId, newProfileId) => {
         try {
             await SecureStore.setItemAsync('auth_token', newToken);
             await AsyncStorage.setItem('user_type', newUserType);
             await AsyncStorage.setItem('user_id', String(newUserId));
-            await AsyncStorage.setItem('profile_id', String(newUserId));
+            await AsyncStorage.setItem('profile_id', String(newProfileId));
 
             setToken(newToken);
             setUserType(newUserType);
             setUserId(newUserId);
-            setProfileId(newUserId);
+            setProfileId(newProfileId);
             setIsAuthenticated(true);
 
         } catch (e) {

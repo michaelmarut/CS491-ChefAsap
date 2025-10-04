@@ -5,6 +5,7 @@ import getEnvVars from "../../config";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
+import LoadingIcon from "../components/LoadingIcon";
 
 export default function ProfileScreen() {
     const { logout, token, userType, userId, profileId } = useAuth();
@@ -55,7 +56,7 @@ export default function ProfileScreen() {
     if (loading) {
         return (
             <View className="flex-1 justify-center items-center bg-base-100">
-                <Text className="text-lg text-olive-500">Loading Profile...</Text>
+                <LoadingIcon/>
                 <Button
                     title="Log out"
                     style="primary"
