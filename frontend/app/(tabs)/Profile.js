@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 
 export default function ProfileScreen() {
-    const { logout, token, userType, userId } = useAuth();
+    const { logout, token, userType, userId, profileId } = useAuth();
     const { apiUrl } = getEnvVars();
     const navigation = useNavigation();
 
@@ -15,15 +15,15 @@ export default function ProfileScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    /*useEffect(() => {
+    useEffect(() => {
         const fetchProfile = async () => {
-            if (!userId || !token || !userType) return;
+            if (!userId || !token || !userType || !profileId) return;
 
             setLoading(true);
             setError(null);
 
             try {
-                const url = `${apiUrl}/profile/${userType}/${userId}`;
+                const url = `${apiUrl}/profile/${userType}/${profileId}`;
 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -50,12 +50,17 @@ export default function ProfileScreen() {
         };
 
         fetchProfile();
-    }, [userId, userType, token, apiUrl]);
+    }, [profileId, userId, userType, token, apiUrl]);
 
     if (loading) {
         return (
             <View className="flex-1 justify-center items-center bg-base-100">
                 <Text className="text-lg text-olive-500">Loading Profile...</Text>
+                <Button
+                    title="Log out"
+                    style="primary"
+                    onPress={logout}
+                />
             </View>
         );
     }
@@ -72,7 +77,7 @@ export default function ProfileScreen() {
                 />
             </View>
         );
-    }*/
+    }
 
     return (
         <View className="flex-1 bg-base-100">

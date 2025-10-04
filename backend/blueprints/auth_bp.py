@@ -207,6 +207,7 @@ def signin():
             'message': 'Login successful',
             'token': token,
             'user_type': user['user_type'],
+            'user_id': user['id'],
             'profile_id': profile_id,
         }
         print(f'Response data: {response_data}')

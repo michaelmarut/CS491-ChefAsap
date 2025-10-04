@@ -8,6 +8,7 @@ export const AuthContext = createContext({
     isAuthenticated: false,
     userType: null,
     userId: null,
+    profileId: null,
     token: null,
     login: async () => { },
     logout: async () => { },
@@ -19,6 +20,7 @@ export function AuthProvider({ children}) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userType, setUserType] = useState(null);
     const [userId, setUserId] = useState(null);
+    const [profileId, setProfileId] = useState(null);
     const [token, setToken] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
@@ -50,10 +52,12 @@ export function AuthProvider({ children}) {
             await SecureStore.setItemAsync('auth_token', newToken);
             await AsyncStorage.setItem('user_type', newUserType);
             await AsyncStorage.setItem('user_id', String(newUserId));
+            await AsyncStorage.setItem('profile_id', String(newUserId));
 
             setToken(newToken);
             setUserType(newUserType);
             setUserId(newUserId);
+            setProfileId(newUserId);
             setIsAuthenticated(true);
 
         } catch (e) {
@@ -67,9 +71,11 @@ export function AuthProvider({ children}) {
             await SecureStore.deleteItemAsync('auth_token');
             await AsyncStorage.removeItem('user_type');
             await AsyncStorage.removeItem('user_id');
+            await AsyncStorage.removeItem('profile_id');
 
             setToken(null);
             setUserId(null);
+            setProfileId(null);
             setUserType(null);
             setIsAuthenticated(false);
 
@@ -85,6 +91,7 @@ export function AuthProvider({ children}) {
         isAuthenticated,
         userType,
         userId,
+        profileId,
         token,
         login,
         logout,

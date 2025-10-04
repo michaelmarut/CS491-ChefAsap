@@ -72,6 +72,7 @@ export default function Signin() {
 
       console.log('Token:', data.token);
       console.log('User type:', data.user_type);
+      console.log('User id:', data.user_id);
       console.log('Profile id:', data.profile_id);
 
       await login(data.token, data.user_type, data.profile_id); 
