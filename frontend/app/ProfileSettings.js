@@ -1,30 +1,82 @@
 import { useEffect, useState } from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, TextInput, Button } from "react-native";
+import { useAuth } from "./context/AuthContext";
 
-// Set user ID and backend API URL
-const USER_ID = 1;
-const API_URL = "http://localhost:3000/profile/customer/" + USER_ID;
-
-// ProfileSettings component displays user profile information
+// ProfileSettings component displays and edits user profile information
 export default function ProfileSettings() {
+  const { userId } = useAuth(); // Get userId from AuthContext
   const [profile, setProfile] = useState(null); // Holds profile data
+  const [form, setForm] = useState(null);       // Holds editable form data
   const [error, setError] = useState(null);     // Holds error message
+  const [editing, setEditing] = useState(false); // Edit mode
 
-  // Fetch profile data from backend when component mounts
+  const API_URL = "http://10.0.2.2:3000/profile/customer/" + userId;
+
+  // Fetch profile data from backend when component mounts or userId changes
   useEffect(() => {
+    if (!userId) return;
     fetch(API_URL)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) setError(data.error);
-        else setProfile(data.profile);
+        else {
+          setProfile(data.profile);
+          setForm(data.profile); // Initialize form with profile data
+        }
+      })
+      .catch(() => setError("Network error")); //Change to match other pages errors
+  }, [userId]);
+
+  // Handle input changes for top-level fields
+  const handleChange = (field, value) => {
+    setForm({ ...form, [field]: value });
+  };
+
+  // Handle input changes for address fields
+  const handleAddressChange = (field, value) => {
+    setForm({
+      ...form,
+      full_address: {
+        ...form.full_address,
+        [field]: value,
+      },
+    });
+  };
+
+  // Save updated info to backend
+  const handleSave = () => {
+    // Flatten address fields for backend
+    const payload = {
+      ...form,
+      address_line1: form.full_address?.address_line1 || "",
+      address_line2: form.full_address?.address_line2 || "",
+      city: form.full_address?.city || "",
+      state: form.full_address?.state || "",
+      zip_code: form.full_address?.zip_code || "",
+    };
+    delete payload.full_address;
+    delete payload.email; // Email not editable
+
+    fetch(API_URL, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) setError(data.error);
+        else {
+          setProfile({ ...profile, ...form });
+          setEditing(false);
+        }
       })
       .catch(() => setError("Network error"));
-  }, []);
+  };
 
   // Show error if there is one
   if (error) return <Text className="text-red-500">{error}</Text>;
   // Show loading message while profile is being fetched
-  if (!profile) return <Text>Loading...</Text>;
+  if (!profile || !form) return <Text>Loading...</Text>;
 
   // Render profile information
   return (
@@ -68,25 +120,90 @@ export default function ProfileSettings() {
           {/* Profile picture label */}
           <Text className="text-base text-olive-400" style={{ textAlign: "left" }}>Profile Picture</Text>
         </View>
-        {/* Display profile fields */}
-        <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-          Name: {profile.first_name} {profile.last_name}
-        </Text>
-        <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-          Email: {profile.email}
-        </Text>
-        <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-          Phone: {profile.phone}
-        </Text>
-        <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-          Address: {profile.full_address?.address_line1} {profile.full_address?.address_line2}, {profile.full_address?.city}, {profile.full_address?.state} {profile.full_address?.zip_code}
-        </Text>
-        <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-          Allergy Notes: {profile.allergy_notes}
-        </Text>
-        <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-          Member Since: {profile.member_since}
-        </Text>
+        {/* Editable fields */}
+        {editing ? (
+          <>
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.first_name}
+              onChangeText={v => handleChange("first_name", v)}
+              placeholder="First Name"
+            />
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.last_name}
+              onChangeText={v => handleChange("last_name", v)}
+              placeholder="Last Name"
+            />
+            <Text style={{ marginBottom: 8 }}>Email: {profile.email}</Text>
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.phone}
+              onChangeText={v => handleChange("phone", v)}
+              placeholder="Phone"
+            />
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.allergy_notes}
+              onChangeText={v => handleChange("allergy_notes", v)}
+              placeholder="Allergy Notes"
+            />
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.full_address?.address_line1 || ""}
+              onChangeText={v => handleAddressChange("address_line1", v)}
+              placeholder="Address Line 1"
+            />
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.full_address?.address_line2 || ""}
+              onChangeText={v => handleAddressChange("address_line2", v)}
+              placeholder="Address Line 2"
+            />
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.full_address?.city || ""}
+              onChangeText={v => handleAddressChange("city", v)}
+              placeholder="City"
+            />
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.full_address?.state || ""}
+              onChangeText={v => handleAddressChange("state", v)}
+              placeholder="State"
+            />
+            <TextInput
+              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
+              value={form.full_address?.zip_code || ""}
+              onChangeText={v => handleAddressChange("zip_code", v)}
+              placeholder="Zip Code"
+            />
+            <Button title="Save" onPress={handleSave} />
+            <Button title="Cancel" onPress={() => { setEditing(false); setForm(profile); }} />
+          </>
+        ) : (
+          <>
+            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+              Name: {profile.first_name} {profile.last_name}
+            </Text>
+            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+              Email: {profile.email}
+            </Text>
+            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+              Phone: {profile.phone}
+            </Text>
+            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+              Address: {profile.full_address?.address_line1} {profile.full_address?.address_line2}, {profile.full_address?.city}, {profile.full_address?.state} {profile.full_address?.zip_code}
+            </Text>
+            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+              Allergy Notes: {profile.allergy_notes}
+            </Text>
+            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+              Member Since: {profile.member_since}
+            </Text>
+            <Button title="Edit Information" onPress={() => setEditing(true)} />
+          </>
+        )}
       </View>
     </View>
   );
