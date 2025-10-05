@@ -13,19 +13,34 @@ const BUTTON_STYLES = {
     accent: {
         button: "bg-olive-200 border-olive-300",
         text: "text-olive-500",
+    }
+};
+
+const BUTTON_CLASSES = {
+    basic: {
+        button: "py-3 px-8 rounded-full mb-2 border-2 shadow-sm shadow-olive-500",
+        text: "text-center font-bold text-lg",
+    },
+    link: {
+        button: "py-2 px-4 bg-transparent",
+        text: "text-center text-md underline",
     },
 };
 
 export default function Button({
     title, // button text
-    style = 'primary', // primary, secondary, accent
+    style = 'primary', // button colors: primary, secondary, accent, transparent
+    base = 'basic', // base button structure: basic, link
     href, // pass a href for navigation (not needed if using onPress)
     onPress, // pass an onPress for custom action (not needed if using href)
     customClasses = "", // custom button style overrides
-    customTextClasses = "" // custom text style overrides
+    customTextClasses = "", // custom text style overrides
+    disabled = false, // disable button interaction
 }) {
 
     const styles = BUTTON_STYLES[style] || BUTTON_STYLES.primary;
+
+    const buttonClass = BUTTON_CLASSES[base] || BUTTON_CLASSES.basic;
 
     const Component = href ? Link : TouchableOpacity;
 
@@ -41,10 +56,11 @@ export default function Button({
     return (
         <Component {...componentProps}>
             <TouchableOpacity
-                className={`py-3 px-8 rounded-full mb-2 border-2 shadow-sm shadow-olive-500 ${styles.button} ${customClasses}`}
+                className={`${styles.button} ${buttonClass.button} ${customClasses}`}
                 onPress={onPress}
+                disabled={disabled}
             >
-                <Text className={`text-center font-bold text-lg ${styles.text} ${customTextClasses}`}>
+                <Text className={`${styles.text} ${buttonClass.text} ${customTextClasses} `}>
                     {title}
                 </Text>
             </TouchableOpacity>

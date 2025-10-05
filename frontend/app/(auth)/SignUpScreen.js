@@ -214,7 +214,7 @@ export default function Signup() {
   };
 
   return (
-    <View className="flex-1 bg-base-100 rounded-xl p-2 pb-0">
+    <View className="flex-1 bg-base-100 p-2 pb-0">
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -224,11 +224,19 @@ export default function Signup() {
           paddingBottom: 30,
         }}
       >
-        <Text className="text-2xl font-bold text-center mb-4 mt-4 text-olive-500 capitalize">
-          Create Your Account
+        <Text className="text-4xl font-bold text-center mt-8 text-olive-500">
+          Create An Account
         </Text>
 
-        <Card title={"Personal Information"}>
+        <Button
+          title="Already have an account?"
+          style="secondary"
+          base="link"
+          customTextClasses='mb-4'
+          href="/SignInScreen"
+        />
+
+        <Card title={"Personal Information"} headerIcon="person">
           <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Name</Text>
           <View className="flex-row justify-between">
             <Input
@@ -272,7 +280,7 @@ export default function Signup() {
           />
         </Card>
 
-        <Card title={"Create Password"}>
+        <Card title={"Create Password"} headerIcon="lock">
           <Input
             label="Password"
             placeholder="Enter a secure password"
@@ -319,7 +327,7 @@ export default function Signup() {
           </View>
         </Card>
 
-        <Card title={"Your Address"}>
+        <Card title={"Your Address"} headerIcon="location">
 
           <Input
             label="Street Address"
@@ -377,7 +385,7 @@ export default function Signup() {
           </View>
         </Card>
 
-        <Card title={"I am a..."}>
+        <Card title={"I am a..."} headerIcon="smiley">
           <View className="flex-row justify-between mt-2">
 
             <TouchableOpacity

@@ -6,7 +6,7 @@ import Input from '../components/Input';
 import getEnvVars from '../../config';
 import { useAuth } from '../context/AuthContext';
 
-export default function Signin() {
+export default function ForgetPassword() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
@@ -94,11 +94,11 @@ export default function Signin() {
     <View className="p-5 bg-base-100 flex-1">
 
       <Text className="text-4xl font-bold text-center mb-5 text-olive-500 mt-8">
-        Sign In
+        Reset Password
       </Text>
 
       <Input
-        containerClasses=""
+        label="Enter your email to reset your password"
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -107,38 +107,14 @@ export default function Signin() {
       />
 
       <Button
-        title="Don't have an account?"
-        style="secondary"
-        base="link"
-        customTextClasses='text-right'
-        href="/SignUpScreen"
-      />
-
-      <Input
-        containerClasses=""
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-
-        secureTextEntry
-      />
-
-      <Button
-        title="Forgot your password?"
-        style="secondary"
-        base="link"
-        customTextClasses='text-right'
-        href="/ForgetPasswordScreen"
-      />
-
-      <Button
-        title="Log in"
+        title="Send Reset Link"
         style="primary"
-        onPress={handleSignin}
+        disabled={!email}
+        onPress={() => alert("Reset Link sent to "+email)}
       />
 
       <Button
-        title="← Back"
+        title="← Return to Sign In"
         style="secondary"
         href="/"
       />
