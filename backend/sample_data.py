@@ -207,6 +207,47 @@ def add_sample_data():
                     VALUES (%s, %s, %s, %s, %s)
                 ''', (chef_id, base_rate, produce_cost, min_people, max_people))
 
+        # Add chef availability days (for all 50 chefs)
+        days_of_week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        
+        # Common time slots for different chef types
+        time_slots = [
+            ('09:00', '17:00'),  # Day shift chef
+            ('17:00', '23:00'),  # Evening chef
+            ('11:00', '22:00'),  # All-day chef
+            ('18:00', '24:00'),  # Dinner specialist
+            ('10:00', '16:00'),  # Lunch specialist
+            ('16:00', '20:00'),  # Dinner only
+            ('12:00', '21:00'),  # Lunch + Dinner
+        ]
+        
+        chef_availability = []
+        
+        for i in range(50):
+            chef_email = f'chef{i+1}@gmail.com'
+            if chef_email in chefs:
+                chef_id = chefs[chef_email]
+                
+                # Each chef gets 3-6 available days per week
+                num_available_days = 3 + (i % 4)  # 3, 4, 5, or 6 days
+                
+                # Select random days for this chef
+                import random
+                random.seed(i)  # Consistent random for same chef
+                available_days = random.sample(days_of_week, num_available_days)
+                
+                # Select time slot based on chef index
+                start_time, end_time = time_slots[i % len(time_slots)]
+                
+                for day in available_days:
+                    chef_availability.append((chef_id, day, start_time, end_time))
+
+        for chef_id, day, start_time, end_time in chef_availability:
+            cursor.execute('''
+                INSERT IGNORE INTO chef_availability_days (chef_id, day_of_week, start_time, end_time) 
+                VALUES (%s, %s, %s, %s)
+            ''', (chef_id, day, start_time, end_time))
+
         # Add customer addresses (for all 50 customers)
         cursor.execute('SELECT id, email FROM customers')
         customers = {email: customer_id for customer_id, email in cursor.fetchall()}
@@ -235,17 +276,127 @@ def add_sample_data():
                     VALUES (%s, %s, %s, %s, %s, %s)
                 ''', (customer_id, address, city, state, zip_code, True))
 
+        # Add sample favorite chefs relationships (each customer gets 2 favorite chefs)
+        print("\nAdding user interface sample data...")
+        
+        # Generate favorite relationships: each customer (1-50) likes 2 different chefs
+        sample_favorites = []
+        
+        import random
+        for customer_id in range(1, 51):  # Customer IDs 1-50
+            random.seed(customer_id + 100)  # Consistent random for same customer
+            # Each customer likes 2 random chefs (avoiding their own chef_id if it matches)
+            favorite_chef_ids = []
+            
+            while len(favorite_chef_ids) < 2:
+                chef_id = random.randint(1, 50)  # Chef IDs 1-50
+                # Avoid duplication and don't let customer favorite themselves
+                if chef_id not in favorite_chef_ids and chef_id != customer_id:
+                    favorite_chef_ids.append(chef_id)
+            
+            for chef_id in favorite_chef_ids:
+                sample_favorites.append((customer_id, chef_id))
+        
+        for customer_id, chef_id in sample_favorites:
+            cursor.execute('''
+                INSERT IGNORE INTO customer_favorite_chefs (customer_id, chef_id)
+                VALUES (%s, %s)
+            ''', (customer_id, chef_id))
+        print(f"Added {len(sample_favorites)} favorite chef relationships (2 per customer)")
+
+        # Add sample booking history
+        print("Adding sample booking history...")
+        
+        # Generate booking data for better testing
+        from datetime import datetime, timedelta
+        import random
+        
+        sample_bookings = []
+        meal_types = ['breakfast', 'lunch', 'dinner']
+        event_types = ['birthday', 'wedding', 'party', 'dinner', 'brunch']
+        cuisine_list = ['Italian', 'Chinese', 'Mexican', 'Indian', 'Japanese', 'Thai', 'French']
+        statuses = ['completed', 'accepted', 'pending']
+        
+        # Add bookings for first 20 customers with various dates
+        for customer_id in range(1, 21):  # Customer IDs 1-20
+            # Each customer gets 2-5 bookings
+            num_bookings = random.randint(2, 5)
+            
+            for booking_num in range(num_bookings):
+                random.seed(customer_id * 100 + booking_num)  # Consistent random
+                
+                # Random chef (1-50)
+                chef_id = random.randint(1, 50)
+                
+                # Random date (mix of past, today, and future)
+                days_offset = random.randint(-30, 60)  # 30 days ago to 60 days future
+                booking_date = (datetime.now() + timedelta(days=days_offset)).date()
+                
+                # Random time
+                hours = random.choice([9, 11, 12, 17, 18, 19, 20])
+                minutes = random.choice([0, 30])
+                booking_time = f"{hours:02d}:{minutes:02d}"
+                
+                # Random booking details
+                cuisine_type = random.choice(cuisine_list)
+                meal_type = random.choice(meal_types)
+                event_type = random.choice(event_types)
+                number_of_people = random.randint(2, 8)
+                
+                # Status based on date
+                if days_offset < -1:  # Past bookings
+                    status = 'completed'
+                elif days_offset < 0:  # Recent past
+                    status = random.choice(['completed', 'accepted'])
+                else:  # Future bookings
+                    status = random.choice(['accepted', 'pending'])
+                
+                # Calculate total cost
+                base_rate = 45.00 + (chef_id % 40) + (chef_id * 0.5)
+                total_cost = base_rate * number_of_people
+                
+                sample_bookings.append((
+                    customer_id, chef_id, cuisine_type, meal_type, event_type,
+                    booking_date, booking_time, 'customer', number_of_people,
+                    f'Special request for {event_type} event', status, total_cost
+                ))
+        
+        # Insert all booking records
+        for booking_data in sample_bookings:
+            cursor.execute('''
+                INSERT INTO bookings (
+                    customer_id, chef_id, cuisine_type, meal_type, event_type,
+                    booking_date, booking_time, produce_supply, number_of_people,
+                    special_notes, status, total_cost
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', booking_data)
+        
+        print(f"Added {len(sample_bookings)} sample bookings for customers 1-20")
+        print("Booking history includes past, present, and future bookings")
+
         conn.commit()
-        print("Sample data added successfully!")
-        print("\n✅ Added 100 users total:")
+        print("\nSample data added successfully!")
+        print("\nAdded 100 users total:")
         print("   • 50 chefs (chef1@gmail.com to chef50@gmail.com)")
         print("   • 50 customers (customer101@gmail.com to customer150@gmail.com)")
         print("   • All users have password: QWEasd123!")
-        print("\n📍 Chefs are distributed across 50 major US cities")
-        print("🍳 Each chef has 1-3 cuisine specialties")  
-        print("💰 Pricing ranges from $45-85 per person")
-        print("🏠 All customers have default addresses")
-        print("\nYou can now test the booking system with 100 users!")
+        print("\nChefs are distributed across 50 major US cities")
+        print("Each chef has 1-3 cuisine specialties")  
+        print("Pricing ranges from $45-85 per person")
+        print("Each chef has 3-6 available days per week with varied time slots")
+        print("All customers have default addresses")
+        print("\nUser Interface Features Ready:")
+        print("   • Favorite chefs: All 50 customers have 2 favorite chefs each (100 relationships total)")
+        print("   • Recent chefs: Based on extensive booking history (customers 1-20 have 2-5 bookings each)")
+        print("   • Nearby chefs: Geographic search using customer addresses")
+        print("   • Booking history: Mix of completed, accepted, and pending bookings across different dates")
+        print("\nYou can now test:")
+        print("• GET /booking/customer/1/favorite-chefs")
+        print("• GET /booking/customer/1/recent-chefs")  
+        print("• GET /booking/customer/1/nearby-chefs")
+        print("• GET /search/customer/1/favorite-chefs")
+        print("• GET /search/customer/1/recent-chefs")
+        print("• GET /search/customer/1/nearby-chefs")
 
     except Exception as e:
         print(f"Error adding sample data: {e}")

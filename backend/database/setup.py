@@ -239,7 +239,7 @@ def init_db():
                 chef_id INT,
                 cuisine_type VARCHAR(50) NOT NULL,
                 meal_type ENUM('breakfast', 'lunch', 'dinner') NOT NULL,
-                event_type ENUM('birthday', 'wedding', 'party', 'dinner', 'brunch') NOT NULL,
+                event_type ENUM('birthday', 'wedding', 'party', 'dinner', 'brunch') DEFAULT 'dinner',
                 booking_date DATE NOT NULL,
                 booking_time TIME NOT NULL,
                 produce_supply ENUM('customer', 'chef') NOT NULL DEFAULT 'customer',
@@ -638,6 +638,21 @@ def init_db():
                 print("Added customer_id column to users table")
         except mysql.connector.Error as e:
             print(f"Note: customer_id column handling: {e}")
+
+        # Customer favorite chefs table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customer_favorite_chefs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_id INT NOT NULL,
+                chef_id INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_customer_chef_favorite (customer_id, chef_id),
+                INDEX idx_customer_favorites (customer_id),
+                INDEX idx_chef_favorited (chef_id)
+            )
+        ''')
 
         # Add foreign key constraints for users table after all tables are created
         try:
