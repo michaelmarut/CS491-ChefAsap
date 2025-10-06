@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { View, Text, Image, TextInput, Button } from "react-native";
+import { View, Text, Image, TextInput, Button, ScrollView } from "react-native";
 import { useAuth } from "./context/AuthContext";
+import getEnvVars from "../config";
 
 // ProfileSettings component displays and edits user profile information
 export default function ProfileSettings() {
@@ -10,7 +11,10 @@ export default function ProfileSettings() {
   const [error, setError] = useState(null);     // Holds error message
   const [editing, setEditing] = useState(false); // Edit mode
 
-  const API_URL = "http://10.0.2.2:3000/profile/customer/" + userId;
+  const { apiUrl } = getEnvVars();
+
+  // Build API URL using userId from context and config
+  const API_URL = `${apiUrl}/profile/customer/${userId}`;
 
   // Fetch profile data from backend when component mounts or userId changes
   useEffect(() => {
@@ -24,8 +28,8 @@ export default function ProfileSettings() {
           setForm(data.profile); // Initialize form with profile data
         }
       })
-      .catch(() => setError("Network error")); //Change to match other pages errors
-  }, [userId]);
+      .catch(() => setError("Network error")); //Need to change to match other pages errors
+  }, [userId, API_URL]);
 
   // Handle input changes for top-level fields
   const handleChange = (field, value) => {
@@ -78,9 +82,8 @@ export default function ProfileSettings() {
   // Show loading message while profile is being fetched
   if (!profile || !form) return <Text>Loading...</Text>;
 
-  // Render profile information
   return (
-    <View className="flex-1 bg-base-100 p-5">
+    <ScrollView className="flex-1 bg-base-100 p-5">
       {/* Profile title */}
       <Text className="text-2xl font-bold text-olive-500 mb-4" style={{ textAlign: "left" }}>Profile</Text>
       <View className="bg-white rounded-2xl shadow-md p-6 items-start">
@@ -205,6 +208,6 @@ export default function ProfileSettings() {
           </>
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
