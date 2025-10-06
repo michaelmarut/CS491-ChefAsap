@@ -3,6 +3,7 @@ import mysql.connector
 from database.config import db_config
 import re
 import os
+from werkzeug.utils import secure_filename
 
 # Create the blueprint
 profile_bp = Blueprint('profile', __name__)
@@ -401,5 +402,33 @@ def update_customer_profile(customer_id):
         
         return jsonify({'message': 'Profile updated successfully'}), 200
         
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@profile_bp.route('/customer/<int:customer_id>/photo', methods=['POST'])
+def upload_customer_photo(customer_id):
+    """Upload and update customer profile photo"""
+    try:
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No photo uploaded'}), 400
+        photo = request.files['photo']
+        if photo.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        filename = secure_filename(f"profile_{customer_id}.{photo.filename.rsplit('.', 1)[-1]}")
+        filepath = os.path.join('static/profile_photos', filename)
+        photo.save(filepath)
+
+        photo_url = f"/static/profile_photos/{filename}"
+
+        # Update photo_url in database
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute('UPDATE customers SET photo_url = %s WHERE id = %s', (photo_url, customer_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({'photo_url': f"{request.host_url.rstrip('/')}{photo_url}"}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
