@@ -15,8 +15,6 @@ export default function SearchScreen() {
                 customClasses="w-full mt-4 mb-4"
             />
 
-<LoadingIcon message="Finding Chefs Near You..." />
-
             <Card
                 title="Favorite Chefs"
                 headerIcon="heart"
