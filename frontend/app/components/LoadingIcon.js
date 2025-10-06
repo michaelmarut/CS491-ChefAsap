@@ -1,8 +1,7 @@
 import LottieView from 'lottie-react-native';
-import { View, Text, StyleSheet } from 'react-native'; // 💡 Import StyleSheet
-import { useTailwind } from 'nativewind'; // Still needed if you use it elsewhere
+import { View, Text, StyleSheet } from 'react-native';
 
-const FryingPanAsset = require('../assets/loadingLottie.json');
+const FryingPanAsset = require('../assets/lotties/loadingLottie.json');
 
 const styles = StyleSheet.create({
     lottieSize: {

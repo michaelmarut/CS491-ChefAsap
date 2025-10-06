@@ -4,7 +4,7 @@
     "slug": "ChefAsap",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/images/icon.png",
+    "icon": "./app/assets/images/chefAsapLogo1Circle.png",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

@@ -23,6 +23,21 @@ module.exports = {
         }
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addUtilities }) {
+      addUtilities({
+        '.title-shadow-sm': {
+          textShadowColor: 'rgba(255, 255, 255, 1)',
+          textShadowOffset: { width: 1, height: 1 },
+          textShadowRadius: 2,
+        },
+        '.title-shadow-md': {
+          textShadowColor: 'rgba(255, 255, 255, 1)',
+          textShadowOffset: { width: 2, height: 2 },
+          textShadowRadius: 4,
+        },
+      });
+    },
+  ],
 }
 
