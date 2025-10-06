@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { View, Text, Image, TextInput, Button, ScrollView } from "react-native";
+import { View, Text, Image, TextInput, Button, ScrollView, TouchableOpacity } from "react-native";
 import { useAuth } from "./context/AuthContext";
 import getEnvVars from "../config";
+import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
 
 // ProfileSettings component displays and edits user profile information
 export default function ProfileSettings() {
@@ -10,6 +12,7 @@ export default function ProfileSettings() {
   const [form, setForm] = useState(null);       // Holds editable form data
   const [error, setError] = useState(null);     // Holds error message
   const [editing, setEditing] = useState(false); // Edit mode
+  const [uploading, setUploading] = useState(false);
 
   const { apiUrl } = getEnvVars();
 
@@ -26,6 +29,8 @@ export default function ProfileSettings() {
         else {
           setProfile(data.profile);
           setForm(data.profile); // Initialize form with profile data
+          // Log the profile picture URL
+          console.log("Profile Picture URL:", data.profile?.photo_url);
         }
       })
       .catch(() => setError("Network error")); //Need to change to match other pages errors
@@ -77,6 +82,62 @@ export default function ProfileSettings() {
       .catch(() => setError("Network error"));
   };
 
+  const pickImage = async () => {
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access gallery was denied');
+      return;
+    }
+
+    // Pick image
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setUploading(true);
+      const localUri = result.assets[0].uri;
+      const filename = localUri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image`;
+
+      // Prepare FormData
+      const formData = new FormData();
+      formData.append('photo', {
+        uri: localUri,
+        name: filename,
+        type,
+      });
+
+      // Upload to backend
+      try {
+        const uploadUrl = `${apiUrl}/profile/customer/${userId}/photo`;
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          body: formData,
+        });
+        const data = await response.json();
+        if (data.photo_url) {
+          // Update profile with new photo_url
+          setProfile({ ...profile, photo_url: data.photo_url });
+          setForm({ ...form, photo_url: data.photo_url });
+        } else {
+          alert('Failed to upload image');
+        }
+      } catch (error) {
+        alert('Error uploading image');
+      }
+      setUploading(false);
+    }
+  };
+
   // Show error if there is one
   if (error) return <Text className="text-red-500">{error}</Text>;
   // Show loading message while profile is being fetched
@@ -89,39 +150,42 @@ export default function ProfileSettings() {
       <View className="bg-white rounded-2xl shadow-md p-6 items-start">
         {/* Profile Picture Display */}
         <View style={{ alignItems: "flex-start", marginBottom: 20 }}>
-          {profile.photo_url ? (
-            // Show profile image if available
-            <Image
-              source={{ uri: profile.photo_url }}
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                marginBottom: 10,
-                borderWidth: 2,
-                borderColor: "#65a30d",
-              }}
-            />
-          ) : (
-            // Show placeholder if no profile image
-            <View
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                backgroundColor: "#d9f99d",
-                justifyContent: "center",
-                alignItems: "center",
-                marginBottom: 10,
-                borderWidth: 2,
-                borderColor: "#65a30d",
-              }}
-            >
-              <Text className="text-olive-400 text-xl">No Photo</Text>
-            </View>
-          )}
-          {/* Profile picture label */}
-          <Text className="text-base text-olive-400" style={{ textAlign: "left" }}>Profile Picture</Text>
+          <TouchableOpacity onPress={pickImage} disabled={uploading}>
+            {profile.photo_url ? (
+              // Show profile image if available
+              <Image
+                source={{ uri: `${apiUrl}${profile.photo_url}` }}
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 60,
+                  marginBottom: 10,
+                  borderWidth: 2,
+                  borderColor: "#65a30d",
+                }}
+              />
+            ) : (
+              // Show placeholder if no profile image
+              <View
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 60,
+                  backgroundColor: "#d9f99d",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginBottom: 10,
+                  borderWidth: 2,
+                  borderColor: "#65a30d",
+                }}
+              >
+                <Text className="text-olive-400 text-xl">No Photo</Text>
+              </View>
+            )}
+            <Text className="text-base text-olive-400" style={{ textAlign: "left" }}>
+              {uploading ? "Uploading..." : "Tap to change profile picture"}
+            </Text>
+          </TouchableOpacity>
         </View>
         {/* Editable fields */}
         {editing ? (

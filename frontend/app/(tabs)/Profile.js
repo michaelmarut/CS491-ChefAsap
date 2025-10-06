@@ -1,4 +1,4 @@
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, Image } from "react-native";
 import Button from "../components/Button";
 import { useAuth } from "../context/AuthContext";
 import getEnvVars from "../../config";
@@ -38,6 +38,8 @@ export default function ProfileScreen() {
 
                 if (response.ok) {
                     setProfileData(data.profile);
+                    // Log the source of the profile picture
+                    console.log("Profile picture source:", `${apiUrl}${data.profile?.photo_url}`);
                 } else {
                     setError(data.error || 'Failed to load profile.');
                     Alert.alert('Error', data.error || 'Failed to load profile.');
@@ -98,7 +100,39 @@ export default function ProfileScreen() {
                 <Text className="text-olive-500 font-bold">⚙️</Text>
             </TouchableOpacity>
             <ScrollView className="p-5">
-                <Text className="text-base text-warm-gray text-center mt-12"> Profile Picture </Text>
+                {/* Display profile picture */}
+                <View style={{ alignItems: "center", marginTop: 32, marginBottom: 16 }}>
+                    {profileData?.photo_url ? (
+                        <Image
+                            source={{ uri: `${apiUrl}${profileData.photo_url}` }}
+                            style={{
+                                width: 120,
+                                height: 120,
+                                borderRadius: 60,
+                                marginBottom: 10,
+                                borderWidth: 2,
+                                borderColor: "#65a30d",
+                            }}
+                        />
+                    ) : (
+                        <View
+                            style={{
+                                width: 120,
+                                height: 120,
+                                borderRadius: 60,
+                                backgroundColor: "#d9f99d",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                marginBottom: 10,
+                                borderWidth: 2,
+                                borderColor: "#65a30d",
+                            }}
+                        >
+                            <Text className="text-olive-400 text-xl">No Photo</Text>
+                        </View>
+                    )}
+                </View>
+                <Text className="text-base text-warm-gray text-center mt-4"> Profile Picture </Text>
                 <Text className="text-base text-warm-gray text-center mt-12"> {profileData?.first_name} {profileData?.last_name} </Text>
                 <Text className="text-base text-warm-gray text-center mt-12"> Description </Text>
                 <Button
