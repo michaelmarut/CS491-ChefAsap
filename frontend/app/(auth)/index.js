@@ -7,7 +7,7 @@ export default function LandingScreen() {
       <View className="p-6 rounded-2xl bg-olive-200 items-center w-[80%] h-[90%] shadow-lg shadow-olive-400">
         <View className="mb-8 items-center">
           <Image
-            source={require('../assets/images/chefAsapLogo.png')}
+            source={require('../assets/images/chefAsapLogo1Circle.png')}
             className="w-48 h-48 mb-4"
             resizeMode="contain"
           />
