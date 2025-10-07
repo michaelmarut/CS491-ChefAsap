@@ -1,24 +1,109 @@
 import { useEffect, useState } from "react";
-import { View, Text, Image, TextInput, Button, ScrollView } from "react-native";
+import { View, Text, Image, ScrollView, TouchableOpacity } from "react-native";
 import { useAuth } from "./context/AuthContext";
 import getEnvVars from "../config";
+import * as ImagePicker from 'expo-image-picker';
+import { Stack } from "expo-router";
+import LoadingIcon from "./components/LoadingIcon";
+import Card from "./components/Card";
+import Button from "./components/Button";
+import Input from "./components/Input";
+import { Picker } from "@react-native-picker/picker";
+import ProfilePicture from "./components/ProfilePicture";
+
+const validateEmail = (email) => {
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
+const filterNameCharacters = (text) => {
+  const filteredText = text.replace(/[^a-zA-Z\s'-]/g, '');
+  return filteredText;
+};
+
+const filterDigits = (text) => {
+  return text.replace(/[^0-9]/g, '');
+};
+
+const filterAddressCharacters = (text) => {
+  return text.replace(/[^a-zA-Z0-9\s.,\-\/#]/g, '');
+};
+
+const filterAlphabeticCharacters = (text) => {
+  return text.replace(/[^a-zA-Z\s'-]/g, '');
+};
+
+const US_STATES = [
+  { label: "Select a state...", value: "" },
+  { label: "Alabama", value: "AL" },
+  { label: "Alaska", value: "AK" },
+  { label: "Arizona", value: "AZ" },
+  { label: "Arkansas", value: "AR" },
+  { label: "California", value: "CA" },
+  { label: "Colorado", value: "CO" },
+  { label: "Connecticut", value: "CT" },
+  { label: "Delaware", value: "DE" },
+  { label: "Florida", value: "FL" },
+  { label: "Georgia", value: "GA" },
+  { label: "Hawaii", value: "HI" },
+  { label: "Idaho", value: "ID" },
+  { label: "Illinois", value: "IL" },
+  { label: "Indiana", value: "IN" },
+  { label: "Iowa", value: "IA" },
+  { label: "Kansas", value: "KS" },
+  { label: "Kentucky", value: "KY" },
+  { label: "Louisiana", value: "LA" },
+  { label: "Maine", value: "ME" },
+  { label: "Maryland", value: "MD" },
+  { label: "Massachusetts", value: "MA" },
+  { label: "Michigan", value: "MI" },
+  { label: "Minnesota", value: "MN" },
+  { label: "Mississippi", value: "MS" },
+  { label: "Missouri", value: "MO" },
+  { label: "Montana", value: "MT" },
+  { label: "Nebraska", value: "NE" },
+  { label: "Nevada", value: "NV" },
+  { label: "New Hampshire", value: "NH" },
+  { label: "New Jersey", value: "NJ" },
+  { label: "New Mexico", value: "NM" },
+  { label: "New York", value: "NY" },
+  { label: "North Carolina", value: "NC" },
+  { label: "North Dakota", value: "ND" },
+  { label: "Ohio", value: "OH" },
+  { label: "Oklahoma", value: "OK" },
+  { label: "Oregon", value: "OR" },
+  { label: "Pennsylvania", value: "PA" },
+  { label: "Rhode Island", value: "RI" },
+  { label: "South Carolina", value: "SC" },
+  { label: "South Dakota", value: "SD" },
+  { label: "Tennessee", value: "TN" },
+  { label: "Texas", value: "TX" },
+  { label: "Utah", value: "UT" },
+  { label: "Vermont", value: "VT" },
+  { label: "Virginia", value: "VA" },
+  { label: "Washington", value: "WA" },
+  { label: "West Virginia", value: "WV" },
+  { label: "Wisconsin", value: "WI" },
+  { label: "Wyoming", value: "WY" },
+];
 
 // ProfileSettings component displays and edits user profile information
 export default function ProfileSettings() {
-  const { userId } = useAuth(); // Get userId from AuthContext
+  const { profileId } = useAuth(); // Get profileId from AuthContext
   const [profile, setProfile] = useState(null); // Holds profile data
   const [form, setForm] = useState(null);       // Holds editable form data
   const [error, setError] = useState(null);     // Holds error message
   const [editing, setEditing] = useState(false); // Edit mode
+  const [uploading, setUploading] = useState(false);
 
   const { apiUrl } = getEnvVars();
 
-  // Build API URL using userId from context and config
-  const API_URL = `${apiUrl}/profile/customer/${userId}`;
+  // Build API URL using profileId from context and config
+  const API_URL = `${apiUrl}/profile/customer/${profileId}`;
 
-  // Fetch profile data from backend when component mounts or userId changes
+  // Fetch profile data from backend when component mounts or profileId changes
   useEffect(() => {
-    if (!userId) return;
+    if (!profileId) return;
     fetch(API_URL)
       .then((res) => res.json())
       .then((data) => {
@@ -26,10 +111,12 @@ export default function ProfileSettings() {
         else {
           setProfile(data.profile);
           setForm(data.profile); // Initialize form with profile data
+          // Log the profile picture URL
+          console.log("Profile Picture URL:", data.profile?.photo_url);
         }
       })
       .catch(() => setError("Network error")); //Need to change to match other pages errors
-  }, [userId, API_URL]);
+  }, [profileId, API_URL]);
 
   // Handle input changes for top-level fields
   const handleChange = (field, value) => {
@@ -77,137 +164,255 @@ export default function ProfileSettings() {
       .catch(() => setError("Network error"));
   };
 
+  const pickImage = async () => {
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access gallery was denied');
+      return;
+    }
+
+    // Pick image
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setUploading(true);
+      const localUri = result.assets[0].uri;
+      const filename = localUri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image`;
+
+      // Prepare FormData
+      const formData = new FormData();
+      formData.append('photo', {
+        uri: localUri,
+        name: filename,
+        type,
+      });
+
+      // Upload to backend
+      try {
+        const uploadUrl = `${apiUrl}/profile/customer/${profileId}/photo`;
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          body: formData,
+        });
+        const data = await response.json();
+        if (data.photo_url) {
+          // Update profile with new photo_url
+          setProfile({ ...profile, photo_url: data.photo_url });
+          setForm({ ...form, photo_url: data.photo_url });
+        } else {
+          alert('Failed to upload image');
+        }
+      } catch (error) {
+        alert('Error uploading image');
+      }
+      setUploading(false);
+    }
+  };
+
   // Show error if there is one
   if (error) return <Text className="text-red-500">{error}</Text>;
   // Show loading message while profile is being fetched
-  if (!profile || !form) return <Text>Loading...</Text>;
+  if (!profile || !form) return <LoadingIcon message="Loading User Profile..." />;
 
   return (
-    <ScrollView className="flex-1 bg-base-100 p-5">
-      {/* Profile title */}
-      <Text className="text-2xl font-bold text-olive-500 mb-4" style={{ textAlign: "left" }}>Profile</Text>
-      <View className="bg-white rounded-2xl shadow-md p-6 items-start">
-        {/* Profile Picture Display */}
-        <View style={{ alignItems: "flex-start", marginBottom: 20 }}>
-          {profile.photo_url ? (
-            // Show profile image if available
-            <Image
-              source={{ uri: profile.photo_url }}
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                marginBottom: 10,
-                borderWidth: 2,
-                borderColor: "#65a30d",
-              }}
-            />
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView className="flex-1 bg-base-100 p-5">
+        {/* Profile title */}
+        <View className="rounded-2xl p-4 items-center mt-8">
+          {/* Profile Picture Display */}
+          <Card title="Profile" headerIcon="gear" customClasses="w-full">
+            <TouchableOpacity className="items-center" onPress={pickImage} disabled={uploading || !editing}>
+              <ProfilePicture photoUrl={profile.photo_url} firstName={profile?.first_name} lastName={profile?.last_name} />
+              {editing &&
+                <Text className="text-base text-olive-400 underline" style={{ textAlign: "left" }}>
+                  {uploading ? "Uploading..." : "Tap to change profile picture"}
+                </Text>
+              }
+            </TouchableOpacity>
+          </Card>
+          {/* Editable fields */}
+          {editing ? (
+            <>
+              <Card title="Personal Information" headerIcon="person" customClasses="w-full">
+                <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Name</Text>
+                <View className="flex-row justify-between">
+                  <Input
+                    placeholder="First Name"
+                    value={form.first_name}
+                    onChangeText={v => handleChange("first_name", filterNameCharacters(v))}
+                    containerClasses="flex-1 mx-0.5 mb-2 mt-0"
+                  />
+
+                  <Input
+                    placeholder="Last Name"
+                    value={form.last_name}
+                    onChangeText={v => handleChange("last_name", filterNameCharacters(v))}
+                    containerClasses="flex-1 mx-0.5 mb-2 mt-0"
+                  />
+                </View>
+
+                <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Email Address</Text>
+                <Text className="border border-gray-300 bg-white rounded-full py-3 px-4 text-base text-gray-400">{profile.email}</Text>
+
+                <Input label="Phone Number"
+                  value={form.phone}
+                  onChangeText={v => handleChange("phone", v)}
+                  keyboardType="phone-pad"
+                  placeholder="(555) 123-4567"
+                  maxLength={10}
+                />
+              </Card>
+
+              <Card title={"Your Address"} headerIcon="location" customClasses="w-full">
+                <Input
+                  label="Street Address"
+                  placeholder="123 Main Street"
+                  value={form.full_address?.address_line1 || ""}
+                  onChangeText={v => handleAddressChange("address_line1", v)}
+                />
+
+                <Input
+                  label="Apartment, Suite, etc. (Optional)"
+                  placeholder="Apt 4B, Suite 200, etc."
+                  value={form.full_address?.address_line2 || ""}
+                  onChangeText={v => handleAddressChange("address_line2", v)}
+                />
+
+                <Input
+                  label="City"
+                  placeholder="City"
+                  value={form.full_address?.city || ""}
+                  onChangeText={v => handleAddressChange("city", v)}
+                />
+
+                <View className="flex-row justify-between">
+                  <View className="flex-1 mr-3">
+                    <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">State</Text>
+                    <View
+                      className="border border-olive-100 bg-white rounded-full py-0 mb-2"
+                      style={{ paddingHorizontal: 0 }}
+                    >
+                      <Picker
+                        selectedValue={form.full_address?.state}
+                        onValueChange={v => handleAddressChange("state", v)}
+                        prompt="Select a state"
+                        style={{ color: '#3f3f1f' }}
+                      >
+                        {US_STATES.map((s) => (
+                          <Picker.Item key={s.value} label={s.label} value={s.value} />
+                        ))}
+                      </Picker>
+                    </View>
+                  </View>
+
+                  <View className="flex-1 ml-3">
+                    <Input
+                      label="Zip Code"
+                      placeholder="12345"
+                      value={form.full_address?.zip_code || ""}
+                      onChangeText={v => handleAddressChange("zip_code", v)}
+                      keyboardType="numeric"
+                      maxLength={5}
+                      customClasses="text-center"
+                      containerClasses="mb-2"
+                    />
+                  </View>
+                </View>
+              </Card>
+
+              <Card title={"Other"} headerIcon="three-bars" customClasses="w-full">
+                <Input
+                  value={form.allergy_notes}
+                  onChangeText={v => handleChange("allergy_notes", v)}
+                  label="Allergy Notes"
+                  placeholder="Allergy Notes"
+                  textArea={true}
+                />
+                <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Member Since</Text>
+                <Text className="border border-gray-300 bg-white rounded-full py-3 px-4 text-base text-gray-400">{profile.member_since}</Text>
+              </Card>
+
+              <Button
+                title="Save"
+                onPress={handleSave}
+                customClasses="min-w-[50%]"
+              />
+              <Button
+                title="Cancel"
+                onPress={() => { setEditing(false); setForm(profile); }}
+                style="secondary"
+                customClasses="min-w-[50%]"
+              />
+            </>
           ) : (
-            // Show placeholder if no profile image
-            <View
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                backgroundColor: "#d9f99d",
-                justifyContent: "center",
-                alignItems: "center",
-                marginBottom: 10,
-                borderWidth: 2,
-                borderColor: "#65a30d",
-              }}
-            >
-              <Text className="text-olive-400 text-xl">No Photo</Text>
-            </View>
+            <>
+              <Card title="Personal Information" headerIcon="person" customClasses="w-full">
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Name: </Text> {profile.first_name} {profile.last_name}
+                </Text>
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Email: </Text> {profile.email}
+                </Text>
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Phone: </Text> {profile.phone}
+                </Text>
+              </Card>
+              <Card title="Your Address" headerIcon="location" customClasses="w-full">
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Address{profile.full_address?.address_line2 && " 1"}: </Text>{profile.full_address?.address_line1}
+                </Text>
+                {profile.full_address?.address_line2 &&
+                  <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                    <Text className="font-semibold">Address 2: </Text>{profile.full_address?.address_line2}
+                  </Text>
+                }
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">City: </Text>{profile.full_address?.city}
+                </Text>
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">State: </Text>{US_STATES.find(state => state.value === profile.full_address?.state).label}
+                </Text>
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Zip Code: </Text>{profile.full_address?.zip_code}
+                </Text>
+              </Card>
+              <Card title={"Other"} headerIcon="three-bars" customClasses="w-full">
+
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Allergy Notes: </Text>{profile.allergy_notes || "None"}
+                </Text>
+                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Member Since: </Text>{profile.member_since}
+                </Text>
+              </Card>
+              <Button
+                title="Edit Information"
+                onPress={() => setEditing(true)}
+                customClasses="min-w-[60%]"
+              />
+              <Button
+                title="← Return"
+                style="secondary"
+                href="/(tabs)/Profile"
+                customClasses="min-w-[60%]"
+              />
+            </>
           )}
-          {/* Profile picture label */}
-          <Text className="text-base text-olive-400" style={{ textAlign: "left" }}>Profile Picture</Text>
         </View>
-        {/* Editable fields */}
-        {editing ? (
-          <>
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.first_name}
-              onChangeText={v => handleChange("first_name", v)}
-              placeholder="First Name"
-            />
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.last_name}
-              onChangeText={v => handleChange("last_name", v)}
-              placeholder="Last Name"
-            />
-            <Text style={{ marginBottom: 8 }}>Email: {profile.email}</Text>
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.phone}
-              onChangeText={v => handleChange("phone", v)}
-              placeholder="Phone"
-            />
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.allergy_notes}
-              onChangeText={v => handleChange("allergy_notes", v)}
-              placeholder="Allergy Notes"
-            />
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.full_address?.address_line1 || ""}
-              onChangeText={v => handleAddressChange("address_line1", v)}
-              placeholder="Address Line 1"
-            />
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.full_address?.address_line2 || ""}
-              onChangeText={v => handleAddressChange("address_line2", v)}
-              placeholder="Address Line 2"
-            />
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.full_address?.city || ""}
-              onChangeText={v => handleAddressChange("city", v)}
-              placeholder="City"
-            />
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.full_address?.state || ""}
-              onChangeText={v => handleAddressChange("state", v)}
-              placeholder="State"
-            />
-            <TextInput
-              style={{ marginBottom: 8, backgroundColor: "#fef9c3", borderRadius: 6, paddingHorizontal: 8 }}
-              value={form.full_address?.zip_code || ""}
-              onChangeText={v => handleAddressChange("zip_code", v)}
-              placeholder="Zip Code"
-            />
-            <Button title="Save" onPress={handleSave} />
-            <Button title="Cancel" onPress={() => { setEditing(false); setForm(profile); }} />
-          </>
-        ) : (
-          <>
-            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-              Name: {profile.first_name} {profile.last_name}
-            </Text>
-            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-              Email: {profile.email}
-            </Text>
-            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-              Phone: {profile.phone}
-            </Text>
-            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-              Address: {profile.full_address?.address_line1} {profile.full_address?.address_line2}, {profile.full_address?.city}, {profile.full_address?.state} {profile.full_address?.zip_code}
-            </Text>
-            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-              Allergy Notes: {profile.allergy_notes}
-            </Text>
-            <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-              Member Since: {profile.member_since}
-            </Text>
-            <Button title="Edit Information" onPress={() => setEditing(true)} />
-          </>
-        )}
-      </View>
-    </ScrollView>
+        <View className="h-16" />
+      </ScrollView>
+    </>
   );
 }

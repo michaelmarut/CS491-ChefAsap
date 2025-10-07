@@ -60,7 +60,6 @@ export default function TabLayout() {
                         tabBarIcon: ({ color }) =>
                             <Octicons name="person" size={iconSize} color={color} />,
                         ...TransitionPresets.ShiftTransition,
-
                     }}
                 />
 

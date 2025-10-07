@@ -12,6 +12,9 @@ export default function Card({
     children,
     footerButtonProps = null,
     startExpanded = false,
+    customClasses = '',
+    customCard = '',
+    customHeader = ''
 }) {
     const [isExpanded, setIsExpanded] = useState(isCollapsible ? startExpanded : true);
 
@@ -26,9 +29,9 @@ export default function Card({
         }
         : {};
 
-    const cardClasses = "bg-white rounded-xl shadow-sm shadow-olive-500 mb-4 p-0 overflow-hidden";
-    const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-olive-100";
-    const contentWrapperClasses = "p-4";
+    const cardClasses = "bg-white rounded-xl shadow-sm shadow-olive-500 mb-4 p-0 overflow-hidden " + customClasses;
+    const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-olive-100" + customHeader;
+    const contentWrapperClasses = "p-4 " + customCard;
     const footerClasses = "p-4";
 
     const HeaderContent = (
