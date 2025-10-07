@@ -89,7 +89,7 @@ const US_STATES = [
 
 // ProfileSettings component displays and edits user profile information
 export default function ProfileSettings() {
-  const { profileId } = useAuth(); // Get profileId from AuthContext
+  const { profileId, userType } = useAuth(); // Get profileId from AuthContext
   const [profile, setProfile] = useState(null); // Holds profile data
   const [form, setForm] = useState(null);       // Holds editable form data
   const [error, setError] = useState(null);     // Holds error message
@@ -99,7 +99,7 @@ export default function ProfileSettings() {
   const { apiUrl } = getEnvVars();
 
   // Build API URL using profileId from context and config
-  const API_URL = `${apiUrl}/profile/customer/${profileId}`;
+  const API_URL = `${apiUrl}/profile/${userType}/${profileId}`;
 
   // Fetch profile data from backend when component mounts or profileId changes
   useEffect(() => {
@@ -197,7 +197,7 @@ export default function ProfileSettings() {
 
       // Upload to backend
       try {
-        const uploadUrl = `${apiUrl}/profile/customer/${profileId}/photo`;
+        const uploadUrl = `${apiUrl}/profile/${userType}/${profileId}/photo`;
         const response = await fetch(uploadUrl, {
           method: 'POST',
           headers: {

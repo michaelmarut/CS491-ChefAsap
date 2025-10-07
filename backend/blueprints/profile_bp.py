@@ -415,7 +415,7 @@ def upload_customer_photo(customer_id):
         if photo.filename == '':
             return jsonify({'error': 'No selected file'}), 400
 
-        filename = secure_filename(f"profile_{customer_id}.{photo.filename.rsplit('.', 1)[-1]}")
+        filename = secure_filename(f"profile_customer{customer_id}.{photo.filename.rsplit('.', 1)[-1]}")
         filepath = os.path.join('static/profile_photos', filename)
         photo.save(filepath)
 
@@ -425,6 +425,34 @@ def upload_customer_photo(customer_id):
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
         cursor.execute('UPDATE customers SET photo_url = %s WHERE id = %s', (photo_url, customer_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({'photo_url': f"{request.host_url.rstrip('/')}{photo_url}"}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@profile_bp.route('/chef/<int:chef_id>/photo', methods=['POST'])
+def upload_chef_photo(chef_id):
+    """Upload and update chef profile photo"""
+    try:
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No photo uploaded'}), 400
+        photo = request.files['photo']
+        if photo.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        filename = secure_filename(f"profile_chef{chef_id}.{photo.filename.rsplit('.', 1)[-1]}")
+        filepath = os.path.join('static/profile_photos', filename)
+        photo.save(filepath)
+
+        photo_url = f"/static/profile_photos/{filename}"
+
+        # Update photo_url in database
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute('UPDATE chefs SET photo_url = %s WHERE id = %s', (photo_url, chef_id))
         conn.commit()
         cursor.close()
         conn.close()
