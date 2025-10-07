@@ -429,7 +429,7 @@ def upload_customer_photo(customer_id):
         cursor.close()
         conn.close()
 
-        return jsonify({'photo_url': f"{request.host_url.rstrip('/')}{photo_url}"}), 200
+        return jsonify({'photo_url': photo_url}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
@@ -457,6 +457,6 @@ def upload_chef_photo(chef_id):
         cursor.close()
         conn.close()
 
-        return jsonify({'photo_url': f"{request.host_url.rstrip('/')}{photo_url}"}), 200
+        return jsonify({'photo_url': photo_url}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500

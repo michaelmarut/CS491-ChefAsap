@@ -96,9 +96,8 @@ export default function ProfileScreen() {
             <ScrollView className="p-5 mt-8">
                 {/* Display profile picture */}
                 <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
-                <Text className="text-base text-warm-gray text-center mt-4"> {profileData.photo_url} </Text>
-                <Text className="text-base text-warm-gray text-center mt-12"> {profileData?.first_name} {profileData?.last_name} </Text>
-                <Text className="text-base text-warm-gray text-center mt-12"> Description </Text>
+                <Text className="text-base text-warm-gray text-center mt-4"> {profileData?.first_name} {profileData?.last_name} </Text>
+                <Text className="text-base text-warm-gray text-center mt-4 mb-4"> Description </Text>
                 <Button
                     title="Log out"
                     style="primary"
