@@ -16,6 +16,7 @@ export default function Input({
     containerClasses = "mb-2", // optional container classes
     isTextArea = false, // allows for multi-line input
     secureTextEntry, //allows for password hiding
+    disabled = false, // disables input
     ...props // standard TextInput props
 }) {
     const isPasswordField = secureTextEntry === true;
@@ -46,6 +47,7 @@ export default function Input({
                 placeholderTextColor="#6b7280" // base-200
                 style={isTextArea ? { textAlignVertical: 'top' } : {}}
                 secureTextEntry={finalSecureTextEntry} 
+                disabled={disabled}
                 {...props}
             />
 

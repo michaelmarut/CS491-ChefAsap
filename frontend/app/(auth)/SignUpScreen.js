@@ -236,7 +236,7 @@ export default function Signup() {
           href="/SignInScreen"
         />
 
-        <Card title={"Personal Information"} headerIcon="person">
+        <Card title="Personal Information" headerIcon="person">
           <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Name</Text>
           <View className="flex-row justify-between">
             <Input
@@ -280,7 +280,7 @@ export default function Signup() {
           />
         </Card>
 
-        <Card title={"Create Password"} headerIcon="lock">
+        <Card title="Create Password" headerIcon="lock">
           <Input
             label="Password"
             placeholder="Enter a secure password"
@@ -327,8 +327,7 @@ export default function Signup() {
           </View>
         </Card>
 
-        <Card title={"Your Address"} headerIcon="location">
-
+        <Card title="Your Address" headerIcon="location">
           <Input
             label="Street Address"
             placeholder="123 Main Street"
@@ -385,7 +384,7 @@ export default function Signup() {
           </View>
         </Card>
 
-        <Card title={"I am a..."} headerIcon="smiley">
+        <Card title="I am a..." headerIcon="smiley">
           <View className="flex-row justify-between mt-2">
 
             <TouchableOpacity

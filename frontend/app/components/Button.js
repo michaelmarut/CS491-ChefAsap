@@ -1,5 +1,6 @@
 import { Text, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
+import { Octicons } from "@expo/vector-icons";
 
 const BUTTON_STYLES = {
     primary: {
@@ -36,6 +37,7 @@ export default function Button({
     customClasses = "", // custom button style overrides
     customTextClasses = "", // custom text style overrides
     disabled = false, // disable button interaction
+    icon = "", // optional Octicons icon name
 }) {
 
     const styles = BUTTON_STYLES[style] || BUTTON_STYLES.primary;
@@ -54,12 +56,20 @@ export default function Button({
     }
 
     return (
-        <Component {...componentProps}>
+        <Component {...componentProps} className={customClasses}>
             <TouchableOpacity
-                className={`${styles.button} ${buttonClass.button} ${customClasses}`}
+                className={`${styles.button} ${buttonClass.button} items-center content-center flex-row justify-center`}
                 onPress={onPress}
                 disabled={disabled}
             >
+                {icon &&
+                    <Octicons
+                        name={icon}
+                        size={16}
+                        color="#BEF264" // olive-100
+                        style={{ marginRight: 8 }}
+                    />
+                }
                 <Text className={`${styles.text} ${buttonClass.text} ${customTextClasses} `}>
                     {title}
                 </Text>

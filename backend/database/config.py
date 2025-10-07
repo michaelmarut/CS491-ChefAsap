@@ -1,7 +1,7 @@
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'yourpassword', 
+    'password': 'your_password', 
     #'password': 'xiaobailei1943',
     'database': 'chefasap'
 }

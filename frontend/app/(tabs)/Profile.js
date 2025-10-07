@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import LoadingIcon from "../components/LoadingIcon";
+import ProfilePicture from "../components/ProfilePicture";
 
 export default function ProfileScreen() {
     const { logout, token, userType, userId, profileId } = useAuth();
@@ -58,7 +59,7 @@ export default function ProfileScreen() {
     if (loading) {
         return (
             <View className="flex-1 justify-center items-center bg-base-100">
-                <LoadingIcon/>
+                <LoadingIcon />
                 <Button
                     title="Log out"
                     style="primary"
@@ -75,7 +76,7 @@ export default function ProfileScreen() {
                 <Button
                     title="Retry"
                     variant="primary"
-                    onPress={() => setUserId(userId)} 
+                    onPress={() => setUserId(userId)}
                     customClasses="mt-5 w-1/2"
                 />
             </View>
@@ -85,53 +86,16 @@ export default function ProfileScreen() {
     return (
         <View className="flex-1 bg-base-100">
             {/* Profile Settings Button in top-right corner */}
-            <TouchableOpacity
-                style={{
-                    position: "absolute",
-                    top: 40,
-                    right: 20,
-                    zIndex: 10,
-                    backgroundColor: "#d9f99d",
-                    padding: 8,
-                    borderRadius: 20,
-                }}
-                onPress={() => navigation.navigate("ProfileSettings")}
-            >
-                <Text className="text-olive-500 font-bold">⚙️</Text>
-            </TouchableOpacity>
-            <ScrollView className="p-5">
+            <Button
+                title=""
+                href="/ProfileSettings"
+                icon="gear"
+                customClasses="absolute top-10 right-5 z-10 p-3 rounded-full pl-5 pl-5"
+            />
+
+            <ScrollView className="p-5 mt-8">
                 {/* Display profile picture */}
-                <View style={{ alignItems: "center", marginTop: 32, marginBottom: 16 }}>
-                    {profileData?.photo_url ? (
-                        <Image
-                            source={{ uri: `${apiUrl}${profileData.photo_url}` }}
-                            style={{
-                                width: 120,
-                                height: 120,
-                                borderRadius: 60,
-                                marginBottom: 10,
-                                borderWidth: 2,
-                                borderColor: "#65a30d",
-                            }}
-                        />
-                    ) : (
-                        <View
-                            style={{
-                                width: 120,
-                                height: 120,
-                                borderRadius: 60,
-                                backgroundColor: "#d9f99d",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                marginBottom: 10,
-                                borderWidth: 2,
-                                borderColor: "#65a30d",
-                            }}
-                        >
-                            <Text className="text-olive-400 text-xl">No Photo</Text>
-                        </View>
-                    )}
-                </View>
+                <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
                 <Text className="text-base text-warm-gray text-center mt-4"> Profile Picture </Text>
                 <Text className="text-base text-warm-gray text-center mt-12"> {profileData?.first_name} {profileData?.last_name} </Text>
                 <Text className="text-base text-warm-gray text-center mt-12"> Description </Text>
