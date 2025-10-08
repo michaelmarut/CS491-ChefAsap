@@ -127,6 +127,11 @@ def add_sample_data():
         print("\nSample Customer: John Doe - Chicago, IL")
         print("\nYou can now test the booking system!")
 
+        query = "alter table chefs add description varchar(500)"
+        cursor.execute(query)
+        conn.commit()
+        print("COLUMN 'description' ADDED TO TABLE 'chefs'")
+
     except Exception as e:
         print(f"Error adding sample data: {e}")
         if conn:
