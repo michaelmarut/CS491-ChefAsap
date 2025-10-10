@@ -1,7 +1,10 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import getEnvVars from '../config';
+import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import getEnvVars from '../../config';
+import { useAuth } from '../context/AuthContext';
 
 export default function Signin() {
   const [email, setEmail] = useState('');
@@ -9,6 +12,7 @@ export default function Signin() {
   const router = useRouter();
 
   const { apiUrl } = getEnvVars();
+  const { login } = useAuth();
 
   const showAlert = (title, message, onPress = null) => {
     const buttons = [
@@ -47,7 +51,7 @@ export default function Signin() {
       console.log('Trying to connect to:', apiUrl);
       console.log('Attempting signin...');
       const result = await tryFetch();
-      
+
       if (!result.response) {
         const errorMsg = result.error?.message || 'Unknown error';
         console.error('Connection error:', errorMsg);
@@ -66,16 +70,20 @@ export default function Signin() {
       }
 
       showAlert('Success', 'Signed in successfully!');
-      
+
       console.log('Token:', data.token);
       console.log('User type:', data.user_type);
-      
-      // Navigate to appropriate dashboard based on user type
+      console.log('User id:', data.user_id);
+      console.log('Profile id:', data.profile_id);
+
+      await login(data.token, data.user_type, data.user_id, data.profile_id);
       if (data.user_type === 'customer') {
-        router.push('/customer');
-      } else if (data.user_type === 'chef') {
-        router.push('/chef');
+        router.replace('/(tabs)/SearchScreen');
       }
+      else if (data.user_type === 'chef') {
+        router.replace('/(tabs)/BookingsScreen');
+      }
+
     } catch (error) {
       console.error('Error in handleSignin:', error);
       showAlert('Error', 'Network error: ' + error.message);
@@ -83,11 +91,14 @@ export default function Signin() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      
-      <TextInput
-        style={styles.input}
+    <View className="p-5 bg-base-100 flex-1">
+
+      <Text className="text-4xl font-bold text-center mb-5 text-olive-500 mt-8">
+        Sign In
+      </Text>
+
+      <Input
+        containerClasses=""
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -95,87 +106,42 @@ export default function Signin() {
         autoCapitalize="none"
       />
 
-      <TextInput
-        style={styles.input}
+      <Button
+        title="Don't have an account?"
+        style="secondary"
+        base="link"
+        customTextClasses='text-right'
+        href="/SignUpScreen"
+      />
+
+      <Input
+        containerClasses=""
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
+
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.signupButton} onPress={handleSignin}>
-        <Text style={styles.signupButtonText}>Login</Text>
-      </TouchableOpacity>
+      <Button
+        title="Forgot your password?"
+        style="secondary"
+        base="link"
+        customTextClasses='text-right'
+        href="/ForgetPasswordScreen"
+      />
 
-      <Link href="/" asChild>
-        <TouchableOpacity style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-      </Link>
+      <Button
+        title="Log in"
+        style="primary"
+        onPress={handleSignin}
+      />
+
+      <Button
+        title="← Back"
+        style="secondary"
+        href="/"
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#fefce8', // soft cream base (olive theme)
-    flex: 1,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#3f3f1f', // earthy dark olive
-    textTransform: 'capitalize',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d9f99d', // light olive highlight
-    backgroundColor: '#ffffff', // white for visibility
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginVertical: 10,
-    fontSize: 16,
-    color: '#3f3f1f', // earthy dark olive
-  },
-
-  signupButton: {
-    backgroundColor: '#4d7c0f', // rich olive text
-    paddingVertical: 16,
-    borderRadius: 25,
-    marginTop: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-
-  signupButtonText: {
-    color: '#fefce8', // soft cream base
-    fontWeight: '700',
-    fontSize: 16,
-  },
-
-  backButton: {
-    marginTop: 20,
-    alignSelf: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#d9f99d', // light olive highlight
-    borderRadius: 20,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#bef264', // olive accent
-  },
-  
-  backButtonText: {
-    color: '#333',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-});
