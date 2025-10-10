@@ -398,6 +398,11 @@ def add_sample_data():
         print("• GET /search/customer/1/recent-chefs")
         print("• GET /search/customer/1/nearby-chefs")
 
+        query = "alter table chefs add description varchar(500)"
+        cursor.execute(query)
+        conn.commit()
+        print("COLUMN 'description' ADDED TO TABLE 'chefs'")
+
     except Exception as e:
         print(f"Error adding sample data: {e}")
         if conn:
