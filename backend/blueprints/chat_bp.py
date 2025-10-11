@@ -61,7 +61,7 @@ def send_message():
         return jsonify(message="Message sent", chat_id=chat_id), 201
 
     except mysql.connector.Error as e:
-        print("❌ Error inserting message:", e)
+        print("Error inserting message:", e)
         return jsonify(error="Internal server error"), 500
 
     finally:
@@ -114,7 +114,7 @@ def get_chat_history():
         return jsonify(messages), 200
 
     except mysql.connector.Error as e:
-        print("❌ Error loading messages:", e)
+        print("Error loading messages:", e)
         return jsonify(error="Internal server error"), 500
 
     finally:
@@ -155,7 +155,7 @@ def list_bookings():
         return jsonify(bookings), 200
 
     except mysql.connector.Error as e:
-        print("❌ Error listing bookings:", e)
+        print("Error listing bookings:", e)
         return jsonify(error="Internal server error"), 500
 
     finally:
@@ -208,7 +208,7 @@ def list_contacts():
         return jsonify(contacts), 200
 
     except mysql.connector.Error as e:
-        print("❌ Error listing contacts:", e)
+        print("Error listing contacts:", e)
         return jsonify(error="Internal server error"), 500
 
     finally:
@@ -297,7 +297,7 @@ def get_conversations():
         return jsonify(conversations), 200
 
     except mysql.connector.Error as e:
-        print("❌ Error getting conversations:", e)
+        print("Error getting conversations:", e)
         return jsonify(error="Internal server error"), 500
 
     finally:
@@ -345,7 +345,7 @@ def mark_messages_read():
         return jsonify(message="Messages marked as read"), 200
 
     except mysql.connector.Error as e:
-        print("❌ Error marking messages as read:", e)
+        print("Error marking messages as read:", e)
         return jsonify(error="Internal server error"), 500
 
     finally:

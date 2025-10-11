@@ -655,6 +655,27 @@ def init_db():
             )
         ''')
 
+        # Chef cuisine photos table for storing chef's food/cuisine photos
+        # Business rules: Max 10 photos per cuisine type, max 50 total photos per chef
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_cuisine_photos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                cuisine_type VARCHAR(100) NOT NULL,
+                photo_url VARCHAR(255) NOT NULL,
+                photo_title VARCHAR(200),
+                photo_description TEXT,
+                is_featured BOOLEAN DEFAULT FALSE,
+                display_order INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                INDEX idx_chef_cuisine_photos (chef_id, cuisine_type),
+                INDEX idx_chef_featured_photos (chef_id, is_featured),
+                INDEX idx_display_order (chef_id, display_order)
+            )
+        ''')
+
         # Add foreign key constraints for users table after all tables are created
         try:
             cursor.execute('''
