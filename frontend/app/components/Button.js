@@ -14,14 +14,18 @@ const BUTTON_STYLES = {
     accent: {
         button: "bg-olive-200 border-olive-300",
         text: "text-olive-500",
+    },
+    transparent: {
+        button: "bg-transparent border-transparent",
+        text: "text-transparent"
     }
 };
 
 const BUTTON_CLASSES = {
     basic: {
-        button: "py-3 px-8 rounded-full mb-2 border-2 shadow-sm shadow-olive-500",
+        button: "py-3 rounded-full mb-2 border-2 shadow-sm shadow-olive-500",
         text: "text-center font-bold text-lg",
-    },
+    }, 
     link: {
         button: "py-2 px-4 bg-transparent",
         text: "text-center text-md underline",
@@ -56,9 +60,9 @@ export default function Button({
     }
 
     return (
-        <Component {...componentProps} className={customClasses}>
+        <Component {...componentProps}>
             <TouchableOpacity
-                className={`${styles.button} ${buttonClass.button} items-center content-center flex-row justify-center`}
+                className={`${styles.button} ${buttonClass.button} items-center content-center flex-row justify-center ${customClasses}`}
                 onPress={onPress}
                 disabled={disabled}
             >
@@ -67,7 +71,7 @@ export default function Button({
                         name={icon}
                         size={16}
                         color="#BEF264" // olive-100
-                        style={{ marginRight: 8 }}
+                        style={{  }}
                     />
                 }
                 <Text className={`${styles.text} ${buttonClass.text} ${customTextClasses} `}>

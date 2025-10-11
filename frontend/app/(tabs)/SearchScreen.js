@@ -3,16 +3,33 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Card from "../components/Card";
 import Button from '../components/Button';
 import LoadingIcon from "../components/LoadingIcon";
+import LocationInput from '../components/LocationInput';
+import SearchBarComponent from '../components/SearchBar';
+
+const [formData, setFormData] = useState({
+    locationAddress: '',
+    latitude: null,
+    longitude: null,
+    searchQuery: '',     // chef name, cuisine, or dish
+    searchType: 'chef',  // 'chef', 'cuisine', or 'dish'
+    gender: 'any',       // 'any', 'male', 'female'
+    searchRadius: 10,    // search radius in miles (default 10)
+    timing: 'any',       // 'any', 'breakfast', 'lunch', 'dinner'
+});
+
+const handleSearch = () => {
+    console.log("Initiating search with data:", formData);
+    alert(`Searching for ${formData.searchQuery} by ${formData.searchType}...`);
+};
 
 export default function SearchScreen() {
     return (
         <ScrollView className="flex-1 bg-base-100 p-5 gap-y-12 pt-24">
 
-            <Button
-                title="Start a New Booking"
-                variant="primary"
-                href="/BookingScreen"
-                customClasses="w-full mt-4 mb-4"
+            <SearchBarComponent
+                formData={formData}
+                setFormData={setFormData}
+                handleSearch={handleSearch}
             />
 
             <Card
@@ -58,10 +75,8 @@ export default function SearchScreen() {
             <Card
                 title="Nearby Chefs"
                 headerIcon="location"
-                isCollapsible={true}
                 isScrollable={true}
                 scrollDirection="vertical"
-                startExpanded={true}
             >
                 <Card
                     title="Jane Doe"

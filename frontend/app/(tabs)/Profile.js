@@ -69,28 +69,13 @@ export default function ProfileScreen() {
         );
     }
 
-    if (error) {
-        return (
-            <View className="flex-1 justify-center items-center bg-base-100">
-                <Text className="text-lg text-red-500">Error: {error}</Text>
-                <Button
-                    title="Retry"
-                    variant="primary"
-                    onPress={() => setUserId(userId)}
-                    customClasses="mt-5 w-1/2"
-                />
-            </View>
-        );
-    }
-
     return (
         <View className="flex-1 bg-base-100">
             {/* Profile Settings Button in top-right corner */}
             <Button
-                title=""
                 href="/ProfileSettings"
                 icon="gear"
-                customClasses="absolute top-10 right-5 z-10 p-3 rounded-full pl-5 pl-5"
+                customClasses="absolute top-10 right-5 z-10 p-3 rounded-full w-12 h-12"
             />
 
             <ScrollView className="p-5 mt-8">

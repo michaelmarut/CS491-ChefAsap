@@ -2,18 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import Octicons from '@expo/vector-icons/Octicons';
 
-/**
- * A generalized, styled text input component.
- * @param {string} label - Text label displayed above the input.
- * @param {string} error - Optional error message displayed below the input.
- * @param {string} containerClasses - Optional NativeWind classes for the surrounding View.
- * @param {boolean} isTextArea - If true, applies styling for a multi-line text area.
- * @param {object} props - All standard React Native TextInput props (value, onChangeText, etc.).
- */
 export default function Input({
     label, // input label
     error, // error message
-    containerClasses = "mb-2", // optional container classes
+    containerClasses = "mb-1", // optional container classes
     isTextArea = false, // allows for multi-line input
     secureTextEntry, //allows for password hiding
     disabled = false, // disables input

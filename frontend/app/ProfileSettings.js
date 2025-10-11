@@ -301,7 +301,7 @@ export default function ProfileSettings() {
                   <View className="flex-1 mr-3">
                     <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">State</Text>
                     <View
-                      className="border border-olive-100 bg-white rounded-full py-0 mb-2"
+                      className="border border-olive-200 bg-white rounded-full py-0 mb-2"
                       style={{ paddingHorizontal: 0 }}
                     >
                       <Picker
