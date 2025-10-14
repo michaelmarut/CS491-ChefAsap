@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import LoadingIcon from "../components/LoadingIcon";
 import ProfilePicture from "../components/ProfilePicture";
+import Card from "../components/Card";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ProfileScreen() {
     const { logout, token, userType, userId, profileId } = useAuth();
@@ -83,29 +85,109 @@ export default function ProfileScreen() {
         );
     }
 
-    return (
-        <View className="flex-1 bg-base-100">
-            {/* Profile Settings Button in top-right corner */}
-            <Button
-                title=""
-                href="/ProfileSettings"
-                icon="gear"
-                customClasses="absolute top-10 right-5 z-10 p-3 rounded-full pl-5 pl-5"
-            />
-
-            <ScrollView className="p-5 mt-8">
-                {/* Display profile picture */}
-                <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
-                <Text className="text-base text-warm-gray text-center mt-4"> {profileData?.first_name} {profileData?.last_name} </Text>
-                <Text className="text-base text-warm-gray text-center mt-4 mb-4"> Description </Text>
+    if (userType === "customer") {
+        return (
+            <ScrollView className="flex-1 bg-base-100 pt-1">
+                {/* Profile Settings Button in top-right corner */}
                 <Button
-                    title="Log out"
-                    style="primary"
-                    onPress={logout}
+                    href="/ProfileSettings"
+                    icon="gear"
+                    customClasses="absolute top-14 right-10 z-10 p-3 rounded-full pl-5"
                 />
-                <View className="h-24" />
-            </ScrollView>
-        </View>
-    );
 
+                <ScrollView className="p-5 mt-8">
+                    <Card
+                        title="Profile"
+                        headerIcon="person"
+                        >
+
+                        {/* Display profile picture */}
+                        <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
+                        <Text className="text-xl font-bold text-wrap mb-1 mt-2 text-olive-400">{profileData?.first_name} {profileData?.last_name} </Text>
+                        <Text className="text-lg text-wrap text-olive-400">{userType}</Text>
+                        <Text className="text-lg text-wrap text-olive-400">Joined: {profileData.member_since} </Text>
+                        
+                        {/*<View className="h-24" />*/}
+                    </Card>
+                    <Card
+                        title="Help & Policies"
+                        headerIcon="info"
+                        >
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400"> Help</Text>
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400"> Policies</Text>
+                        
+                    </Card>
+                    <Button
+                        title="Log out"
+                        style="primary"
+                        onPress={logout}
+                        customClasses="bottom-2 rounded-full flex-1 justify-end items-center"
+                    />
+                </ScrollView>
+                
+            </ScrollView>
+        );
+    }
+
+    if (userType === "chef") {
+         return (
+            <ScrollView className="flex-1 bg-base-100 pt-1">
+                {/* Profile Settings Button in top-right corner */}
+                <Button
+                    href="/ProfileSettings"
+                    icon="gear"
+                    customClasses="absolute top-14 right-10 z-10 p-3 rounded-full pl-5"
+                />
+
+                <ScrollView className="p-5 mt-8">
+                    <Card
+                        title="Profile"
+                        headerIcon="person"
+                        >
+
+                        {/* Display profile picture and public user info */}
+                        <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
+                        <Text className="text-xl font-bold text-wrap mb-1 mt-2 text-olive-400">{profileData?.first_name} {profileData?.last_name} </Text>
+                        <Text className="text-lg text-wrap text-olive-400">{userType}</Text>
+                        <Text className="text-lg text-wrap text-olive-400">Cuisine: Jamaican</Text>
+                        <Text className="text-lg text-wrap text-olive-400">Rating: 5/5</Text>
+                        <Text className="text-lg text-wrap text-olive-400">Gender: F (private)</Text>
+
+                        
+                    </Card>
+
+                    <Card
+                        title="Most Ordered"
+                        headerIcon="heart"
+                        >
+                        {/* Placeholder most ordered meals from chef*/}
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">1. Curry Chicken</Text>
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">2. Jerk Chicken</Text>
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">3. Fried Chicken</Text>
+                        
+                    </Card>
+
+                    <Card
+                        title="Meal Options"
+                        headerIcon="flame"
+                        >
+                        {/* Example meal options; replace with dynamic data as needed */}    
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">* Curry Chicken</Text>
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">* Jerk Chicken</Text>
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">* Fried Chicken</Text>
+                        <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">* Oxtail</Text>
+                        
+                    </Card>
+
+                    <Button
+                        title="Log out"
+                        style="primary"
+                        onPress={logout}
+                        customClasses="bottom-2 rounded-full flex-1 justify-end items-center"
+                    />
+                </ScrollView>
+                
+            </ScrollView>
+        );
+    }
 }
