@@ -3,6 +3,7 @@ import mysql.connector
 from datetime import datetime, timedelta
 from database.config import db_config
 import math
+from services.geocoding_service import geocoding_service, get_coordinates_for_zip
 
 # Create the blueprint
 booking_bp = Blueprint('booking', __name__)
@@ -25,15 +26,8 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return R * c
 
 def get_zip_coordinates(zip_code):
-    """Get approximate coordinates for a zip code (simplified version)"""
- 
-    zip_coords = {
-        '60601': (41.8781, -87.6298),  # Chicago
-        '10001': (40.7505, -73.9934),  # NYC
-        '90210': (34.0901, -118.4065), # Beverly Hills
-        '94102': (37.7749, -122.4194), # San Francisco
-    }
-    return zip_coords.get(zip_code, (40.7128, -74.0060))  # Default to NYC
+    """Get coordinates for a zip code using improved geocoding service"""
+    return get_coordinates_for_zip(zip_code)
 
 @booking_bp.route('/create', methods=['POST'])
 def create_booking():
@@ -106,7 +100,7 @@ def search_chefs():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
         
-  
+        # Use improved geocoding service
         customer_lat, customer_lon = get_zip_coordinates(customer_zip)
         
   

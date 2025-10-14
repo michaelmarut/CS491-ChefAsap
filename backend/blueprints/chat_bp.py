@@ -166,8 +166,8 @@ def list_bookings():
 @chat_bp.route('/contacts', methods=['GET'])
 def list_contacts():
     """
-    If is_chef, pass chef_id → returns customers they've chatted with.
-    If is_customer, pass customer_id → returns chefs they've chatted with.
+    If is_chef, pass chef_id -> returns customers they've chatted with.
+    If is_customer, pass customer_id -> returns chefs they've chatted with.
     """
     chef_id = request.args.get('chef_id')
     customer_id = request.args.get('customer_id')

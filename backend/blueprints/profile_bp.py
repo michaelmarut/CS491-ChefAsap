@@ -407,6 +407,19 @@ def update_chef_profile(chef_id):
         
         # Update address if provided
         if address_line1 and city and state and zip_code:
+            # Get coordinates for the address
+            from services.geocoding_service import geocoding_service
+            
+            # Build full address string
+            full_address = f"{address_line1}"
+            if address_line2:
+                full_address += f", {address_line2}"
+            full_address += f", {city}, {state} {zip_code}"
+            
+            coords = geocoding_service.geocode_address(full_address)
+            latitude = coords[0] if coords else None
+            longitude = coords[1] if coords else None
+            
             # Check if default address exists
             cursor.execute('''
                 SELECT id FROM chef_addresses 
@@ -416,18 +429,25 @@ def update_chef_profile(chef_id):
             address_record = cursor.fetchone()
             
             if address_record:
-                # Update existing default address
+                # Update existing default address with coordinates
                 cursor.execute('''
                     UPDATE chef_addresses 
-                    SET address_line1 = %s, address_line2 = %s, city = %s, state = %s, zip_code = %s
+                    SET address_line1 = %s, address_line2 = %s, city = %s, state = %s, zip_code = %s,
+                        latitude = %s, longitude = %s
                     WHERE chef_id = %s AND is_default = TRUE
-                ''', (address_line1, address_line2, city, state, zip_code, chef_id))
+                ''', (address_line1, address_line2, city, state, zip_code, latitude, longitude, chef_id))
             else:
-                # Create new default address
+                # Create new default address with coordinates
                 cursor.execute('''
-                    INSERT INTO chef_addresses (chef_id, address_line1, address_line2, city, state, zip_code, is_default)
-                    VALUES (%s, %s, %s, %s, %s, %s, TRUE)
-                ''', (chef_id, address_line1, address_line2, city, state, zip_code))
+                    INSERT INTO chef_addresses (chef_id, address_line1, address_line2, city, state, zip_code, latitude, longitude, is_default)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                ''', (chef_id, address_line1, address_line2, city, state, zip_code, latitude, longitude))
+            
+            # Log geocoding results
+            if latitude and longitude:
+                print(f"Geocoded chef {chef_id} address: {city}, {state} -> ({latitude}, {longitude})")
+            else:
+                print(f"Warning: Could not geocode chef {chef_id} address: {address_line1}, {city}, {state} {zip_code}")
         
         conn.commit()
         cursor.close()
@@ -590,6 +610,19 @@ def update_customer_profile(customer_id):
         
         # Update address if provided
         if address_line1 and city and state and zip_code:
+            # Get coordinates for the address
+            from services.geocoding_service import geocoding_service
+            
+            # Build full address string
+            full_address = f"{address_line1}"
+            if address_line2:
+                full_address += f", {address_line2}"
+            full_address += f", {city}, {state} {zip_code}"
+            
+            coords = geocoding_service.geocode_address(full_address)
+            latitude = coords[0] if coords else None
+            longitude = coords[1] if coords else None
+            
             # Check if default address exists
             cursor.execute('''
                 SELECT id FROM customer_addresses 
@@ -599,18 +632,25 @@ def update_customer_profile(customer_id):
             address_record = cursor.fetchone()
             
             if address_record:
-                # Update existing default address
+                # Update existing default address with coordinates
                 cursor.execute('''
                     UPDATE customer_addresses 
-                    SET address_line1 = %s, address_line2 = %s, city = %s, state = %s, zip_code = %s
+                    SET address_line1 = %s, address_line2 = %s, city = %s, state = %s, zip_code = %s,
+                        latitude = %s, longitude = %s
                     WHERE customer_id = %s AND is_default = TRUE
-                ''', (address_line1, address_line2, city, state, zip_code, customer_id))
+                ''', (address_line1, address_line2, city, state, zip_code, latitude, longitude, customer_id))
             else:
-                # Create new default address
+                # Create new default address with coordinates
                 cursor.execute('''
-                    INSERT INTO customer_addresses (customer_id, address_line1, address_line2, city, state, zip_code, is_default)
-                    VALUES (%s, %s, %s, %s, %s, %s, TRUE)
-                ''', (customer_id, address_line1, address_line2, city, state, zip_code))
+                    INSERT INTO customer_addresses (customer_id, address_line1, address_line2, city, state, zip_code, latitude, longitude, is_default)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                ''', (customer_id, address_line1, address_line2, city, state, zip_code, latitude, longitude))
+            
+            # Log geocoding results
+            if latitude and longitude:
+                print(f"Geocoded customer {customer_id} address: {city}, {state} -> ({latitude}, {longitude})")
+            else:
+                print(f"Warning: Could not geocode customer {customer_id} address: {address_line1}, {city}, {state} {zip_code}")
         
         conn.commit()
         cursor.close()

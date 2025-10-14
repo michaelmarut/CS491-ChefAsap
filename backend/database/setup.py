@@ -39,6 +39,7 @@ def init_db():
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 first_name VARCHAR(50) NOT NULL,
                 last_name VARCHAR(50) NOT NULL,
+                gender ENUM('male', 'female', 'other', 'prefer_not_to_say') NULL,
                 email VARCHAR(100) NOT NULL UNIQUE,
                 phone VARCHAR(20),
                 description VARCHAR(500),
@@ -81,9 +82,12 @@ def init_db():
                 city VARCHAR(50) NOT NULL,
                 state VARCHAR(2) NOT NULL,
                 zip_code VARCHAR(10) NOT NULL,
+                latitude DECIMAL(10, 8) NULL,
+                longitude DECIMAL(11, 8) NULL,
                 is_default BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                INDEX idx_location (latitude, longitude)
             )
         ''')
 
@@ -188,9 +192,12 @@ def init_db():
                 city VARCHAR(50) NOT NULL,
                 state VARCHAR(2) NOT NULL,
                 zip_code VARCHAR(10) NOT NULL,
+                latitude DECIMAL(10, 8) NULL,
+                longitude DECIMAL(11, 8) NULL,
                 is_default BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                INDEX idx_location (latitude, longitude)
             )
         ''')
 
@@ -639,6 +646,38 @@ def init_db():
                 print("Added customer_id column to users table")
         except mysql.connector.Error as e:
             print(f"Note: customer_id column handling: {e}")
+
+        # Add latitude and longitude columns to address tables if they don't exist
+        try:
+            # Check if latitude column exists in chef_addresses
+            cursor.execute("SHOW COLUMNS FROM chef_addresses LIKE 'latitude'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE chef_addresses ADD COLUMN latitude DECIMAL(10, 8) NULL")
+                cursor.execute("ALTER TABLE chef_addresses ADD COLUMN longitude DECIMAL(11, 8) NULL")
+                cursor.execute("ALTER TABLE chef_addresses ADD INDEX idx_location (latitude, longitude)")
+                print("Added latitude/longitude columns to chef_addresses table")
+        except mysql.connector.Error as e:
+            print(f"Note: chef_addresses latitude/longitude column handling: {e}")
+
+        try:
+            # Check if latitude column exists in customer_addresses
+            cursor.execute("SHOW COLUMNS FROM customer_addresses LIKE 'latitude'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE customer_addresses ADD COLUMN latitude DECIMAL(10, 8) NULL")
+                cursor.execute("ALTER TABLE customer_addresses ADD COLUMN longitude DECIMAL(11, 8) NULL")
+                cursor.execute("ALTER TABLE customer_addresses ADD INDEX idx_location (latitude, longitude)")
+                print("Added latitude/longitude columns to customer_addresses table")
+        except mysql.connector.Error as e:
+            print(f"Note: customer_addresses latitude/longitude column handling: {e}")
+
+        # Add gender column to chefs table if it doesn't exist
+        try:
+            cursor.execute("SHOW COLUMNS FROM chefs LIKE 'gender'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE chefs ADD COLUMN gender ENUM('male', 'female', 'other', 'prefer_not_to_say') NULL AFTER last_name")
+                print("Added gender column to chefs table")
+        except mysql.connector.Error as e:
+            print(f"Note: chefs gender column handling: {e}")
 
         # Customer favorite chefs table
         cursor.execute('''

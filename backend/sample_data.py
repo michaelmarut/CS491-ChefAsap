@@ -26,12 +26,12 @@ def add_sample_data():
         # Add sample users (chefs and customers)
         sample_users = []
         
-        # Add 50 chefs (chef1@gmail.com to chef50@gmail.com)
-        for i in range(1, 51):
+        # Add 100 chefs (chef1@gmail.com to chef100@gmail.com)
+        for i in range(1, 101):
             sample_users.append((f'chef{i}@gmail.com', 'QWEasd123!', 'chef'))
         
-        # Add 50 customers (customer101@gmail.com to customer150@gmail.com) 
-        for i in range(101, 151):
+        # Add 100 customers (customer1@gmail.com to customer100@gmail.com) 
+        for i in range(1, 101):
             sample_users.append((f'customer{i}@gmail.com', 'QWEasd123!', 'customer'))
 
         for email, password, user_type in sample_users:
@@ -40,53 +40,90 @@ def add_sample_data():
                 INSERT IGNORE INTO users (email, password, user_type) VALUES (%s, %s, %s)
             ''', (email, hashed_password, user_type))
 
-        # Add sample chefs (50 chefs)
+        # Add sample chefs (100 chefs)
         sample_chefs = []
         
-        # Generate 50 chefs with varied names
+        # Generate 100 chefs with varied names from different cultures
         first_names = ['Mario', 'Li', 'Carlos', 'Sarah', 'Ahmed', 'Julia', 'David', 'Maria', 'Jean', 'Raj', 
                       'Anna', 'Marco', 'Sofia', 'Hassan', 'Elena', 'James', 'Lucia', 'Omar', 'Grace', 'Luis',
                       'Emma', 'Ali', 'Rosa', 'Pierre', 'Yuki', 'Sam', 'Nina', 'Paolo', 'Aisha', 'Chen',
                       'Isabella', 'Diego', 'Fatima', 'Andre', 'Mei', 'Antonio', 'Zara', 'Jean-Luc', 'Priya', 'Miguel',
-                      'Chloe', 'Karim', 'Valentina', 'François', 'Akiko', 'Roberto', 'Layla', 'Giuseppe', 'Amara', 'Hiroshi']
+                      'Chloe', 'Karim', 'Valentina', 'Francois', 'Akiko', 'Roberto', 'Layla', 'Giuseppe', 'Amara', 'Hiroshi',
+                      'Isabella', 'Viktor', 'Natasha', 'Dmitri', 'Olga', 'Ivan', 'Katya', 'Alexei', 'Anya', 'Pavel',
+                      'Ingrid', 'Hans', 'Greta', 'Klaus', 'Heidi', 'Wolfgang', 'Ursula', 'Franz', 'Brigitte', 'Karl',
+                      'Bjorn', 'Astrid', 'Lars', 'Sigrid', 'Erik', 'Maja', 'Nils', 'Inga', 'Sven', 'Liv',
+                      'Kofi', 'Amina', 'Kwame', 'Fatou', 'Jomo', 'Asha', 'Tariq', 'Zara', 'Idris', 'Halima',
+                      'Hiroshi', 'Yuki', 'Kenji', 'Sakura', 'Takeshi', 'Hana', 'Akira', 'Mika', 'Ryu', 'Emi',
+                      'Carmen', 'Pablo', 'Esperanza', 'Fernando', 'Dolores', 'Ramon', 'Pilar', 'Javier', 'Mercedes', 'Alejandro']
         
         last_names = ['Rossi', 'Chen', 'Rodriguez', 'Johnson', 'Al-Rashid', 'Dubois', 'Smith', 'Garcia', 'Leblanc', 'Patel',
                      'Martinez', 'Wang', 'Brown', 'Hassan', 'Romano', 'Wilson', 'Lopez', 'Ahmed', 'Taylor', 'Gonzalez',
                      'Anderson', 'Ali', 'Ferrari', 'Moreau', 'Tanaka', 'Davis', 'Silva', 'Bianchi', 'Khan', 'Liu',
                      'Miller', 'Santos', 'Khalil', 'Martin', 'Yamamoto', 'Conti', 'Omar', 'Bernard', 'Singh', 'Herrera',
-                     'Thomas', 'Ibrahim', 'Rosso', 'Petit', 'Sato', 'Russo', 'Mansour', 'Greco', 'Said', 'Suzuki']
+                     'Thomas', 'Ibrahim', 'Rosso', 'Petit', 'Sato', 'Russo', 'Mansour', 'Greco', 'Said', 'Suzuki',
+                     'Petrov', 'Ivanov', 'Sokolov', 'Popov', 'Kozlov', 'Volkov', 'Novak', 'Fedorov', 'Morozov', 'Orlov',
+                     'Mueller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Becker', 'Schulz', 'Hoffmann',
+                     'Andersson', 'Johansson', 'Karlsson', 'Nilsson', 'Eriksson', 'Larsson', 'Olsson', 'Persson', 'Svensson', 'Gustafsson',
+                     'Okonkwo', 'Nkomo', 'Banda', 'Mwangi', 'Kiprotich', 'Achebe', 'Mandela', 'Sankara', 'Kone', 'Traore',
+                     'Yamamoto', 'Watanabe', 'Ito', 'Kobayashi', 'Kato', 'Yoshida', 'Nakamura', 'Hayashi', 'Matsumoto', 'Inoue',
+                     'Fernandez', 'Gutierrez', 'Vargas', 'Castillo', 'Mendoza', 'Morales', 'Ortega', 'Delgado', 'Castro', 'Ruiz']
         
-        for i in range(50):
+        # Create descriptions for chefs based on their specialties
+        chef_descriptions = [
+            "Authentic Italian cuisine specialist with 15 years of experience in traditional pasta and pizza making.",
+            "Master of Chinese cuisine, trained in Beijing. Specializes in Szechuan and Cantonese dishes.",
+            "Mexican chef expert in regional cuisines from Oaxaca to Yucatan. Famous for handmade tortillas.",
+            "Indian cuisine master with expertise in North and South Indian flavors. Award-winning curry specialist.",
+            "Japanese chef trained in Tokyo. Sushi master and expert in traditional kaiseki dining.",
+            "Thai cuisine specialist with authentic recipes passed down through generations.",
+            "French chef trained at Le Cordon Bleu. Expert in classical French techniques and modern fusion.",
+            "Mediterranean diet expert focusing on healthy, fresh ingredients and olive oil-based dishes.",
+            "American BBQ pit master with 20 years of smoking and grilling experience.",
+            "Caribbean cuisine specialist bringing island flavors with fresh seafood and tropical spices.",
+        ] * 10  # Repeat descriptions for 100 chefs
+        
+        for i in range(100):
             first_name = first_names[i]
             last_name = last_names[i]
             email = f'chef{i+1}@gmail.com'
             phone = f'555-{1000+i:04d}'
-            sample_chefs.append((first_name, last_name, email, phone))
+            description = chef_descriptions[i]
+            sample_chefs.append((first_name, last_name, email, phone, description))
 
-        for first_name, last_name, email, phone in sample_chefs:
+        for first_name, last_name, email, phone, description in sample_chefs:
             cursor.execute('''
-                INSERT IGNORE INTO chefs (first_name, last_name, email, phone) VALUES (%s, %s, %s, %s)
-            ''', (first_name, last_name, email, phone))
+                INSERT IGNORE INTO chefs (first_name, last_name, email, phone, description) VALUES (%s, %s, %s, %s, %s)
+            ''', (first_name, last_name, email, phone, description))
 
-        # Add sample customers (50 customers)
+        # Add sample customers (100 customers)
         sample_customers = []
         
         customer_first_names = ['John', 'Jane', 'Michael', 'Emily', 'Robert', 'Lisa', 'William', 'Sarah', 'David', 'Jessica',
                                'Richard', 'Ashley', 'Joseph', 'Amanda', 'Thomas', 'Melissa', 'Charles', 'Deborah', 'Christopher', 'Dorothy',
                                'Daniel', 'Amy', 'Matthew', 'Angela', 'Anthony', 'Helen', 'Mark', 'Brenda', 'Donald', 'Emma',
                                'Steven', 'Olivia', 'Paul', 'Cynthia', 'Andrew', 'Marie', 'Joshua', 'Janet', 'Kenneth', 'Catherine',
-                               'Kevin', 'Frances', 'Brian', 'Samantha', 'George', 'Debra', 'Timothy', 'Rachel', 'Ronald', 'Carolyn']
+                               'Kevin', 'Frances', 'Brian', 'Samantha', 'George', 'Debra', 'Timothy', 'Rachel', 'Ronald', 'Carolyn',
+                               'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Margaret', 'Carol', 'Ruth', 'Sharon',
+                               'Michelle', 'Laura', 'Emily', 'Kimberly', 'Donna', 'Margaret', 'Carol', 'Sandra', 'Ashley', 'Kimberly',
+                               'Donna', 'Emily', 'Michelle', 'Dorothy', 'Lisa', 'Nancy', 'Karen', 'Betty', 'Helen', 'Sandra',
+                               'Virginia', 'Maria', 'Ruth', 'Sharon', 'Michelle', 'Laura', 'Sarah', 'Kimberly', 'Deborah', 'Jessica',
+                               'Shirley', 'Cynthia', 'Angela', 'Melissa', 'Brenda', 'Emma', 'Olivia', 'Amy', 'Anna', 'Rebecca']
         
         customer_last_names = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
                               'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin',
                               'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson',
                               'Walker', 'Young', 'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores',
-                              'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts']
+                              'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts',
+                              'Phillips', 'Evans', 'Turner', 'Diaz', 'Parker', 'Cruz', 'Edwards', 'Collins', 'Reyes', 'Stewart',
+                              'Morris', 'Morales', 'Murphy', 'Cook', 'Rogers', 'Gutierrez', 'Ortiz', 'Morgan', 'Cooper', 'Peterson',
+                              'Bailey', 'Reed', 'Kelly', 'Howard', 'Ramos', 'Kim', 'Cox', 'Ward', 'Richardson', 'Watson',
+                              'Brooks', 'Chavez', 'Wood', 'James', 'Bennett', 'Gray', 'Mendoza', 'Ruiz', 'Hughes', 'Price',
+                              'Alvarez', 'Castillo', 'Sanders', 'Patel', 'Myers', 'Long', 'Ross', 'Foster', 'Jimenez', 'Powell']
         
-        for i in range(50):
+        for i in range(100):
             first_name = customer_first_names[i]
             last_name = customer_last_names[i] 
-            email = f'customer{i+101}@gmail.com'
+            email = f'customer{i+1}@gmail.com'
             phone = f'555-{2000+i:04d}'
             sample_customers.append((first_name, last_name, email, phone))
 
@@ -128,8 +165,8 @@ def add_sample_data():
         
         chef_cuisine_mappings = []
         
-        # Assign cuisines to all 50 chefs (cycling through cuisines and adding 1-3 per chef)
-        for i in range(1, 51):
+        # Assign cuisines to all 100 chefs (cycling through cuisines and adding 1-3 per chef)
+        for i in range(1, 101):
             chef_email = f'chef{i}@gmail.com'
             # Each chef gets 1-3 cuisines based on their index
             num_cuisines = (i % 3) + 1  # 1, 2, or 3 cuisines
@@ -150,7 +187,7 @@ def add_sample_data():
                             INSERT IGNORE INTO chef_cuisines (chef_id, cuisine_id) VALUES (%s, %s)
                         ''', (chef_id, cuisine_ids[cuisine_name]))
 
-        # Add chef service areas (for all 50 chefs)
+        # Add chef service areas (for all 100 chefs) - Extended to 100 major US cities
         cities_data = [
             ('Chicago', 'IL', '60601'), ('New York', 'NY', '10001'), ('Los Angeles', 'CA', '90210'),
             ('Houston', 'TX', '77001'), ('Phoenix', 'AZ', '85001'), ('Philadelphia', 'PA', '19101'),
@@ -168,11 +205,33 @@ def add_sample_data():
             ('Colorado Springs', 'CO', '80901'), ('Raleigh', 'NC', '27601'), ('Miami', 'FL', '33101'),
             ('Virginia Beach', 'VA', '23451'), ('Omaha', 'NE', '68101'), ('Oakland', 'CA', '94601'),
             ('Minneapolis', 'MN', '55401'), ('Tulsa', 'OK', '74101'), ('Arlington', 'TX', '76010'),
-            ('New Orleans', 'LA', '70112'), ('Wichita', 'KS', '67201')
+            ('New Orleans', 'LA', '70112'), ('Wichita', 'KS', '67201'), ('Cleveland', 'OH', '44101'),
+            ('Tampa', 'FL', '33601'), ('Bakersfield', 'CA', '93301'), ('Aurora', 'CO', '80010'),
+            ('Anaheim', 'CA', '92801'), ('Honolulu', 'HI', '96801'), ('Santa Ana', 'CA', '92701'),
+            ('Corpus Christi', 'TX', '78401'), ('Riverside', 'CA', '92501'), ('Lexington', 'KY', '40501'),
+            ('Stockton', 'CA', '95201'), ('Henderson', 'NV', '89001'), ('Saint Paul', 'MN', '55101'),
+            ('St. Louis', 'MO', '63101'), ('Cincinnati', 'OH', '45201'), ('Pittsburgh', 'PA', '15201'),
+            ('Greensboro', 'NC', '27401'), ('Anchorage', 'AK', '99501'), ('Plano', 'TX', '75023'),
+            ('Lincoln', 'NE', '68501'), ('Orlando', 'FL', '32801'), ('Irvine', 'CA', '92602'),
+            ('Newark', 'NJ', '07101'), ('Durham', 'NC', '27701'), ('Chula Vista', 'CA', '91910'),
+            ('Toledo', 'OH', '43601'), ('Fort Wayne', 'IN', '46801'), ('St. Petersburg', 'FL', '33701'),
+            ('Laredo', 'TX', '78040'), ('Jersey City', 'NJ', '07302'), ('Chandler', 'AZ', '85224'),
+            ('Madison', 'WI', '53701'), ('Lubbock', 'TX', '79401'), ('Scottsdale', 'AZ', '85251'),
+            ('Reno', 'NV', '89501'), ('Buffalo', 'NY', '14201'), ('Gilbert', 'AZ', '85234'),
+            ('Glendale', 'AZ', '85301'), ('North Las Vegas', 'NV', '89030'), ('Winston-Salem', 'NC', '27101'),
+            ('Chesapeake', 'VA', '23320'), ('Norfolk', 'VA', '23501'), ('Fremont', 'CA', '94536'),
+            ('Garland', 'TX', '75040'), ('Irving', 'TX', '75061'), ('Hialeah', 'FL', '33010'),
+            ('Richmond', 'VA', '23218'), ('Boise', 'ID', '83702'), ('Spokane', 'WA', '99201'),
+            ('Birmingham', 'AL', '35203'), ('Modesto', 'CA', '95354'), ('Des Moines', 'IA', '50309'),
+            ('Fontana', 'CA', '92335'), ('Rochester', 'NY', '14604'), ('Oxnard', 'CA', '93030'),
+            ('Moreno Valley', 'CA', '92553'), ('Fayetteville', 'NC', '28301'), ('Glendale', 'CA', '91205'),
+            ('Huntington Beach', 'CA', '92648'), ('Akron', 'OH', '44308'), ('Aurora', 'IL', '60505'),
+            ('Mobile', 'AL', '36601'), ('Little Rock', 'AR', '72201'), ('Amarillo', 'TX', '79101'),
+            ('Yonkers', 'NY', '10701'), ('Montgomery', 'AL', '36104'), ('Grand Rapids', 'MI', '49503')
         ]
         
         chef_areas = []
-        for i in range(50):
+        for i in range(100):
             chef_email = f'chef{i+1}@gmail.com'
             city, state, zip_code = cities_data[i % len(cities_data)]
             radius = 10 + (i % 20)  # Service radius between 10-29 miles
@@ -186,10 +245,10 @@ def add_sample_data():
                     VALUES (%s, %s, %s, %s, %s)
                 ''', (chef_id, city, state, zip_code, radius))
 
-        # Add chef pricing (for all 50 chefs)
+        # Add chef pricing (for all 100 chefs)
         chef_pricing = []
         
-        for i in range(50):
+        for i in range(100):
             chef_email = f'chef{i+1}@gmail.com'
             # Vary pricing based on chef index
             base_rate = 45.00 + (i % 40) + (i * 0.5)  # Base rate between $45-85
@@ -207,7 +266,7 @@ def add_sample_data():
                     VALUES (%s, %s, %s, %s, %s)
                 ''', (chef_id, base_rate, produce_cost, min_people, max_people))
 
-        # Add chef availability days (for all 50 chefs)
+        # Add chef availability days (for all 100 chefs)
         days_of_week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
         
         # Common time slots for different chef types
@@ -223,7 +282,7 @@ def add_sample_data():
         
         chef_availability = []
         
-        for i in range(50):
+        for i in range(100):
             chef_email = f'chef{i+1}@gmail.com'
             if chef_email in chefs:
                 chef_id = chefs[chef_email]
@@ -248,7 +307,7 @@ def add_sample_data():
                 VALUES (%s, %s, %s, %s)
             ''', (chef_id, day, start_time, end_time))
 
-        # Add customer addresses (for all 50 customers)
+        # Add customer addresses (for all 100 customers)
         cursor.execute('SELECT id, email FROM customers')
         customers = {email: customer_id for customer_id, email in cursor.fetchall()}
         
@@ -258,18 +317,25 @@ def add_sample_data():
                        'King St', 'Lincoln Ave', 'Madison St', 'Market St', 'Mill St', 'North St', 'Park Ave', 'Ridge Rd',
                        'River St', 'School St', 'South St', 'Spring St', 'State St', 'Union St', 'View Dr', 'Wall St',
                        'Washington Ave', 'Water St', 'West St', 'Wilson Ave', 'Wood St', 'York St', 'Adams St',
-                       'Baker St', 'Clark Ave', 'Davis Dr', 'Evans St', 'Forest Ave']
+                       'Baker St', 'Clark Ave', 'Davis Dr', 'Evans St', 'Forest Ave', 'Green St', 'Harbor Ave', 'Industrial Blvd',
+                       'James St', 'Kennedy Dr', 'Lake View', 'Monument Ave', 'Noble St', 'Ocean Dr', 'Pleasant St',
+                       'Queen St', 'Railroad Ave', 'Sunset Blvd', 'Tower St', 'University Ave', 'Valley Rd', 'Windsor Way',
+                       'Xenia St', 'Yale Ave', 'Zion St', 'Ashford St', 'Beacon Hill', 'Cherry Lane', 'Diamond St',
+                       'Evergreen Ave', 'Fairview Dr', 'Garden Way', 'Heritage St', 'Ivy Lane', 'Jasmine St', 'Kensington Ave',
+                       'Liberty St', 'Magnolia Dr', 'Northern Ave', 'Orchard St', 'Peach Tree', 'Quiet Lane', 'Rosewood Dr',
+                       'Sycamore St', 'Tulip Ave', 'Unity Dr', 'Victoria St', 'Willow Creek', 'Xavier Blvd', 'Yellowstone Ave',
+                       'Zenith Way', 'Alpine St', 'Birch Ave', 'Crescent Dr', 'Dogwood Lane', 'Eagle St', 'Falcon Way']
         
-        for i in range(101, 151):
+        for i in range(1, 101):
             customer_email = f'customer{i}@gmail.com'
             if customer_email in customers:
                 customer_id = customers[customer_email]
                 street_num = 100 + (i % 900)
-                street_name = street_names[(i-101) % len(street_names)]
+                street_name = street_names[(i-1) % len(street_names)]
                 address = f'{street_num} {street_name}'
                 
                 # Use same cities as chefs, cycling through them
-                city, state, zip_code = cities_data[(i-101) % len(cities_data)]
+                city, state, zip_code = cities_data[(i-1) % len(cities_data)]
                 
                 cursor.execute('''
                     INSERT IGNORE INTO customer_addresses (customer_id, address_line1, city, state, zip_code, is_default) 
@@ -279,19 +345,20 @@ def add_sample_data():
         # Add sample favorite chefs relationships (each customer gets 2 favorite chefs)
         print("\nAdding user interface sample data...")
         
-        # Generate favorite relationships: each customer (1-50) likes 2 different chefs
+        # Generate favorite relationships: each customer (1-100) likes 2-3 different chefs
         sample_favorites = []
         
         import random
-        for customer_id in range(1, 51):  # Customer IDs 1-50
+        for customer_id in range(1, 101):  # Customer IDs 1-100
             random.seed(customer_id + 100)  # Consistent random for same customer
-            # Each customer likes 2 random chefs (avoiding their own chef_id if it matches)
+            # Each customer likes 2-3 random chefs
+            num_favorites = 2 + (customer_id % 2)  # 2 or 3 favorites
             favorite_chef_ids = []
             
-            while len(favorite_chef_ids) < 2:
-                chef_id = random.randint(1, 50)  # Chef IDs 1-50
-                # Avoid duplication and don't let customer favorite themselves
-                if chef_id not in favorite_chef_ids and chef_id != customer_id:
+            while len(favorite_chef_ids) < num_favorites:
+                chef_id = random.randint(1, 100)  # Chef IDs 1-100
+                # Avoid duplication
+                if chef_id not in favorite_chef_ids:
                     favorite_chef_ids.append(chef_id)
             
             for chef_id in favorite_chef_ids:
@@ -302,7 +369,7 @@ def add_sample_data():
                 INSERT IGNORE INTO customer_favorite_chefs (customer_id, chef_id)
                 VALUES (%s, %s)
             ''', (customer_id, chef_id))
-        print(f"Added {len(sample_favorites)} favorite chef relationships (2 per customer)")
+        print(f"Added {len(sample_favorites)} favorite chef relationships (2-3 per customer)")
 
         # Add sample booking history
         print("Adding sample booking history...")
@@ -317,16 +384,16 @@ def add_sample_data():
         cuisine_list = ['Italian', 'Chinese', 'Mexican', 'Indian', 'Japanese', 'Thai', 'French']
         statuses = ['completed', 'accepted', 'pending']
         
-        # Add bookings for first 20 customers with various dates
-        for customer_id in range(1, 21):  # Customer IDs 1-20
+        # Add bookings for first 50 customers with various dates
+        for customer_id in range(1, 51):  # Customer IDs 1-50
             # Each customer gets 2-5 bookings
             num_bookings = random.randint(2, 5)
             
             for booking_num in range(num_bookings):
                 random.seed(customer_id * 100 + booking_num)  # Consistent random
                 
-                # Random chef (1-50)
-                chef_id = random.randint(1, 50)
+                # Random chef (1-100)
+                chef_id = random.randint(1, 100)
                 
                 # Random date (mix of past, today, and future)
                 days_offset = random.randint(-30, 60)  # 30 days ago to 60 days future
@@ -371,37 +438,116 @@ def add_sample_data():
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', booking_data)
         
-        print(f"Added {len(sample_bookings)} sample bookings for customers 1-20")
+        print(f"Added {len(sample_bookings)} sample bookings for customers 1-50")
         print("Booking history includes past, present, and future bookings")
 
-        conn.commit()
-        print("\nSample data added successfully!")
-        print("\nAdded 100 users total:")
-        print("   • 50 chefs (chef1@gmail.com to chef50@gmail.com)")
-        print("   • 50 customers (customer101@gmail.com to customer150@gmail.com)")
-        print("   • All users have password: QWEasd123!")
-        print("\nChefs are distributed across 50 major US cities")
-        print("Each chef has 1-3 cuisine specialties")  
-        print("Pricing ranges from $45-85 per person")
-        print("Each chef has 3-6 available days per week with varied time slots")
-        print("All customers have default addresses")
-        print("\nUser Interface Features Ready:")
-        print("   • Favorite chefs: All 50 customers have 2 favorite chefs each (100 relationships total)")
-        print("   • Recent chefs: Based on extensive booking history (customers 1-20 have 2-5 bookings each)")
-        print("   • Nearby chefs: Geographic search using customer addresses")
-        print("   • Booking history: Mix of completed, accepted, and pending bookings across different dates")
-        print("\nYou can now test:")
-        print("• GET /booking/customer/1/favorite-chefs")
-        print("• GET /booking/customer/1/recent-chefs")  
-        print("• GET /booking/customer/1/nearby-chefs")
-        print("• GET /search/customer/1/favorite-chefs")
-        print("• GET /search/customer/1/recent-chefs")
-        print("• GET /search/customer/1/nearby-chefs")
+        # Add description column to chefs table first
+        try:
+            query = "ALTER TABLE chefs ADD COLUMN description VARCHAR(500)"
+            cursor.execute(query)
+            conn.commit()
+            print("COLUMN 'description' ADDED TO TABLE 'chefs'")
+        except mysql.connector.Error as e:
+            if "Duplicate column name" in str(e):
+                print("COLUMN 'description' ALREADY EXISTS IN TABLE 'chefs'")
+            else:
+                print(f"Error adding description column: {e}")
 
-        query = "alter table chefs add description varchar(500)"
-        cursor.execute(query)
         conn.commit()
-        print("COLUMN 'description' ADDED TO TABLE 'chefs'")
+ 
+
+        # Add geographic coordinates for chef addresses
+        print("\nAdding geographic coordinates for chefs...")
+        
+        # US city coordinates data (lat, lng for major cities)
+        city_coordinates = {
+            'Chicago': (41.8781, -87.6298), 'New York': (40.7831, -73.9712), 'Los Angeles': (34.0549, -118.2426),
+            'Houston': (29.7604, -95.3698), 'Phoenix': (33.4484, -112.0740), 'Philadelphia': (39.9526, -75.1652),
+            'San Antonio': (29.4241, -98.4936), 'San Diego': (32.7157, -117.1611), 'Dallas': (32.7767, -96.7970),
+            'San Jose': (37.3382, -121.8863), 'Austin': (30.2672, -97.7431), 'Jacksonville': (30.3322, -81.6557),
+            'Fort Worth': (32.7555, -97.3308), 'Columbus': (39.9612, -82.9988), 'Charlotte': (35.2271, -80.8431),
+            'San Francisco': (37.7749, -122.4194), 'Indianapolis': (39.7684, -86.1581), 'Seattle': (47.6062, -122.3321),
+            'Denver': (39.7392, -104.9903), 'Washington': (38.9072, -77.0369), 'Boston': (42.3601, -71.0589),
+            'El Paso': (31.7619, -106.4850), 'Nashville': (36.1627, -86.7816), 'Detroit': (42.3314, -83.0458),
+            'Oklahoma City': (35.4676, -97.5164), 'Portland': (45.5152, -122.6784), 'Las Vegas': (36.1699, -115.1398),
+            'Memphis': (35.1495, -90.0490), 'Louisville': (38.2527, -85.7585), 'Baltimore': (39.2904, -76.6122),
+            'Milwaukee': (43.0389, -87.9065), 'Albuquerque': (35.0844, -106.6504), 'Tucson': (32.2226, -110.9747),
+            'Fresno': (36.7378, -119.7871), 'Sacramento': (38.5816, -121.4944), 'Mesa': (33.4152, -111.8315),
+            'Kansas City': (39.0997, -94.5786), 'Atlanta': (33.7490, -84.3880), 'Long Beach': (33.7701, -118.1937),
+            'Colorado Springs': (38.8339, -104.8214), 'Raleigh': (35.7796, -78.6382), 'Miami': (25.7617, -80.1918),
+            'Virginia Beach': (36.8529, -75.9780), 'Omaha': (41.2565, -95.9345), 'Oakland': (37.8044, -122.2712),
+            'Minneapolis': (44.9778, -93.2650), 'Tulsa': (36.1540, -95.9928), 'Arlington': (32.7357, -97.1081),
+            'New Orleans': (29.9511, -90.0715), 'Wichita': (37.6872, -97.3301), 'Cleveland': (41.4993, -81.6944),
+            'Tampa': (27.9506, -82.4572), 'Bakersfield': (35.3733, -119.0187), 'Aurora': (39.7294, -104.8319),
+            'Anaheim': (33.8366, -117.9143), 'Honolulu': (21.3099, -157.8581), 'Santa Ana': (33.7455, -117.8677),
+            'Corpus Christi': (27.8006, -97.3964), 'Riverside': (33.9533, -117.3961), 'Lexington': (38.0406, -84.5037),
+            'Stockton': (37.9577, -121.2908), 'Henderson': (36.0397, -114.9817), 'Saint Paul': (44.9537, -93.0900),
+            'St. Louis': (38.6270, -90.1994), 'Cincinnati': (39.1031, -84.5120), 'Pittsburgh': (40.4406, -79.9959),
+            'Greensboro': (36.0726, -79.7920), 'Anchorage': (61.2181, -149.9003), 'Plano': (33.0198, -96.6989),
+            'Lincoln': (40.8136, -96.7026), 'Orlando': (28.5383, -81.3792), 'Irvine': (33.6846, -117.8265),
+            'Newark': (40.7357, -74.1724), 'Durham': (35.9940, -78.8986), 'Chula Vista': (32.6401, -117.0842),
+            'Toledo': (41.6528, -83.5379), 'Fort Wayne': (41.0793, -85.1394), 'St. Petersburg': (27.7676, -82.6403),
+            'Laredo': (27.5306, -99.4803), 'Jersey City': (40.7178, -74.0431), 'Chandler': (33.3062, -111.8413),
+            'Madison': (43.0731, -89.4012), 'Lubbock': (33.5779, -101.8552), 'Scottsdale': (33.4942, -111.9261),
+            'Reno': (39.5296, -119.8138), 'Buffalo': (42.8864, -78.8784), 'Gilbert': (33.3528, -111.7890),
+            'Glendale': (33.5387, -112.1860), 'North Las Vegas': (36.1989, -115.1175), 'Winston-Salem': (36.0999, -80.2442),
+            'Chesapeake': (36.7682, -76.2875), 'Norfolk': (36.8468, -76.2852), 'Fremont': (37.5483, -121.9886),
+            'Garland': (32.9126, -96.6389), 'Irving': (32.8140, -96.9489), 'Hialeah': (25.8576, -80.2781),
+            'Richmond': (37.5407, -77.4360), 'Boise': (43.6150, -116.2023), 'Spokane': (47.6587, -117.4260),
+            'Birmingham': (33.5207, -86.8025), 'Modesto': (37.6391, -120.9969), 'Des Moines': (41.5868, -93.6250),
+            'Fontana': (34.0922, -117.4350), 'Rochester': (43.1566, -77.6088), 'Oxnard': (34.1975, -119.1771),
+            'Moreno Valley': (33.9425, -117.2297), 'Fayetteville': (35.0527, -78.8784), 'Huntington Beach': (33.6595, -117.9988),
+            'Akron': (41.0814, -81.5190), 'Mobile': (30.6954, -88.0399), 'Little Rock': (34.7465, -92.2896),
+            'Amarillo': (35.2220, -101.8313), 'Yonkers': (40.9312, -73.8988), 'Montgomery': (32.3668, -86.3000),
+            'Grand Rapids': (42.9634, -85.6681)
+        }
+        
+        # Get all chefs with their service areas
+        cursor.execute('''
+            SELECT c.id, c.email, sa.city, sa.state 
+            FROM chefs c 
+            JOIN chef_service_areas sa ON c.id = sa.chef_id
+        ''')
+        chef_service_areas = cursor.fetchall()
+        
+        # Insert chef addresses with coordinates
+        for chef_id, chef_email, city, state in chef_service_areas:
+            if city in city_coordinates:
+                lat, lng = city_coordinates[city]
+                
+                # Add some variation to coordinates (within a few miles of city center)
+                import random
+                random.seed(chef_id)  # Consistent random for same chef
+                lat_variation = random.uniform(-0.05, 0.05)  # About ±3 miles
+                lng_variation = random.uniform(-0.05, 0.05)
+                
+                final_lat = lat + lat_variation
+                final_lng = lng + lng_variation
+                
+                # Generate street address
+                street_num = 100 + (chef_id % 900)
+                street_names = ['Chef Way', 'Culinary Blvd', 'Kitchen St', 'Gourmet Ave', 'Recipe Rd', 
+                              'Flavor St', 'Spice Lane', 'Taste Ave', 'Cook St', 'Food Dr']
+                street_name = street_names[chef_id % len(street_names)]
+                address = f'{street_num} {street_name}'
+                
+                cursor.execute('''
+                    INSERT IGNORE INTO chef_addresses (chef_id, address_line1, city, state, latitude, longitude, is_primary) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ''', (chef_id, address, city, state, final_lat, final_lng, True))
+        
+        print(f"Added geographic coordinates for {len(chef_service_areas)} chefs")
+
+        try:
+            query = "ALTER TABLE chefs ADD COLUMN description VARCHAR(500)"
+            cursor.execute(query)
+            conn.commit()
+            print("COLUMN 'description' ADDED TO TABLE 'chefs'")
+        except mysql.connector.Error as e:
+            if "Duplicate column name" in str(e):
+                print("COLUMN 'description' ALREADY EXISTS IN TABLE 'chefs'")
+            else:
+                print(f"Error adding description column: {e}")
 
     except Exception as e:
         print(f"Error adding sample data: {e}")
