@@ -13,6 +13,17 @@ export default function LocationInput({
     const [addressInput, setAddressInput] = useState(formData.locationAddress || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [selection, setSelection] = useState({ start: 0, end: 0 });
+
+    useEffect(() => {
+        getCurrentLocation();
+    }, []);
+    
+    useEffect(() => {
+        if (formData.locationAddress) {
+            setAddressInput(formData.locationAddress);
+        }
+    }, [formData.locationAddress]);
 
     const getCurrentLocation = async () => {
         setLoading(true);
@@ -34,12 +45,11 @@ export default function LocationInput({
 
             const primaryAddress = reverseGeo[0];
 
-            const streetAddress = primaryAddress.name || primaryAddress.street || '';
-
             const addressString = `${primaryAddress.name} ${primaryAddress.street}, ${primaryAddress.city}, ${primaryAddress.region} ${primaryAddress.postalCode}`;
 
             setAddressInput(addressString);
             onLocationSelect(latitude, longitude, addressString);
+            setSelection({ start: 0, end: 0 }); 
 
         } catch (err) {
             console.error("GPS Error:", err);
@@ -47,6 +57,7 @@ export default function LocationInput({
             Alert.alert('GPS Error', "Failed to retrieve your current location.");
         } finally {
             setLoading(false);
+            geocodeAddress();
         }
     };
 
@@ -80,33 +91,24 @@ export default function LocationInput({
         }
     };
 
-    useEffect(() => {
-        if (formData.locationAddress) {
-            setAddressInput(formData.locationAddress);
-        }
-    }, [formData.locationAddress]);
-
     return (
-        <View className="p-4 bg-white rounded-xl shadow-md flex-row w-full items-center justify-center">
+        <View className="p-4 pt-2 pb-2 bg-olive-100 rounded-xl shadow-md flex-row w-full items-center justify-center shadow-sm shadow-olive-500">
             <Button
                 icon={loading ? "sync" : "location"}
                 onPress={getCurrentLocation}
                 disabled={loading}
-                customClasses='rounded-lg w-14 h-14 mr-3'
+                customClasses='rounded-lg w-12 h-12 m-1'
+                style='accent'
             />
-
             <Input
                 placeholder="Street, City, State, Zip"
                 value={addressInput}
                 onChangeText={setAddressInput}
-                error={error}
-            />
-
-            <Button
-                icon="check-circle"
-                onPress={geocodeAddress}
-                disabled={loading}
-                customClasses='rounded-lg w-14 h-14 ml-3'
+                //error={error}
+                containerClasses='w-[88%]'
+                onBlur={geocodeAddress}
+                selection={selection}
+                onSelectionChange={({ nativeEvent: { selection } }) => setSelection(selection)}
             />
         </View>
     );

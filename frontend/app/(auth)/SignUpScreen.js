@@ -1,10 +1,10 @@
-import { Picker } from "@react-native-picker/picker";
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Card from '../components/Card';
+import CustomPicker from "../components/Picker";
 import getEnvVars from '../../config';
 
 const validatePassword = (password) => {
@@ -64,7 +64,7 @@ export default function Signup() {
   const { apiUrl } = getEnvVars();
 
   const US_STATES = [
-    { label: "Select a state...", value: "" },
+    { label: "State", value: "" },
     { label: "Alabama", value: "AL" },
     { label: "Alaska", value: "AK" },
     { label: "Arizona", value: "AZ" },
@@ -348,26 +348,16 @@ export default function Signup() {
             value={city}
             onChangeText={(text) => setCity(filterAlphabeticCharacters(text))}
           />
-
+          
           <View className="flex-row justify-between">
-            <View className="flex-1 mr-3">
-              <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">State</Text>
-              <View
-                className="border border-olive-100 bg-white rounded-full py-0 mb-2"
-                style={{ paddingHorizontal: 0 }}
-              >
-                <Picker
-                  selectedValue={state}
-                  onValueChange={(val) => setState(val)}
-                  prompt="Select a state"
-                  style={{ color: '#3f3f1f' }}
-                >
-                  {US_STATES.map((s) => (
-                    <Picker.Item key={s.value} label={s.label} value={s.value} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
+            
+            <CustomPicker
+              label="State"
+              prompt="Select a State"
+              selectedValue={state}
+              onValueChange={(v) => setState(v)}
+              items={US_STATES}
+            />
 
             <View className="flex-1 ml-3">
               <Input

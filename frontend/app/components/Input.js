@@ -17,7 +17,7 @@ export default function Input({
         setIsPasswordVisible(prev => !prev);
     };
 
-    const baseClasses = "border border-olive-200 bg-white rounded-full py-3 px-4 text-base text-olive-500 focus:border-olive-300";
+    const baseClasses = "border border-olive-200 bg-white rounded-full py-3 px-4 text-base text-olive-500 focus:border-olive-300 shadow-sm shadow-olive-500";
     const finalInputClasses = isTextArea
         ? `${baseClasses.replace('rounded-full', 'rounded-lg')} h-24 text-top`
         : `${baseClasses} rounded-full`;
@@ -39,7 +39,7 @@ export default function Input({
                 placeholderTextColor="#6b7280" // base-200
                 style={isTextArea ? { textAlignVertical: 'top' } : {}}
                 secureTextEntry={finalSecureTextEntry} 
-                disabled={disabled}
+                editable={!disabled}
                 {...props}
             />
 
