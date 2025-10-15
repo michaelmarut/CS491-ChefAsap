@@ -76,10 +76,9 @@ export default function ProfileScreen() {
             <View className="flex-1 justify-center items-center bg-base-100">
                 <Text className="text-lg text-red-500">Error: {error}</Text>
                 <Button
-                    title="Retry"
-                    variant="primary"
-                    onPress={() => setUserId(userId)}
-                    customClasses="mt-5 w-1/2"
+                    title="Log out"
+                    style="primary"
+                    onPress={logout}
                 />
             </View>
         );
@@ -88,12 +87,7 @@ export default function ProfileScreen() {
     if (userType === "customer") {
         return (
             <ScrollView className="flex-1 bg-base-100 pt-1">
-                {/* Profile Settings Button in top-right corner */}
-                <Button
-                    href="/ProfileSettings"
-                    icon="gear"
-                    customClasses="absolute top-14 right-10 z-10 p-3 rounded-full pl-5"
-                />
+                
 
                 <ScrollView className="p-5 mt-8">
                     <Card
@@ -107,7 +101,13 @@ export default function ProfileScreen() {
                         <Text className="text-lg text-wrap text-olive-400">{userType}</Text>
                         <Text className="text-lg text-wrap text-olive-400">Joined: {profileData.member_since} </Text>
                         
-                        {/*<View className="h-24" />*/}
+                        {/* Profile Settings Button in top-right corner */}
+                        <Button
+                            href="/ProfileSettings"
+                            icon="gear"
+                            style="accent"
+                            customClasses="absolute -top-[54px] right-2 z-10 p-3 rounded-full pl-3"
+                        />
                     </Card>
                     <Card
                         title="Help & Policies"
@@ -121,7 +121,6 @@ export default function ProfileScreen() {
                         title="Log out"
                         style="primary"
                         onPress={logout}
-                        customClasses="bottom-2 rounded-full flex-1 justify-end items-center"
                     />
                 </ScrollView>
                 
