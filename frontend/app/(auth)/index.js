@@ -21,12 +21,14 @@ export default function LandingScreen() {
             title="Sign Up"
             style="primary"
             href="/SignUpScreen"
+            customClasses="min-w-[50%]"
           />
 
           <Button
             title="Log In"
             style="secondary"
             href="/SignInScreen"
+            customClasses="min-w-[50%]"
           />
         </View>
 
