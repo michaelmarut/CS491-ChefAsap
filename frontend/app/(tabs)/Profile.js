@@ -131,13 +131,6 @@ export default function ProfileScreen() {
     if (userType === "chef") {
          return (
             <ScrollView className="flex-1 bg-base-100 pt-1">
-                {/* Profile Settings Button in top-right corner */}
-                <Button
-                    href="/ProfileSettings"
-                    icon="gear"
-                    customClasses="absolute top-14 right-10 z-10 p-3 rounded-full pl-5"
-                />
-
                 <ScrollView className="p-5 mt-8">
                     <Card
                         title="Profile"
@@ -152,7 +145,13 @@ export default function ProfileScreen() {
                         <Text className="text-lg text-wrap text-olive-400">Rating: 5/5</Text>
                         <Text className="text-lg text-wrap text-olive-400">Gender: F (private)</Text>
 
-                        
+                         {/* Profile Settings Button in top-right corner */}
+                         <Button
+                             href="/ProfileSettings"
+                             icon="gear"
+                             style="accent"
+                             customClasses="absolute -top-[54px] right-2 z-10 p-3 rounded-full pl-3"
+                         />
                     </Card>
 
                     <Card
@@ -182,7 +181,6 @@ export default function ProfileScreen() {
                         title="Log out"
                         style="primary"
                         onPress={logout}
-                        customClasses="bottom-2 rounded-full flex-1 justify-end items-center"
                     />
                 </ScrollView>
                 

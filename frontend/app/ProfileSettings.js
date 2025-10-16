@@ -99,8 +99,8 @@ export default function ProfileSettings() {
   const { apiUrl } = getEnvVars();
 
   // Build API URL using profileId from context and config
-  const API_URL = `${apiUrl}/profile/${userType}/${profileId}`;
-
+  const privateQuery = userType === 'chef' ? '?private=true' : ''; 
+  const API_URL = `${apiUrl}/profile/${userType}/${profileId}${privateQuery}`;
   // Fetch profile data from backend when component mounts or profileId changes
   useEffect(() => {
     if (!profileId) return;
@@ -241,7 +241,10 @@ export default function ProfileSettings() {
                 </Text>
               }
             </TouchableOpacity>
+              
           </Card>
+          {/*<Text>PROFILE {JSON.stringify(profile)}</Text>*/}
+
           {/* Editable fields */}
           {editing ? (
             <>
@@ -371,7 +374,7 @@ export default function ProfileSettings() {
                   <Text className="font-semibold">City: </Text>{profile.full_address?.city}
                 </Text>
                 <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">State: </Text>{US_STATES.find(state => state.value === profile.full_address?.state).label}
+                    <Text className="font-semibold">State: </Text>{US_STATES.find(state => state.value === profile.full_address?.state).label}
                 </Text>
                 <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
                   <Text className="font-semibold">Zip Code: </Text>{profile.full_address?.zip_code}
