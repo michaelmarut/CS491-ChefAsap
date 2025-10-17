@@ -715,6 +715,28 @@ def init_db():
             )
         ''')
 
+        # Customer search location history - stores recent locations used for finding nearby chefs
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customer_search_locations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                customer_id INT NOT NULL,
+                location_name VARCHAR(200),
+                address_line1 VARCHAR(100),
+                address_line2 VARCHAR(100),
+                city VARCHAR(50) NOT NULL,
+                state VARCHAR(2) NOT NULL,
+                zip_code VARCHAR(10),
+                latitude DECIMAL(10, 8) NOT NULL,
+                longitude DECIMAL(11, 8) NOT NULL,
+                last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                usage_count INT DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                INDEX idx_customer_last_used (customer_id, last_used_at DESC),
+                INDEX idx_location (latitude, longitude)
+            )
+        ''')
+
         # Add foreign key constraints for users table after all tables are created
         try:
             cursor.execute('''
