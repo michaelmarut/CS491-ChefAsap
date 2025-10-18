@@ -60,8 +60,8 @@ export default function SearchBarComponent({ formData, setFormData, handleSearch
                 />
                 <Stepper
                     label="Search Radius"
-                    value={formData.searchRadius}
-                    onValueChange={(newValue) => setFormData(prev => ({ ...prev, searchRadius: newValue }))}
+                    value={formData.radius}
+                    onValueChange={(newValue) => setFormData(prev => ({ ...prev, radius: newValue }))}
                     min={5}
                     max={30}
                     step={5}
