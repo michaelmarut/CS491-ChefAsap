@@ -19,7 +19,10 @@ def search_nearby_chefs():
         radius = request.args.get('radius', 30, type=float)
         
         # Get other search parameters
+        chef_name = request.args.get('chef_name', '').strip()
         cuisine = request.args.get('cuisine', '').strip()
+        gender = request.args.get('gender', '').strip().lower()
+        meal_timing = request.args.get('meal_timing', '').strip().lower()  # breakfast, lunch, dinner, or '' for all
         min_rating = request.args.get('min_rating', type=float)
         max_price = request.args.get('max_price', type=float)
         sort_by = request.args.get('sort_by', 'distance').lower()  # distance, rating, price, reviews
@@ -36,6 +39,9 @@ def search_nearby_chefs():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
 
+        # Start with base parameters for distance calculation
+        params = [customer_lat, customer_lon, customer_lat]
+
         # Build the complete SQL query with all parameters properly managed
         query = f'''
             SELECT 
@@ -45,6 +51,7 @@ def search_nearby_chefs():
                 CONCAT(c.first_name, ' ', c.last_name) as full_name,
                 c.email,
                 c.phone,
+                c.gender,
                 
                 -- Distance calculation (Haversine formula)
                 (3959 * acos(cos(radians(%s)) * cos(radians(ca.latitude)) * 
@@ -78,17 +85,40 @@ def search_nearby_chefs():
             LEFT JOIN chef_cuisines cc ON c.id = cc.chef_id
             LEFT JOIN cuisine_types ct ON cc.cuisine_id = ct.id
             LEFT JOIN chef_rating_summary crs ON c.id = crs.chef_id
+        '''
+        
+        # Add meal timing JOIN if filtering by meal time
+        if meal_timing and meal_timing in ['breakfast', 'lunch', 'dinner']:
+            query += '''
+            INNER JOIN chef_meal_availability cma ON c.id = cma.chef_id 
+                AND cma.meal_type = %s AND cma.is_available = TRUE
+            '''
+            params.append(meal_timing)
+        
+        query += '''
             WHERE ca.latitude IS NOT NULL 
             AND ca.longitude IS NOT NULL
-            GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone,
+        '''
+        
+        # Add chef name filter to WHERE clause (before GROUP BY)
+        if chef_name:
+            query += ' AND (c.first_name LIKE %s OR c.last_name LIKE %s OR CONCAT(c.first_name, " ", c.last_name) LIKE %s)'
+            search_pattern = f'%{chef_name}%'
+            params.extend([search_pattern, search_pattern, search_pattern])
+        
+        # Add gender filter to WHERE clause
+        if gender and gender in ['male', 'female']:
+            query += ' AND c.gender = %s'
+            params.append(gender)
+        
+        query += '''
+            GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone, c.gender,
                      cp.base_rate_per_person, cp.minimum_people, cp.maximum_people, cp.produce_supply_extra_cost,
                      ca.address_line1, ca.city, ca.state, ca.zip_code, ca.latitude, ca.longitude,
                      crs.average_rating, crs.total_reviews
-            HAVING distance_miles <= {radius}
+            HAVING distance_miles <= %s
         '''
-
-        # Start with base parameters for distance calculation only
-        params = [customer_lat, customer_lon, customer_lat]
+        params.append(radius)
         
         # Add additional HAVING conditions
         if cuisine:
@@ -136,6 +166,7 @@ def search_nearby_chefs():
                 'full_name': chef['full_name'],
                 'email': chef['email'],
                 'phone': chef['phone'],
+                'gender': chef['gender'],
                 
                 # Distance information
                 'distance_miles': round(float(chef['distance_miles']), 1) if chef['distance_miles'] else None,
@@ -179,7 +210,10 @@ def search_nearby_chefs():
             'search_radius_miles': radius,
             'total_found': len(results),
             'search_params': {
+                'chef_name': chef_name or None,
                 'cuisine': cuisine or None,
+                'gender': gender or None,
+                'meal_timing': meal_timing or None,
                 'min_rating': min_rating,
                 'max_price': max_price,
                 'radius': radius,
@@ -221,7 +255,7 @@ def get_available_cuisines():
             HAVING chef_count > 0
             ORDER BY chef_count DESC, ct.name
         ''')
-        cuisines = cursor.fetchall()
+        cuisines = cursor.fetchall()   
 
         return jsonify({
             'success': True,

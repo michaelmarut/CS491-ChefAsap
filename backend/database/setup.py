@@ -167,6 +167,21 @@ def init_db():
             )
         ''')
 
+        # Chef meal timing availability (breakfast, lunch, dinner)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_meal_availability (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                meal_type ENUM('breakfast', 'lunch', 'dinner') NOT NULL,
+                is_available BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_chef_meal (chef_id, meal_type),
+                INDEX idx_chef_meal (chef_id, meal_type, is_available)
+            )
+        ''')
+
         # Customers
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS customers (
@@ -374,6 +389,19 @@ def init_db():
             )
         ''')
         
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_rating_summary (
+                chef_id INT PRIMARY KEY,
+                average_rating DECIMAL(3,2),
+                total_reviews INT DEFAULT 0,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                INDEX idx_average_rating (average_rating DESC),
+                INDEX idx_total_reviews (total_reviews DESC)
+            )
+        ''')
+
+        # Chef rating summary table - pre-calculated average ratings for performance
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS chef_rating_summary (
                 chef_id INT PRIMARY KEY,
