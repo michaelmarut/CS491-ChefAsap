@@ -1,19 +1,17 @@
-import { ScrollView, Text, TouchableOpacity, View, Image } from "react-native";
-import Button from "../components/Button";
-import { useAuth } from "../context/AuthContext";
-import getEnvVars from "../../config";
-import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
-import { Alert } from "react-native";
+import { ScrollView, Text, View, Alert } from "react-native";
+
+import getEnvVars from "../../config";
+import { useAuth } from "../context/AuthContext";
+
 import LoadingIcon from "../components/LoadingIcon";
+import Button from "../components/Button";
 import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function ProfileScreen() {
     const { logout, token, userType, userId, profileId } = useAuth();
     const { apiUrl } = getEnvVars();
-    const navigation = useNavigation();
 
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);

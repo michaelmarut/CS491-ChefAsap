@@ -32,7 +32,7 @@ export default function Card({
     const cardClasses = "bg-white rounded-xl shadow-sm shadow-olive-500 mb-4 p-0 overflow-hidden " + customClasses;
     const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-olive-100" + customHeader;
     const contentWrapperClasses = "p-4 " + customCard;
-    const footerClasses = "p-4";
+    const footerClasses = "p-4 pt-0";
 
     const HeaderContent = (
         <View className="flex-row items-center">
@@ -82,6 +82,7 @@ export default function Card({
                         style={footerButtonProps.style || 'accent'}
                         onPress={footerButtonProps.onPress}
                         href={footerButtonProps.href}
+                        icon={footerButtonProps.icon}
                         customClasses="w-full"
                     />
                 </View>

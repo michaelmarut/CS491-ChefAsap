@@ -236,7 +236,7 @@ export default function ProfileSettings() {
             <TouchableOpacity className="items-center" onPress={pickImage} disabled={uploading || !editing}>
               <ProfilePicture photoUrl={profile.photo_url} firstName={profile?.first_name} lastName={profile?.last_name} />
               {editing &&
-                <Text className="text-base text-olive-400 underline" style={{ textAlign: "left" }}>
+                <Text className="text-base text-olive-400 underline pt-2" style={{ textAlign: "left" }}>
                   {uploading ? "Uploading..." : "Tap to change profile picture"}
                 </Text>
               }

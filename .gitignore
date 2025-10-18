@@ -19,5 +19,3 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
-
-backend/database/config.py
