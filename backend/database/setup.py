@@ -373,6 +373,18 @@ def init_db():
                 INDEX idx_booking_rating (booking_id)
             )
         ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_rating_summary (
+                chef_id INT PRIMARY KEY,
+                average_rating DECIMAL(3,2),
+                total_reviews INT DEFAULT 0,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                INDEX idx_average_rating (average_rating DESC),
+                INDEX idx_total_reviews (total_reviews DESC)
+            )
+        ''')
 
         # Customer ratings table - chefs rate customers after completed appointments
         cursor.execute('''

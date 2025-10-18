@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Link } from 'expo-router';
 import { Octicons } from "@expo/vector-icons";
 
@@ -46,6 +46,7 @@ export default function Button({
     customTextClasses = "", // custom text style overrides
     disabled = false, // disable button interaction
     icon = "", // optional Octicons icon name
+    iconGap = 5, // if title and icon, this is space between
 }) {
     const styles = BUTTON_STYLES[style] || BUTTON_STYLES.primary;
     const buttonClass = BUTTON_CLASSES[base] || BUTTON_CLASSES.basic;
@@ -54,19 +55,21 @@ export default function Button({
         <TouchableOpacity
             onPress={onPress}
             disabled={disabled}
-            className={`${styles.button} ${buttonClass.button} items-center content-center flex-row justify-center ${customClasses}`}
+            className={`${styles.button} ${buttonClass.button} items-center flex-row justify-center ${customClasses}`}
         >
-            {icon ? (
-                <Octicons
-                    name={icon}
-                    size={16}
-                    color={styles.icon}
-                />
-            ) : null}
+            
             {title ? (
                 <Text className={`${styles.text} ${buttonClass.text} ${customTextClasses}`}>
                     {title}
                 </Text>
+            ) : null}
+            {title && icon ? <View className={`w-[${iconGap}px]`}/> : null}
+            {icon ? (
+                <Octicons
+                    name={icon}
+                    size={title ? 24 : 16}
+                    color={styles.icon}
+                />
             ) : null}
         </TouchableOpacity>
     );
