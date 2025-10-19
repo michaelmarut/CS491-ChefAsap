@@ -228,9 +228,8 @@ export default function ProfileSettings() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView className="flex-1 bg-base-100 p-5">
+      <ScrollView className="flex-1 bg-base-100 p-5 pt-12">
         {/* Profile title */}
-        <View className="rounded-2xl p-4 items-center mt-8">
           {/* Profile Picture Display */}
           <Card title="Profile" headerIcon="gear" customClasses="w-full">
             <TouchableOpacity className="items-center" onPress={pickImage} disabled={uploading || !editing}>
@@ -402,8 +401,7 @@ export default function ProfileSettings() {
               />
             </>
           )}
-        </View>
-        <View className="h-16" />
+        <View className="h-24" />
       </ScrollView>
     </>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import getEnvVars from "../../config";
 import { useAuth } from "../context/AuthContext";
 
@@ -77,8 +77,6 @@ export default function SearchScreen() {
 
             const url = `${apiUrl}/search/chefs/nearby?${searchParams.toString()}`;
 
-            console.log("SEARCHING");
-
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -87,9 +85,7 @@ export default function SearchScreen() {
                 },
             });
 
-            console.log("RESPONSE ", JSON.stringify(response))
             const data = await response.json();
-            console.log("data ", JSON.stringify(data));
 
             if (response.ok) {
                 alert("OK" + JSON.stringify(data));
@@ -113,8 +109,7 @@ export default function SearchScreen() {
     };
 
     return (
-        <ScrollView className="flex-1 bg-base-100 p-5 gap-y-12 pt-24">
-
+        <ScrollView className="flex-1 bg-base-100 p-5 pt-12">
             <SearchBarComponent
                 formData={formData}
                 setFormData={setFormData}

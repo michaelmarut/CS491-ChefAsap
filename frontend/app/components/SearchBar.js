@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, ScrollView, TouchableOpacity, Keyboard } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Button from './Button';
 import Input from './Input';
 import CustomPicker from './Picker';
 import Stepper from './Stepper';
-import Octicons from '@expo/vector-icons/Octicons';
 import LocationInput from './LocationInput';
 
 //mock history
