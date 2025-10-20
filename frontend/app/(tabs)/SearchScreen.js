@@ -59,6 +59,7 @@ export default function SearchScreen() {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchResults, setSearchResults] = useState([]);
 
     const fetchSearchResults = async () => {
         setLoading(true);
@@ -73,7 +74,7 @@ export default function SearchScreen() {
             ];
 
             const otherFutureParams = [
-                'searchQuery', 'searchType', 'timing'
+                'searchQuery', 'searchType', 'gender', 'timing', 'cuisine'
             ];
 
             const allRelevantParams = [...apiParams, ...otherFutureParams];
@@ -88,7 +89,10 @@ export default function SearchScreen() {
             }
 
             if (!formData.latitude || !formData.longitude) {
-                throw new Error('Location is required for search.');
+                setError('Location is required for search. Please enable GPS or enter an address manually.');
+                alert('Location Required: Please enable GPS or enter an address manually to search for nearby chefs.');
+                setLoading(false);
+                return;
             }
 
             const url = `${apiUrl}/search/chefs/nearby?${searchParams.toString()}`;
@@ -104,7 +108,8 @@ export default function SearchScreen() {
             const data = await response.json();
 
             if (response.ok) {
-                alert("OK" + JSON.stringify(data));
+                setSearchResults(data.chefs || []);
+                setError(null);
             } else {
                 setError(data.error || 'Failed to load results.');
                 alert('Error' + (data.error || 'Failed to load results.'));
@@ -120,7 +125,6 @@ export default function SearchScreen() {
     };
 
     const handleSearch = () => {
-        console.log("Initiating search with data:", formData);
         fetchSearchResults();
     };
 
@@ -160,7 +164,7 @@ export default function SearchScreen() {
                 isScrollable={true}
                 scrollDirection="vertical"
             >
-                {SEARCH_RESULTS.map((result, index) =>
+                {searchResults.map((result, index) =>
                     <SearchResultCard
                         key={index}
                         chef_id={result["chef_id"]}

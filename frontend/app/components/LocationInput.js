@@ -35,7 +35,11 @@ export default function LocationInput({
                 return;
             }
 
-            let location = await Location.getCurrentPositionAsync({});
+            let location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+                timeout: 10000,
+                maximumAge: 10000
+            });
             const { latitude, longitude } = location.coords;
 
             let reverseGeo = await Location.reverseGeocodeAsync({
@@ -49,7 +53,7 @@ export default function LocationInput({
 
             setAddressInput(addressString);
             onLocationSelect(latitude, longitude, addressString);
-            setSelection({ start: 0, end: 0 }); 
+            setSelection({ start: 0, end: 0 });
 
         } catch (err) {
             console.error("GPS Error:", err);

@@ -33,6 +33,10 @@ def add_sample_data():
         # Add 100 customers (customer1@gmail.com to customer100@gmail.com) 
         for i in range(1, 101):
             sample_users.append((f'customer{i}@gmail.com', 'QWEasd123!', 'customer'))
+        
+        # Add 10 new users in New York (nyuser1@gmail.com to nyuser10@gmail.com)
+        for i in range(1, 11):
+            sample_users.append((f'nyuser{i}@gmail.com', 'QWEasd123!', 'customer'))
 
         for email, password, user_type in sample_users:
             hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -128,6 +132,24 @@ def add_sample_data():
             sample_customers.append((first_name, last_name, email, phone))
 
         for first_name, last_name, email, phone in sample_customers:
+            cursor.execute('''
+                INSERT IGNORE INTO customers (first_name, last_name, email, phone) 
+                VALUES (%s, %s, %s, %s)
+            ''', (first_name, last_name, email, phone))
+
+        # Add 10 New York users
+        ny_users = []
+        ny_first_names = ['Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn', 'Skyler', 'Cameron']
+        ny_last_names = ['Chen', 'Rodriguez', 'Johnson', 'Williams', 'Martinez', 'Lee', 'Kim', 'Patel', 'Garcia', 'Anderson']
+        
+        for i in range(10):
+            first_name = ny_first_names[i]
+            last_name = ny_last_names[i]
+            email = f'nyuser{i+1}@gmail.com'
+            phone = f'212-{3000+i:04d}'
+            ny_users.append((first_name, last_name, email, phone))
+
+        for first_name, last_name, email, phone in ny_users:
             cursor.execute('''
                 INSERT IGNORE INTO customers (first_name, last_name, email, phone) 
                 VALUES (%s, %s, %s, %s)
@@ -342,21 +364,46 @@ def add_sample_data():
                     VALUES (%s, %s, %s, %s, %s, %s)
                 ''', (customer_id, address, city, state, zip_code, True))
 
+        # Add addresses for 10 New York users
+        print("Adding addresses for New York users...")
+        ny_streets = ['Broadway', '5th Avenue', 'Park Avenue', 'Madison Avenue', 'Lexington Avenue', 
+                     'Amsterdam Avenue', 'Columbus Avenue', 'West End Avenue', 'Riverside Drive', 'Central Park West']
+        
+        for i in range(1, 11):
+            ny_email = f'nyuser{i}@gmail.com'
+            if ny_email in customers:
+                customer_id = customers[ny_email]
+                street_num = 100 + (i * 50)
+                street_name = ny_streets[i-1]
+                address = f'{street_num} {street_name}'
+                
+                cursor.execute('''
+                    INSERT IGNORE INTO customer_addresses (customer_id, address_line1, city, state, zip_code, is_default) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (customer_id, address, 'New York', 'NY', '10001', True))
+
         # Add sample favorite chefs relationships (each customer gets 2 favorite chefs)
         print("\nAdding user interface sample data...")
         
-        # Generate favorite relationships: each customer (1-100) likes 2-3 different chefs
+        # Get actual customer and chef IDs from database
+        cursor.execute('SELECT id FROM customers ORDER BY id LIMIT 100')
+        actual_customer_ids = [row[0] for row in cursor.fetchall()]
+        
+        cursor.execute('SELECT id FROM chefs ORDER BY id LIMIT 100')
+        actual_chef_ids = [row[0] for row in cursor.fetchall()]
+        
+        # Generate favorite relationships: each customer likes 2-3 different chefs
         sample_favorites = []
         
         import random
-        for customer_id in range(1, 101):  # Customer IDs 1-100
+        for idx, customer_id in enumerate(actual_customer_ids):  # Use actual customer IDs
             random.seed(customer_id + 100)  # Consistent random for same customer
             # Each customer likes 2-3 random chefs
-            num_favorites = 2 + (customer_id % 2)  # 2 or 3 favorites
+            num_favorites = 2 + (idx % 2)  # 2 or 3 favorites
             favorite_chef_ids = []
             
             while len(favorite_chef_ids) < num_favorites:
-                chef_id = random.randint(1, 100)  # Chef IDs 1-100
+                chef_id = random.choice(actual_chef_ids)  # Use actual chef IDs
                 # Avoid duplication
                 if chef_id not in favorite_chef_ids:
                     favorite_chef_ids.append(chef_id)
@@ -378,6 +425,14 @@ def add_sample_data():
         from datetime import datetime, timedelta
         import random
         
+        # Get actual customer IDs from database
+        cursor.execute('SELECT id FROM customers ORDER BY id LIMIT 50')
+        actual_customer_ids = [row[0] for row in cursor.fetchall()]
+        
+        # Get actual chef IDs from database
+        cursor.execute('SELECT id FROM chefs ORDER BY id LIMIT 100')
+        actual_chef_ids = [row[0] for row in cursor.fetchall()]
+        
         sample_bookings = []
         meal_types = ['breakfast', 'lunch', 'dinner']
         event_types = ['birthday', 'wedding', 'party', 'dinner', 'brunch']
@@ -385,15 +440,15 @@ def add_sample_data():
         statuses = ['completed', 'accepted', 'pending']
         
         # Add bookings for first 50 customers with various dates
-        for customer_id in range(1, 51):  # Customer IDs 1-50
+        for idx, customer_id in enumerate(actual_customer_ids):  # Use actual customer IDs
             # Each customer gets 2-5 bookings
             num_bookings = random.randint(2, 5)
             
             for booking_num in range(num_bookings):
                 random.seed(customer_id * 100 + booking_num)  # Consistent random
                 
-                # Random chef (1-100)
-                chef_id = random.randint(1, 100)
+                # Random chef (use actual chef IDs)
+                chef_id = random.choice(actual_chef_ids)
                 
                 # Random date (mix of past, today, and future)
                 days_offset = random.randint(-30, 60)  # 30 days ago to 60 days future
@@ -532,7 +587,7 @@ def add_sample_data():
                 address = f'{street_num} {street_name}'
                 
                 cursor.execute('''
-                    INSERT IGNORE INTO chef_addresses (chef_id, address_line1, city, state, latitude, longitude, is_primary) 
+                    INSERT IGNORE INTO chef_addresses (chef_id, address_line1, city, state, latitude, longitude, is_default) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ''', (chef_id, address, city, state, final_lat, final_lng, True))
         

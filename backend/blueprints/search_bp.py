@@ -108,10 +108,18 @@ def search_nearby_chefs():
         '''
         
         # Add chef name filter to WHERE clause (before GROUP BY)
+        # searchQuery will search both chef names AND cuisine types
         if chef_name:
-            query += ' AND (c.first_name LIKE %s OR c.last_name LIKE %s OR CONCAT(c.first_name, " ", c.last_name) LIKE %s)'
+            query += ''' AND (c.first_name LIKE %s 
+                            OR c.last_name LIKE %s 
+                            OR CONCAT(c.first_name, " ", c.last_name) LIKE %s
+                            OR EXISTS (
+                                SELECT 1 FROM chef_cuisines cc2
+                                JOIN cuisine_types ct2 ON cc2.cuisine_id = ct2.id
+                                WHERE cc2.chef_id = c.id AND ct2.name LIKE %s
+                            ))'''
             search_pattern = f'%{chef_name}%'
-            params.extend([search_pattern, search_pattern, search_pattern])
+            params.extend([search_pattern, search_pattern, search_pattern, search_pattern])
         
         # Add gender filter to WHERE clause
         if gender and gender in ['male', 'female']:
