@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ScrollView, Text, View } from "react-native";
 import getEnvVars from "../../config";
 import { useAuth } from "../context/AuthContext";
@@ -108,7 +108,17 @@ export default function SearchScreen() {
             const data = await response.json();
 
             if (response.ok) {
-                setSearchResults(data.chefs || []);
+                // Transform backend data to match SearchResultCard format
+                const transformedResults = (data.chefs || []).map(chef => ({
+                    chef_id: chef.chef_id,
+                    first_name: chef.first_name,
+                    last_name: chef.last_name,
+                    distance: chef.distance_miles,
+                    cuisine: chef.cuisines || [],
+                    timing: [], // TODO: Add meal availability data from backend
+                    rating: Math.round(chef.rating?.average_rating || 0)
+                }));
+                setSearchResults(transformedResults);
                 setError(null);
             } else {
                 setError(data.error || 'Failed to load results.');
@@ -123,6 +133,13 @@ export default function SearchScreen() {
             setLoading(false);
         }
     };
+
+    // Auto-load nearby chefs when location is available
+    useEffect(() => {
+        if (formData.latitude && formData.longitude && token) {
+            fetchSearchResults();
+        }
+    }, [formData.latitude, formData.longitude, token]);
 
     const handleSearch = () => {
         fetchSearchResults();
