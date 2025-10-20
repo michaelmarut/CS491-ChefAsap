@@ -12,14 +12,14 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 
 const tempImageComponent = (
-    < View className="bg-base-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-olive-500 mr-4" >
+    <View className="bg-base-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-olive-500 mr-4" >
         <View className="bg-white h-[200px] w-[200px] justify-center">
             <Text className="text-lg text-center text-olive-400">IMAGE GOES HERE</Text>
         </View>
         <Text className="text-olive-400 text-md pt-2 w-[200px] text-center text-justified">
             Caption goes here.
         </Text>
-    </View >
+    </View>
 );
 
 const timing = ["Lunch", "Dinner"];
