@@ -140,8 +140,9 @@ def search_nearby_chefs():
             query += ' AND FIND_IN_SET(%s, cuisines) > 0'
             params.append(cuisine)
 
-        if min_rating is not None:
-            query += ' AND average_rating >= %s'
+        if min_rating is not None and min_rating > 0:
+            # Use COALESCE to treat NULL ratings as 0
+            query += ' AND COALESCE(average_rating, 0) >= %s'
             params.append(min_rating)
 
         if max_price is not None:
