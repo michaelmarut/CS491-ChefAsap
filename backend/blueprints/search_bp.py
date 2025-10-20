@@ -19,15 +19,22 @@ def search_nearby_chefs():
         radius = request.args.get('radius', 30, type=float)
         
         # Get other search parameters
-        chef_name = request.args.get('chef_name', '').strip()
+        # Support both frontend (searchQuery, timing) and backend (chef_name, meal_timing) parameter names
+        chef_name = request.args.get('searchQuery', '').strip() or request.args.get('chef_name', '').strip()
         cuisine = request.args.get('cuisine', '').strip()
         gender = request.args.get('gender', '').strip().lower()
-        meal_timing = request.args.get('meal_timing', '').strip().lower()  # breakfast, lunch, dinner, or '' for all
+        timing = request.args.get('timing', '').strip().lower() or request.args.get('meal_timing', '').strip().lower()
         min_rating = request.args.get('min_rating', type=float)
         max_price = request.args.get('max_price', type=float)
         sort_by = request.args.get('sort_by', 'distance').lower()  # distance, rating, price, reviews
         limit = request.args.get('limit', 20, type=int)
         offset = request.args.get('offset', 0, type=int)
+        
+        # Convert 'all' to empty string for compatibility
+        if gender == 'all':
+            gender = ''
+        if timing == 'all':
+            timing = ''
 
         if not (customer_lat and customer_lon):
             return jsonify({
@@ -88,12 +95,12 @@ def search_nearby_chefs():
         '''
         
         # Add meal timing JOIN if filtering by meal time
-        if meal_timing and meal_timing in ['breakfast', 'lunch', 'dinner']:
+        if timing and timing in ['breakfast', 'lunch', 'dinner']:
             query += '''
             INNER JOIN chef_meal_availability cma ON c.id = cma.chef_id 
                 AND cma.meal_type = %s AND cma.is_available = TRUE
             '''
-            params.append(meal_timing)
+            params.append(timing)
         
         query += '''
             WHERE ca.latitude IS NOT NULL 
@@ -210,10 +217,10 @@ def search_nearby_chefs():
             'search_radius_miles': radius,
             'total_found': len(results),
             'search_params': {
-                'chef_name': chef_name or None,
+                'searchQuery': chef_name or None,
                 'cuisine': cuisine or None,
                 'gender': gender or None,
-                'meal_timing': meal_timing or None,
+                'timing': timing or None,
                 'min_rating': min_rating,
                 'max_price': max_price,
                 'radius': radius,
