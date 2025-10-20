@@ -146,7 +146,7 @@ def search_nearby_chefs():
             params.append(min_rating)
 
         if max_price is not None:
-            query += ' AND base_rate_per_person <= %s'
+            query += ' AND (base_rate_per_person IS NULL OR base_rate_per_person <= %s)'
             params.append(max_price)
 
         # Add dynamic ordering based on sort_by parameter
