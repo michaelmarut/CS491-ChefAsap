@@ -21,7 +21,7 @@ const BUTTON_STYLES = {
     transparent: {
         button: "bg-transparent border-transparent",
         text: "text-transparent",
-        icon: "#4D7C0F"
+        icon: "#6B7280"
     }
 };
 

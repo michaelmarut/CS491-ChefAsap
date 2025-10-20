@@ -82,107 +82,73 @@ export default function ProfileScreen() {
         );
     }
 
-    if (userType === "customer") {
-        return (
-            <ScrollView className="flex-1 bg-base-100 pt-1">
-                
 
-                <ScrollView className="p-5 mt-8">
-                    <Card
-                        title="Profile"
-                        headerIcon="person"
-                        >
+    return (
+        <ScrollView className="flex-1 bg-base-100 p-5 pt-12">
+            <Card
+                title="Profile"
+                headerIcon="person"
+            >
+                {/* Display profile picture */}
+                <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
+                <Text className="text-xl font-bold text-wrap mb-1 mt-2 text-olive-400">{profileData?.first_name} {profileData?.last_name} </Text>
+                <Text className="text-lg text-wrap text-olive-400">{userType}</Text>
+                <Text className="text-lg text-wrap text-olive-400">Joined: {profileData.member_since} </Text>
 
-                        {/* Display profile picture */}
-                        <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
-                        <Text className="text-xl font-bold text-wrap mb-1 mt-2 text-olive-400">{profileData?.first_name} {profileData?.last_name} </Text>
-                        <Text className="text-lg text-wrap text-olive-400">{userType}</Text>
-                        <Text className="text-lg text-wrap text-olive-400">Joined: {profileData.member_since} </Text>
-                        
-                        {/* Profile Settings Button in top-right corner */}
-                        <Button
-                            href="/ProfileSettings"
-                            icon="gear"
-                            style="accent"
-                            customClasses="absolute -top-[54px] right-2 z-10 p-3 rounded-full pl-3"
-                        />
-                    </Card>
+                {/* Profile Settings Button in top-right corner */}
+                <Button
+                    href="/ProfileSettings"
+                    icon="gear"
+                    style="accent"
+                    customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                />
+            </Card>
+
+            {userType === "customer" ? (
+                <>
                     <Card
                         title="Help & Policies"
                         headerIcon="info"
-                        >
+                    >
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400"> Help</Text>
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400"> Policies</Text>
-                        
+
                     </Card>
-                    <Button
-                        title="Log out"
-                        style="primary"
-                        onPress={logout}
-                    />
-                </ScrollView>
-                
-            </ScrollView>
-        );
-    }
-
-    if (userType === "chef") {
-         return (
-            <ScrollView className="flex-1 bg-base-100 pt-1">
-                <ScrollView className="p-5 mt-8">
-                    <Card
-                        title="Profile"
-                        headerIcon="person"
-                        >
-
-                        {/* Display profile picture and public user info */}
-                        <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
-                        <Text className="text-xl font-bold text-wrap mb-1 mt-2 text-olive-400">{profileData?.first_name} {profileData?.last_name} </Text>
-                        <Text className="text-lg text-wrap text-olive-400">{userType}</Text>
-                        <Text className="text-lg text-wrap text-olive-400">Cuisine: Jamaican</Text>
-                        <Text className="text-lg text-wrap text-olive-400">Rating: 5/5</Text>
-                        <Text className="text-lg text-wrap text-olive-400">Gender: F (private)</Text>
-
-                         {/* Profile Settings Button in top-right corner */}
-                         <Button
-                             href="/ProfileSettings"
-                             icon="gear"
-                             style="accent"
-                             customClasses="absolute -top-[54px] right-2 z-10 p-3 rounded-full pl-3"
-                         />
-                    </Card>
-
+                </>
+            ) : (
+                <>
                     <Card
                         title="Most Ordered"
                         headerIcon="heart"
-                        >
+                    >
                         {/* Placeholder most ordered meals from chef*/}
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">1. Curry Chicken</Text>
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">2. Jerk Chicken</Text>
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">3. Fried Chicken</Text>
-                        
+
                     </Card>
 
                     <Card
                         title="Meal Options"
                         headerIcon="flame"
-                        >
-                        {/* Example meal options; replace with dynamic data as needed */}    
+                    >
+                        {/* Example meal options; replace with dynamic data as needed */}
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">* Curry Chicken</Text>
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">* Jerk Chicken</Text>
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">* Fried Chicken</Text>
                         <Text className="text-lg text-wrap mb-1 mt-2 text-olive-400">* Oxtail</Text>
-                        
-                    </Card>
 
-                    <Button
-                        title="Log out"
-                        style="primary"
-                        onPress={logout}
-                    />
-                </ScrollView>
-                
-            </ScrollView>
-        );
-    }
+                    </Card>
+                </>
+            )}
+            
+            <Button
+                title="Log out"
+                style="primary"
+                onPress={logout}
+            />
+
+            <View className="h-24" />
+        </ScrollView>
+    );
 }

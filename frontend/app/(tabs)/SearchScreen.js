@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import getEnvVars from "../../config";
 import { useAuth } from "../context/AuthContext";
 
@@ -8,12 +8,34 @@ import Button from '../components/Button';
 import LoadingIcon from "../components/LoadingIcon";
 import SearchBarComponent from '../components/SearchBar';
 import SearchResultCard from '../components/SearchResultCard';
+import ProfilePicture from '../components/ProfilePicture';
 
 const SEARCH_RESULTS = [
     { chef_id: 5, distance: 1.1, cuisine: ["Italian"], timing: ["Lunch"], rating: 5 },
     { chef_id: 6, distance: 1.7, cuisine: ["French", "Italian"], timing: ["Lunch", "Dinner"], rating: 3 },
     { chef_id: 7, distance: 2.2, cuisine: ["Italian", "Vietnamese"], timing: ["Lunch", "Dinner"], rating: 4 },
 ];
+
+const tempChefCard = (
+    <View className="flex bg-olive-100 shadow-sm shadow-olive-300 mr-4 rounded-xl border-2 border-olive-400">
+        <View className="w-full p-2">
+            <ProfilePicture size={24} firstName='John' lastName='Doe' />
+        </View>
+        <View className="flex-row bg-olive-300 rounded-b-lg w-full p-2 pb-0 items-center ">
+            <View>
+                <Text className="text-sm text-olive-100 text-center">Jane Doe</Text>
+                <Text className="text-sm text-olive-100 text-center">Italian</Text>
+            </View>
+            <Button
+                icon="link-external"
+                style="primary"
+                base="link"
+                customClasses='ml-3 p-0'
+                href={`/ChefProfileScreen/1`}
+            />
+        </View>
+    </View>
+);
 
 export default function SearchScreen() {
     const [formData, setFormData] = useState({
@@ -77,8 +99,6 @@ export default function SearchScreen() {
 
             const url = `${apiUrl}/search/chefs/nearby?${searchParams.toString()}`;
 
-            console.log("SEARCHING");
-
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -87,9 +107,7 @@ export default function SearchScreen() {
                 },
             });
 
-            console.log("RESPONSE ", JSON.stringify(response))
             const data = await response.json();
-            console.log("data ", JSON.stringify(data));
 
             if (response.ok) {
                 alert("OK" + JSON.stringify(data));
@@ -113,8 +131,7 @@ export default function SearchScreen() {
     };
 
     return (
-        <ScrollView className="flex-1 bg-base-100 p-5 gap-y-12 pt-24">
-
+        <ScrollView className="flex-1 bg-base-100 p-5 pt-12">
             <SearchBarComponent
                 formData={formData}
                 setFormData={setFormData}
@@ -128,18 +145,9 @@ export default function SearchScreen() {
                 isScrollable={true}
                 scrollDirection="horizontal"
             >
-                <View className="gap-y-3 px-4 bg-base-100 shadow-sm shadow-olive-300">
-                    <Text className="text-base text-olive-500 text-center">Jane Doe</Text>
-                    <Text className="text-base text-olive-500 text-center">Italian</Text>
-                </View>
-                <View className="gap-y-3 px-4 bg-base-100 shadow-sm shadow-olive-300">
-                    <Text className="text-base text-olive-500 text-center">John Smith</Text>
-                    <Text className="text-base text-olive-500 text-center">French</Text>
-                </View>
-                <View className="gap-y-3 px-4 bg-base-100 shadow-sm shadow-olive-300">
-                    <Text className="text-base text-olive-500 text-center">George Johnson</Text>
-                    <Text className="text-base text-olive-500 text-center">Vietnamese</Text>
-                </View>
+                {tempChefCard}
+                {tempChefCard}
+                {tempChefCard}
             </Card>
             <Card
                 title="Recent Chefs"
@@ -148,18 +156,9 @@ export default function SearchScreen() {
                 isScrollable={true}
                 scrollDirection="horizontal"
             >
-                <View className="gap-y-3 px-4 bg-base-100 shadow-sm shadow-olive-300">
-                    <Text className="text-base text-olive-500 text-center">Jane Doe</Text>
-                    <Text className="text-base text-olive-500 text-center">Italian</Text>
-                </View>
-                <View className="gap-y-3 px-4 bg-base-100 shadow-sm shadow-olive-300">
-                    <Text className="text-base text-olive-500 text-center">John Smith</Text>
-                    <Text className="text-base text-olive-500 text-center">French</Text>
-                </View>
-                <View className="gap-y-3 px-4 bg-base-100 shadow-sm shadow-olive-300">
-                    <Text className="text-base text-olive-500 text-center">George Johnson</Text>
-                    <Text className="text-base text-olive-500 text-center">Vietnamese</Text>
-                </View>
+                {tempChefCard}
+                {tempChefCard}
+                {tempChefCard}
             </Card>
             <Card
                 title="Nearby Chefs"

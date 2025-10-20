@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import Octicons from '@expo/vector-icons/Octicons';
 
 import getEnvVars from "../../config";
@@ -49,7 +49,7 @@ export default function Card({
                     setProfileData(data.profile);
                 } else {
                     setError(data.error || 'Failed to load profile.');
-                    Alert.alert('Error', data.error || 'Failed to load profile.');
+                    alert('Error', data.error || 'Failed to load profile.');
                 }
             } catch (err) {
                 setError('Network error. Could not connect to API.');
@@ -83,7 +83,7 @@ export default function Card({
                     <Button
                         title={"View Chef "}
                         style={"secondary"}
-                        onPress={() => alert("Info Placeholder")}
+                        href={`/ChefProfileScreen/${chef_id}`}
                         icon={"link-external"}
                         customClasses="w-full rounded-3xl"
                         customTextClasses='text-sm font-medium'
@@ -95,17 +95,18 @@ export default function Card({
                     <View className="flex-row justify-center items-center pt-2">
                         {Array.from({ length: rating }, (a, i) => i).map((num, index) =>
                             <Octicons
+                                key={index}
                                 name={"star-fill"}
                                 size={24}
                                 color={"#65A30D"}
                             />)}
                         {Array.from({ length: 5 - rating }, (a, i) => i).map((num, index) =>
                             <Octicons
+                                key={index}
                                 name={"star"}
                                 size={24}
                                 color={"#65A30D"}
                             />)}
-
                     </View>
                 </View>
             </View>

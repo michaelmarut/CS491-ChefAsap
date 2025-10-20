@@ -14,7 +14,8 @@ export default function Card({
     startExpanded = false,
     customClasses = '',
     customCard = '',
-    customHeader = ''
+    customHeader = '',
+    customHeaderText = ''
 }) {
     const [isExpanded, setIsExpanded] = useState(isCollapsible ? startExpanded : true);
 
@@ -25,13 +26,13 @@ export default function Card({
             horizontal: scrollDirection === 'horizontal',
             showsHorizontalScrollIndicator: scrollDirection === 'horizontal',
             showsVerticalScrollIndicator: scrollDirection === 'vertical',
-            contentContainerStyle: scrollDirection === 'horizontal' ? { paddingHorizontal: 4 } : {}
+            contentContainerStyle: scrollDirection === 'horizontal' ? { paddingHorizontal: 4 } : {},
         }
         : {};
 
     const cardClasses = "bg-white rounded-xl shadow-sm shadow-olive-500 mb-4 p-0 overflow-hidden " + customClasses;
-    const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-olive-100" + customHeader;
-    const contentWrapperClasses = "p-4 " + customCard;
+    const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-olive-100 " + customHeader;
+    const contentWrapperClasses = "m-4 " + customCard;
     const footerClasses = "p-4 pt-0";
 
     const HeaderContent = (
@@ -44,7 +45,7 @@ export default function Card({
                     style={{ marginRight: 8 }}
                 />
             )}
-            <Text className="text-lg font-bold text-olive-400">{title}</Text>
+            <Text className={`text-lg font-bold text-olive-400 ${customHeaderText}`}>{title}</Text>
         </View>
     );
 
