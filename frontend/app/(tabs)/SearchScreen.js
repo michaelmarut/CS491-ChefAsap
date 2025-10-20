@@ -31,7 +31,7 @@ const tempChefCard = (
                 style="primary"
                 base="link"
                 customClasses='ml-3 p-0'
-                href={`/ChefProfileScreen/1`}
+                href={'/ChefProfileScreen/1'}
             />
         </View>
     </View>
@@ -68,12 +68,12 @@ export default function SearchScreen() {
             const searchParams = new URLSearchParams();
 
             const apiParams = [
-                'latitude', 'longitude', 'radius', 'min_rating',
+                'latitude', 'longitude', 'radius', 'min_rating', 'gender',
                 'max_price', 'sort_by', 'limit', 'offset'
             ];
 
             const otherFutureParams = [
-                'searchQuery', 'searchType', 'gender', 'timing'
+                'searchQuery', 'searchType', 'timing'
             ];
 
             const allRelevantParams = [...apiParams, ...otherFutureParams];
@@ -82,12 +82,6 @@ export default function SearchScreen() {
                 const value = formData[key];
 
                 if (value !== null && value !== '' && value !== undefined) {
-                    if (key === 'min_rating' && value === 0) continue;
-                    if (key === 'radius' && value === 10) continue;
-                    if (key === 'limit' && value === 20) continue;
-                    if (key === 'offset' && value === 0) continue;
-                    if (key === 'sort_by' && value === 'distance') continue;
-                    if ((key === 'gender' || key === 'timing' || key === 'searchType') && value === 'all') continue;
 
                     searchParams.append(key, value);
                 }

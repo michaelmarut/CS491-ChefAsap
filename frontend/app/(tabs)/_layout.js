@@ -115,7 +115,7 @@ export default function TabLayout() {
                     options={{
                         title: 'Messages',
                         tabBarIcon: ({ color }) =>
-                            <Octicons name="comment-discussion" size={iconSize} color={color} />,
+                            <Octicons name="comment" size={iconSize} color={color} />,
                         ...TransitionPresets.ShiftTransition,
                     }}
                 />

@@ -15,7 +15,7 @@ const BUTTON_STYLES = {
     },
     accent: {
         button: "bg-olive-400 border-base-100",
-        text: "base-100",
+        text: "text-base-100",
         icon: "#fefce8"
     },
     transparent: {
