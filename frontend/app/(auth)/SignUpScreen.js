@@ -214,7 +214,7 @@ export default function Signup() {
   };
 
   return (
-    <View className="flex-1 bg-base-100 p-2 pb-0">
+    <View className="flex-1 bg-base-100 dark:bg-base-dark-100 p-2 pb-0">
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -224,7 +224,7 @@ export default function Signup() {
           paddingBottom: 30,
         }}
       >
-        <Text className="text-4xl font-bold text-center mt-8 text-olive-500">
+        <Text className="text-4xl font-bold text-center mt-8 text-primary-500">
           Create An Account
         </Text>
 
@@ -237,7 +237,7 @@ export default function Signup() {
         />
 
         <Card title="Personal Information" headerIcon="person">
-          <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Name</Text>
+          <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">Name</Text>
           <View className="flex-row justify-between">
             <Input
               placeholder="First Name"
@@ -314,12 +314,12 @@ export default function Signup() {
             containerClasses="mb-1"
           />
 
-          <View className="mt-2 p-3 bg-olive-100 rounded-xl">
-            <Text className="text-sm font-semibold mb-1 text-olive-400">Password must have:</Text>
+          <View className="mt-2 p-3 bg-primary-100 rounded-xl dark:bg-dark-100">
+            <Text className="text-sm font-semibold mb-1 text-primary-400 dark:text-dark-400">Password must have:</Text>
             {passwordRequirements.map((req, index) => (
               <Text
                 key={index}
-                className={`text-xs mb-0.5 ${req.met ? 'text-olive-400' : 'text-warm-gray'}`}
+                className={`text-xs mb-0.5 ${req.met ? 'text-primary-400 dark:text-dark-400' : 'text-warm-gray'}`}
               >
                 {req.met ? '✓' : '○'} {req.message}
               </Text>
@@ -348,9 +348,9 @@ export default function Signup() {
             value={city}
             onChangeText={(text) => setCity(filterAlphabeticCharacters(text))}
           />
-          
+
           <View className="flex-row justify-between">
-            
+
             <CustomPicker
               label="State"
               prompt="Select a State"
@@ -379,13 +379,13 @@ export default function Signup() {
 
             <TouchableOpacity
               className={`flex-1 py-4 px-2 rounded-2xl mx-0.5 items-center border ${userType === 'customer'
-                ? 'bg-olive-200 border-olive-400'
-                : 'bg-olive-100 border-olive-200'
+                ? 'bg-primary-200 border-primary-400 dark:bg-dark-200 dark:border-dark-400'
+                : 'bg-primary-100 border-primary-200 dark:bg-dark-100 dark:border-dark-200'
                 }`}
               onPress={() => setUserType('customer')}
             >
               <Text
-                className={`text-base font-bold text-center mb-1 ${userType === 'customer' ? 'text-olive-500' : 'text-olive-400'
+                className={`text-base font-bold text-center mb-1 ${userType === 'customer' ? 'text-primary-500' : 'text-primary-400 dark:text-dark-400'
                   }`}
               >
                 🍽️ Customer
@@ -395,13 +395,13 @@ export default function Signup() {
 
             <TouchableOpacity
               className={`flex-1 py-4 px-2 rounded-2xl mx-0.5 items-center border ${userType === 'chef'
-                ? 'bg-olive-200 border-olive-400'
-                : 'bg-olive-100 border-olive-200'
+                ? 'bg-primary-200 border-primary-400 dark:bg-dark-200 dark:border-dark-400'
+                : 'bg-primary-100 border-primary-200 dark:bg-dark-100 dark:border-dark-200'
                 }`}
               onPress={() => setUserType('chef')}
             >
               <Text
-                className={`text-base font-bold text-center mb-1 ${userType === 'chef' ? 'text-olive-500' : 'text-olive-400'
+                className={`text-base font-bold text-center mb-1 ${userType === 'chef' ? 'text-primary-500' : 'text-primary-400 dark:text-dark-400'
                   }`}
               >
                 👨‍🍳 Chef

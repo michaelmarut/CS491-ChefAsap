@@ -47,7 +47,7 @@ export default function SearchBarComponent({ formData, setFormData, handleSearch
     };
 
     const renderDropView = () => (
-        <View className="flex-1 w-full bg-white rounded-xl p-3 mt-1 mb-1 pb-0">
+        <View className="flex-1 w-full bg-white dark:bg-black rounded-xl p-3 mt-1 mb-1 pb-0">
             <View className="flex-row">
                 <CustomPicker
                     label="Search By"
@@ -87,7 +87,7 @@ export default function SearchBarComponent({ formData, setFormData, handleSearch
                 />
             </View>
             <View>
-                <Text className="text-sm font-semibold text-olive-400 mb-1 mt-4 text-center">Recent Searches</Text>
+                <Text className="text-sm font-semibold text-primary-400 mb-1 mt-4 text-center dark:text-dark-400">Recent Searches</Text>
                 <View className="rounded-lg border border-gray-100">
                     {recentSearches.map((item, index) => (
                         <TouchableOpacity key={index} onPress={() => handleHistoryClick(item)} className="p-2 border-b border-gray-100 rounded-lg">
@@ -111,7 +111,7 @@ export default function SearchBarComponent({ formData, setFormData, handleSearch
     return (
         <View className="w-full flex-1 gap-y-4 pb-4">
 
-            <View className="p-4 pt-2 pb-2 bg-olive-100 rounded-xl shadow-md w-full items-center justify-center shadow-sm shadow-olive-500">
+            <View className="p-4 pt-2 pb-2 bg-primary-100 rounded-xl shadow-md w-full items-center justify-center shadow-sm shadow-primary-500 dark:bg-dark-100">
                 <View className="flex-row">
                     <Input
                         placeholder={`Search ${formData.searchType}...`}

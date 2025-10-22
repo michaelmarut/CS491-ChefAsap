@@ -63,23 +63,23 @@ export default function Card({
     }, [chef_id]);
 
     return (
-        <View className="flex justify-center items-center bg-olive-100 rounded-3xl mb-4 border-2 border-olive-100 shadow-sm shadow-olive-500">
+        <View className="flex justify-center items-center bg-primary-100 rounded-3xl mb-4 border-2 border-primary-100 shadow-sm shadow-primary-500 dark:bg-dark-100 dark:border-dark-100">
             <View className="flex-row w-full justify-between items-center p-2 pl-4 pr-4">
 
-                <Text className="text-3xl font-bold text-olive-400 text-center">{profileData?.first_name} {profileData?.last_name}</Text>
-                <Text className="text-md text-olive-100">{distance} Mi.</Text>
+                <Text className="text-3xl font-bold text-primary-400 text-center dark:text-dark-400">{profileData?.first_name} {profileData?.last_name}</Text>
+                <Text className="text-md text-primary-100 dark:text-dark-100">{distance} Mi.</Text>
             </View>
 
 
-            <View className="flex-row w-full justify-between bg-base-100 rounded-b-3xl border-t-2 border-olive-300">
-                <View className="flex justify-center items-center w-1/2 bg-olive-100 pt-2 pl-4 pr-4 rounded-bl-3xl">
+            <View className="flex-row w-full justify-between bg-base-100 dark:bg-base-dark-100 rounded-b-3xl border-t-2 border-primary-300 dark:border-dark-300">
+                <View className="flex justify-center items-center w-1/2 bg-primary-100 pt-2 pl-4 pr-4 rounded-bl-3xl dark:bg-dark-100">
                     <View className="flex-row justify-center items-center w-full gap-x-1">
                         {cuisine.map((c) => (
-                            <Text key={c} className="text-md text-olive-400 bg-base-100 rounded-3xl p-1">{c}</Text>
+                            <Text key={c} className="text-md text-primary-400 bg-base-100 dark:bg-base-dark-100 rounded-3xl p-1 dark:text-dark-400">{c}</Text>
                         ))}
                     </View>
-                    <Text className="text-md text-olive-400 pt-2">Available:</Text>
-                    <Text className="text-md text-olive-400 pb-2">{timing.join(', ')}</Text>
+                    <Text className="text-md text-primary-400 pt-2 dark:text-dark-400">Available:</Text>
+                    <Text className="text-md text-primary-400 pb-2 dark:text-dark-400">{timing.join(', ')}</Text>
                     <Button
                         title={"View Chef "}
                         style={"accent"}

@@ -18,7 +18,7 @@ export default function LocationInput({
     useEffect(() => {
         getCurrentLocation();
     }, []);
-    
+
     useEffect(() => {
         if (formData.locationAddress) {
             setAddressInput(formData.locationAddress);
@@ -96,7 +96,7 @@ export default function LocationInput({
     };
 
     return (
-        <View className="p-4 pt-2 pb-2 bg-olive-100 rounded-xl shadow-md flex-row w-full items-center justify-center shadow-sm shadow-olive-500">
+        <View className="p-4 pt-2 pb-2 bg-primary-100 rounded-xl shadow-md flex-row w-full items-center justify-center shadow-sm shadow-primary-500 dark:bg-dark-100">
             <Button
                 icon={loading ? "sync" : "location"}
                 onPress={getCurrentLocation}
