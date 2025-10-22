@@ -99,7 +99,7 @@ export default function ProfileSettings() {
   const { apiUrl } = getEnvVars();
 
   // Build API URL using profileId from context and config
-  const privateQuery = userType === 'chef' ? '?private=true' : ''; 
+  const privateQuery = userType === 'chef' ? '?private=true' : '';
   const API_URL = `${apiUrl}/profile/${userType}/${profileId}${privateQuery}`;
   // Fetch profile data from backend when component mounts or profileId changes
   useEffect(() => {
@@ -230,177 +230,179 @@ export default function ProfileSettings() {
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView className="flex-1 bg-base-100 p-5 pt-12">
         {/* Profile title */}
-          {/* Profile Picture Display */}
-          <Card title="Profile" headerIcon="gear" customClasses="w-full">
-            <TouchableOpacity className="items-center" onPress={pickImage} disabled={uploading || !editing}>
-              <ProfilePicture photoUrl={profile.photo_url} firstName={profile?.first_name} lastName={profile?.last_name} />
-              {editing &&
-                <Text className="text-base text-olive-400 underline pt-2" style={{ textAlign: "left" }}>
-                  {uploading ? "Uploading..." : "Tap to change profile picture"}
+        {/* Profile Picture Display */}
+        <Card title="Profile" headerIcon="gear" customClasses="w-full">
+          <TouchableOpacity className="items-center" onPress={pickImage} disabled={uploading || !editing}>
+            <ProfilePicture photoUrl={profile.photo_url} firstName={profile?.first_name} lastName={profile?.last_name} />
+            {editing &&
+              <Text className="text-base text-primary-400 underline pt-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                {uploading ? "Uploading..." : "Tap to change profile picture"}
+              </Text>
+            }
+          </TouchableOpacity>
+
+        </Card>
+        {/*<Text>PROFILE {JSON.stringify(profile)}</Text>*/}
+
+        {/* Editable fields */}
+        {editing ? (
+          <>
+            <Card title="Personal Information" headerIcon="person" customClasses="w-full">
+              <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">Name</Text>
+              <View className="flex-row justify-between">
+                <Input
+                  placeholder="First Name"
+                  value={form.first_name}
+                  onChangeText={v => handleChange("first_name", filterNameCharacters(v))}
+                  containerClasses="flex-1 mx-0.5 mb-2 mt-0"
+                />
+
+                <Input
+                  placeholder="Last Name"
+                  value={form.last_name}
+                  onChangeText={v => handleChange("last_name", filterNameCharacters(v))}
+                  containerClasses="flex-1 mx-0.5 mb-2 mt-0"
+                />
+              </View>
+
+              <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">Email Address</Text>
+              <Text className="border border-gray-300 bg-white rounded-full py-3 px-4 text-base text-gray-400">
+                {profile.email}
+              </Text>
+
+              <Input label="Phone Number"
+                value={form.phone}
+                onChangeText={v => handleChange("phone", v)}
+                keyboardType="phone-pad"
+                placeholder="(555) 123-4567"
+                maxLength={10}
+              />
+            </Card>
+
+            <Card title={"Your Address"} headerIcon="location" customClasses="w-full">
+              <Input
+                label="Street Address"
+                placeholder="123 Main Street"
+                value={form.full_address?.address_line1 || ""}
+                onChangeText={v => handleAddressChange("address_line1", v)}
+              />
+
+              <Input
+                label="Apartment, Suite, etc. (Optional)"
+                placeholder="Apt 4B, Suite 200, etc."
+                value={form.full_address?.address_line2 || ""}
+                onChangeText={v => handleAddressChange("address_line2", v)}
+              />
+
+              <Input
+                label="City"
+                placeholder="City"
+                value={form.full_address?.city || ""}
+                onChangeText={v => handleAddressChange("city", v)}
+              />
+
+              <View className="flex-row justify-between">
+                <CustomPicker
+                  label="State"
+                  prompt="Select a State"
+                  selectedValue={form.full_address?.state}
+                  onValueChange={(v) => handleAddressChange("state", v)}
+                  items={US_STATES}
+                />
+
+                <View className="flex-1 ml-3">
+                  <Input
+                    label="Zip Code"
+                    placeholder="12345"
+                    value={form.full_address?.zip_code || ""}
+                    onChangeText={v => handleAddressChange("zip_code", v)}
+                    keyboardType="numeric"
+                    maxLength={5}
+                    customClasses="text-center"
+                    containerClasses="mb-2"
+                  />
+                </View>
+              </View>
+            </Card>
+
+            <Card title={"Other"} headerIcon="three-bars" customClasses="w-full">
+              <Input
+                value={form.allergy_notes}
+                onChangeText={v => handleChange("allergy_notes", v)}
+                label="Allergy Notes"
+                placeholder="Allergy Notes"
+                isTextArea={true}
+              />
+              <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">Member Since</Text>
+              <Text className="border border-gray-300 bg-white rounded-full py-3 px-4 text-base text-gray-400">{profile.member_since}</Text>
+            </Card>
+
+            <Button
+              title="Save"
+              onPress={handleSave}
+              customClasses="min-w-[50%]"
+            />
+            <Button
+              title="Cancel"
+              onPress={() => { setEditing(false); setForm(profile); }}
+              style="secondary"
+              customClasses="min-w-[50%]"
+            />
+          </>
+        ) : (
+          <>
+            <Card title="Personal Information" headerIcon="person" customClasses="w-full">
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">Name: </Text> {profile.first_name} {profile.last_name}
+              </Text>
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">Email: </Text> {profile.email}
+              </Text>
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">Phone: </Text> {profile.phone}
+              </Text>
+            </Card>
+            <Card title="Your Address" headerIcon="location" customClasses="w-full">
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">Address{profile.full_address?.address_line2 && " 1"}: </Text>{profile.full_address?.address_line1}
+              </Text>
+              {profile.full_address?.address_line2 &&
+                <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Address 2: </Text>{profile.full_address?.address_line2}
                 </Text>
               }
-            </TouchableOpacity>
-              
-          </Card>
-          {/*<Text>PROFILE {JSON.stringify(profile)}</Text>*/}
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">City: </Text>{profile.full_address?.city}
+              </Text>
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">State: </Text>{US_STATES.find(state => state.value === profile.full_address?.state)?.label}
+              </Text>
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">Zip Code: </Text>{profile.full_address?.zip_code}
+              </Text>
+            </Card>
+            <Card title={"Other"} headerIcon="three-bars" customClasses="w-full">
 
-          {/* Editable fields */}
-          {editing ? (
-            <>
-              <Card title="Personal Information" headerIcon="person" customClasses="w-full">
-                <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Name</Text>
-                <View className="flex-row justify-between">
-                  <Input
-                    placeholder="First Name"
-                    value={form.first_name}
-                    onChangeText={v => handleChange("first_name", filterNameCharacters(v))}
-                    containerClasses="flex-1 mx-0.5 mb-2 mt-0"
-                  />
-
-                  <Input
-                    placeholder="Last Name"
-                    value={form.last_name}
-                    onChangeText={v => handleChange("last_name", filterNameCharacters(v))}
-                    containerClasses="flex-1 mx-0.5 mb-2 mt-0"
-                  />
-                </View>
-
-                <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Email Address</Text>
-                <Text className="border border-gray-300 bg-white rounded-full py-3 px-4 text-base text-gray-400">{profile.email}</Text>
-
-                <Input label="Phone Number"
-                  value={form.phone}
-                  onChangeText={v => handleChange("phone", v)}
-                  keyboardType="phone-pad"
-                  placeholder="(555) 123-4567"
-                  maxLength={10}
-                />
-              </Card>
-
-              <Card title={"Your Address"} headerIcon="location" customClasses="w-full">
-                <Input
-                  label="Street Address"
-                  placeholder="123 Main Street"
-                  value={form.full_address?.address_line1 || ""}
-                  onChangeText={v => handleAddressChange("address_line1", v)}
-                />
-
-                <Input
-                  label="Apartment, Suite, etc. (Optional)"
-                  placeholder="Apt 4B, Suite 200, etc."
-                  value={form.full_address?.address_line2 || ""}
-                  onChangeText={v => handleAddressChange("address_line2", v)}
-                />
-
-                <Input
-                  label="City"
-                  placeholder="City"
-                  value={form.full_address?.city || ""}
-                  onChangeText={v => handleAddressChange("city", v)}
-                />
-
-                <View className="flex-row justify-between">
-                  <CustomPicker
-                    label="State"
-                    prompt="Select a State"
-                    selectedValue={form.full_address?.state}
-                    onValueChange={(v) => handleAddressChange("state",v)}
-                    items={US_STATES}
-                  />
-
-                  <View className="flex-1 ml-3">
-                    <Input
-                      label="Zip Code"
-                      placeholder="12345"
-                      value={form.full_address?.zip_code || ""}
-                      onChangeText={v => handleAddressChange("zip_code", v)}
-                      keyboardType="numeric"
-                      maxLength={5}
-                      customClasses="text-center"
-                      containerClasses="mb-2"
-                    />
-                  </View>
-                </View>
-              </Card>
-
-              <Card title={"Other"} headerIcon="three-bars" customClasses="w-full">
-                <Input
-                  value={form.allergy_notes}
-                  onChangeText={v => handleChange("allergy_notes", v)}
-                  label="Allergy Notes"
-                  placeholder="Allergy Notes"
-                  textArea={true}
-                />
-                <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">Member Since</Text>
-                <Text className="border border-gray-300 bg-white rounded-full py-3 px-4 text-base text-gray-400">{profile.member_since}</Text>
-              </Card>
-
-              <Button
-                title="Save"
-                onPress={handleSave}
-                customClasses="min-w-[50%]"
-              />
-              <Button
-                title="Cancel"
-                onPress={() => { setEditing(false); setForm(profile); }}
-                style="secondary"
-                customClasses="min-w-[50%]"
-              />
-            </>
-          ) : (
-            <>
-              <Card title="Personal Information" headerIcon="person" customClasses="w-full">
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">Name: </Text> {profile.first_name} {profile.last_name}
-                </Text>
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">Email: </Text> {profile.email}
-                </Text>
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">Phone: </Text> {profile.phone}
-                </Text>
-              </Card>
-              <Card title="Your Address" headerIcon="location" customClasses="w-full">
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">Address{profile.full_address?.address_line2 && " 1"}: </Text>{profile.full_address?.address_line1}
-                </Text>
-                {profile.full_address?.address_line2 &&
-                  <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                    <Text className="font-semibold">Address 2: </Text>{profile.full_address?.address_line2}
-                  </Text>
-                }
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">City: </Text>{profile.full_address?.city}
-                </Text>
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                    <Text className="font-semibold">State: </Text>{US_STATES.find(state => state.value === profile.full_address?.state).label}
-                </Text>
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">Zip Code: </Text>{profile.full_address?.zip_code}
-                </Text>
-              </Card>
-              <Card title={"Other"} headerIcon="three-bars" customClasses="w-full">
-
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">Allergy Notes: </Text>{profile.allergy_notes || "None"}
-                </Text>
-                <Text className="text-lg text-olive-400 mb-2" style={{ textAlign: "left" }}>
-                  <Text className="font-semibold">Member Since: </Text>{profile.member_since}
-                </Text>
-              </Card>
-              <Button
-                title="Edit Information"
-                onPress={() => setEditing(true)}
-                customClasses="min-w-[60%]"
-              />
-              <Button
-                title="← Return"
-                style="secondary"
-                href="/(tabs)/Profile"
-                customClasses="min-w-[60%]"
-              />
-            </>
-          )}
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">Allergy Notes: </Text>{profile.allergy_notes || "None"}
+              </Text>
+              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                <Text className="font-semibold">Member Since: </Text>{profile.member_since}
+              </Text>
+            </Card>
+            <Button
+              title="Edit Information"
+              onPress={() => setEditing(true)}
+              customClasses="min-w-[60%]"
+            />
+            <Button
+              title="← Return"
+              style="secondary"
+              href="/(tabs)/Profile"
+              customClasses="min-w-[60%]"
+            />
+          </>
+        )}
         <View className="h-24" />
       </ScrollView>
     </>

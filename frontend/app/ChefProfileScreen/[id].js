@@ -12,11 +12,11 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 
 const tempImageComponent = (
-    <View className="bg-base-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-olive-500 mr-4" >
+    <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
         <View className="bg-white h-[200px] w-[200px] justify-center">
-            <Text className="text-lg text-center text-olive-400">IMAGE GOES HERE</Text>
+            <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE GOES HERE</Text>
         </View>
-        <Text className="text-olive-400 text-md pt-2 w-[200px] text-center text-justified">
+        <Text className="text-primary-400 text-md pt-2 w-[200px] text-center text-justified dark:text-dark-400">
             Caption goes here.
         </Text>
     </View>
@@ -86,7 +86,7 @@ export default function ChefProfileScreen() {
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
-            <ScrollView className="flex-1 bg-base-100 p-5 pt-12">
+            <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
                 {/*<Text>{JSON.stringify(chefData)}</Text>*/}
                 <Card
                     title={`${chefData?.first_name} ${chefData?.last_name} `}
@@ -110,7 +110,7 @@ export default function ChefProfileScreen() {
                                 color={"#65A30D"}
                             />)}
                     </View>
-                    <Text className="text-lg text-center text-olive-400 pb-2">
+                    <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
                         {chefData.total_ratings} Total Reviews
                         <Button
                             icon='cross-reference'
@@ -120,19 +120,19 @@ export default function ChefProfileScreen() {
                             onPress={() => alert("Reviews Placeholder")}
                         />
                     </Text>
-                    <Text className="text-sm text-center text-olive-400 pt-2 border-t border-olive-200">Serving Since: {chefData.member_since}</Text>
+                    <Text className="text-sm text-center text-primary-400 pt-2 border-t border-primary-200 dark:text-dark-400 dark:border-dark-200">Serving Since: {chefData.member_since}</Text>
                 </Card>
 
                 <Card>
-                    <Text className="text-lg text-center text-olive-400 font-semibold">Located in: {chefData.public_location} </Text>
-                    <Text className="text-lg text-center text-olive-400">Distance from you: (1.5 mi. Away) </Text>
+                    <Text className="text-lg text-center text-primary-400 font-semibold dark:text-dark-400">Located in: {chefData.public_location} </Text>
+                    <Text className="text-lg text-center text-primary-400 dark:text-dark-400">Distance from you: (1.5 mi. Away) </Text>
                 </Card>
 
                 <Card>
-                    <Text className="text-lg text-olive-400 text-center font-semibold mb-2">Serves: {timing.join(', ')}</Text>
+                    <Text className="text-lg text-primary-400 text-center font-semibold mb-2 dark:text-dark-400">Serves: {timing.join(', ')}</Text>
                     <View className="flex-row justify-center items-center w-full gap-x-1">
                         {cuisine.map((c) => (
-                            <Text key={c} className="text-md text-olive-400 bg-olive-100 rounded-3xl p-1">{c}</Text>
+                            <Text key={c} className="text-md text-primary-400 bg-primary-100 rounded-3xl p-1 dark:text-dark-400 dark:bg-dark-100">{c}</Text>
                         ))}
                     </View>
                 </Card>
@@ -142,7 +142,7 @@ export default function ChefProfileScreen() {
                     customHeader='justify-center'
                     customHeaderText='text-xl'
                 >
-                    <Text className="text-lg text-center text-olive-400 text-pretty">
+                    <Text className="text-lg text-center text-primary-400 text-pretty dark:text-dark-400">
                         Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibu
                     </Text>
                 </Card>

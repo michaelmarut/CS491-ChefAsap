@@ -91,9 +91,9 @@ export default function ForgetPassword() {
   };
 
   return (
-    <View className="p-5 bg-base-100 flex-1">
+    <View className="p-5 bg-base-100 dark:bg-base-dark-100 flex-1">
 
-      <Text className="text-4xl font-bold text-center mb-5 text-olive-500 mt-8">
+      <Text className="text-4xl font-bold text-center mb-5 text-primary-500 dark:text-dark-500 mt-8">
         Reset Password
       </Text>
 
@@ -110,7 +110,7 @@ export default function ForgetPassword() {
         title="Send Reset Link"
         style="primary"
         disabled={!email}
-        onPress={() => alert("Reset Link sent to "+email)}
+        onPress={() => alert("Reset Link sent to " + email)}
       />
 
       <Button

@@ -17,14 +17,14 @@ const SEARCH_RESULTS = [
 ];
 
 const tempChefCard = (
-    <View className="flex bg-olive-100 shadow-sm shadow-olive-300 mr-4 rounded-xl border-2 border-olive-400">
+    <View className="flex bg-primary-100 shadow-sm shadow-primary-300 mr-4 rounded-xl border-2 border-primary-400 dark:bg-dark-100 dark:shadow-dark-300 dark:border-dark-400">
         <View className="w-full p-2">
             <ProfilePicture size={24} firstName='John' lastName='Doe' />
         </View>
-        <View className="flex-row bg-olive-300 rounded-b-lg w-full p-2 pb-0 items-center ">
+        <View className="flex-row bg-primary-300 rounded-b-lg w-full p-2 pb-0 items-center dark:bg-dark-300">
             <View>
-                <Text className="text-sm text-olive-100 text-center">Jane Doe</Text>
-                <Text className="text-sm text-olive-100 text-center">Italian</Text>
+                <Text className="text-sm text-primary-100 text-center dark:text-dark-100">Jane Doe</Text>
+                <Text className="text-sm text-primary-100 text-center dark:text-dark-100">Italian</Text>
             </View>
             <Button
                 icon="link-external"
@@ -146,7 +146,7 @@ export default function SearchScreen() {
     };
 
     return (
-        <ScrollView className="flex-1 bg-base-100 p-5 pt-12">
+        <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
             <SearchBarComponent
                 formData={formData}
                 setFormData={setFormData}

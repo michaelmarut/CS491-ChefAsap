@@ -5,7 +5,7 @@ import Button from '../components/Button';
 
 export default function BookingsScreen() {
     return (
-        <ScrollView className="flex-1 bg-base-100 p-5 pt-16">
+        <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-16">
             <Card
                 title="Previous Bookings"
                 headerIcon="history"
@@ -18,9 +18,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">Jane Doe</Text>
-                        <Text className="text-base text-olive-500 text-center">Lunch</Text>
-                        <Text className="text-base text-olive-500 text-center">1 Hour</Text>
+                        <Text className="text-base text-primary-500 text-center">Jane Doe</Text>
+                        <Text className="text-base text-primary-500 text-center">Lunch</Text>
+                        <Text className="text-base text-primary-500 text-center">1 Hour</Text>
                     </View>
                 </Card>
                 <Card
@@ -28,9 +28,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">John Smith</Text>
-                        <Text className="text-base text-olive-500 text-center">Breakfast</Text>
-                        <Text className="text-base text-olive-500 text-center">1 Hour</Text>
+                        <Text className="text-base text-primary-500 text-center">John Smith</Text>
+                        <Text className="text-base text-primary-500 text-center">Breakfast</Text>
+                        <Text className="text-base text-primary-500 text-center">1 Hour</Text>
                     </View>
                 </Card>
                 <Card
@@ -38,9 +38,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">George Johnson</Text>
-                        <Text className="text-base text-olive-500 text-center">Dinner</Text>
-                        <Text className="text-base text-olive-500 text-center">2 Hours</Text>
+                        <Text className="text-base text-primary-500 text-center">George Johnson</Text>
+                        <Text className="text-base text-primary-500 text-center">Dinner</Text>
+                        <Text className="text-base text-primary-500 text-center">2 Hours</Text>
                     </View>
                 </Card>
             </Card>
@@ -57,9 +57,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">Jane Doe</Text>
-                        <Text className="text-base text-olive-500 text-center">Lunch</Text>
-                        <Text className="text-base text-olive-500 text-center">1 Hour</Text>
+                        <Text className="text-base text-primary-500 text-center">Jane Doe</Text>
+                        <Text className="text-base text-primary-500 text-center">Lunch</Text>
+                        <Text className="text-base text-primary-500 text-center">1 Hour</Text>
                     </View>
                 </Card>
                 <Card
@@ -67,9 +67,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">John Smith</Text>
-                        <Text className="text-base text-olive-500 text-center">Breakfast</Text>
-                        <Text className="text-base text-olive-500 text-center">1 Hour</Text>
+                        <Text className="text-base text-primary-500 text-center">John Smith</Text>
+                        <Text className="text-base text-primary-500 text-center">Breakfast</Text>
+                        <Text className="text-base text-primary-500 text-center">1 Hour</Text>
                     </View>
                 </Card>
                 <Card
@@ -77,9 +77,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">George Johnson</Text>
-                        <Text className="text-base text-olive-500 text-center">Dinner</Text>
-                        <Text className="text-base text-olive-500 text-center">2 Hours</Text>
+                        <Text className="text-base text-primary-500 text-center">George Johnson</Text>
+                        <Text className="text-base text-primary-500 text-center">Dinner</Text>
+                        <Text className="text-base text-primary-500 text-center">2 Hours</Text>
                     </View>
                 </Card>
             </Card>
@@ -95,9 +95,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">Jane Doe</Text>
-                        <Text className="text-base text-olive-500 text-center">Lunch</Text>
-                        <Text className="text-base text-olive-500 text-center">1 Hour</Text>
+                        <Text className="text-base text-primary-500 text-center">Jane Doe</Text>
+                        <Text className="text-base text-primary-500 text-center">Lunch</Text>
+                        <Text className="text-base text-primary-500 text-center">1 Hour</Text>
                     </View>
                 </Card>
                 <Card
@@ -105,9 +105,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">John Smith</Text>
-                        <Text className="text-base text-olive-500 text-center">Breakfast</Text>
-                        <Text className="text-base text-olive-500 text-center">1 Hour</Text>
+                        <Text className="text-base text-primary-500 text-center">John Smith</Text>
+                        <Text className="text-base text-primary-500 text-center">Breakfast</Text>
+                        <Text className="text-base text-primary-500 text-center">1 Hour</Text>
                     </View>
                 </Card>
                 <Card
@@ -115,9 +115,9 @@ export default function BookingsScreen() {
                     footerButtonProps={{ title: "See More", style: "secondary", onPress: () => alert("Info Placeholder") }}
                 >
                     <View className="gap-y-3">
-                        <Text className="text-base text-olive-500 text-center">George Johnson</Text>
-                        <Text className="text-base text-olive-500 text-center">Dinner</Text>
-                        <Text className="text-base text-olive-500 text-center">2 Hours</Text>
+                        <Text className="text-base text-primary-500 text-center">George Johnson</Text>
+                        <Text className="text-base text-primary-500 text-center">Dinner</Text>
+                        <Text className="text-base text-primary-500 text-center">2 Hours</Text>
                     </View>
                 </Card>
             </Card>
