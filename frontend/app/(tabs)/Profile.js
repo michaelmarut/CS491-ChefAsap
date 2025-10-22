@@ -89,10 +89,10 @@ export default function ProfileScreen() {
                 headerIcon="person"
             >
                 {/* Display profile picture */}
-                <ProfilePicture photoUrl={profileData.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
+                <ProfilePicture photoUrl={profileData?.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
                 <Text className="text-xl font-bold text-wrap text-center mb-1 mt-2 text-primary-400 dark:text-dark-400">{profileData?.first_name} {profileData?.last_name} </Text>
-                <Text className="text-lg text-wrap text-center text-primary-400 dark:text-dark-400">{userType.charAt(0).toUpperCase() + userType.slice(1)}</Text>
-                <Text className="text-lg text-wrap text-center text-primary-400 dark:text-dark-400">Joined: {profileData.member_since} </Text>
+                <Text className="text-lg text-wrap text-center text-primary-400 dark:text-dark-400">{userType?.charAt(0).toUpperCase() + userType?.slice(1)}</Text>
+                <Text className="text-lg text-wrap text-center text-primary-400 dark:text-dark-400">Joined: {profileData?.member_since} </Text>
 
                 {/* Profile Settings Button in top-right corner */}
                 <Button
