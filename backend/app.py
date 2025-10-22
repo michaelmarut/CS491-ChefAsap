@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from database.config import db_config
 from database.setup import init_db
+from database.db_helper import get_db_connection, get_cursor
 from blueprints.auth_bp import auth_bp
 from blueprints.booking_bp import booking_bp
 from blueprints.profile_bp import profile_bp
@@ -10,7 +11,6 @@ from blueprints.chat_bp import chat_bp
 from blueprints.search_bp import search_bp
 from blueprints.geocoding_bp import geocoding_bp
 from blueprints.search_location_bp import search_location_bp
-import mysql.connector
 import socket
 import os
 
@@ -48,11 +48,11 @@ app.register_blueprint(search_location_bp, url_prefix='/api')
 @app.route('/')
 def index():
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.close()
         conn.close()
-        return 'Flask and MySQL connection successful!'
+        return 'Flask and PostgreSQL connection successful!'
     except Exception as e:
         return f'Error: {str(e)}'
 

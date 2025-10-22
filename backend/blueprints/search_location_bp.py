@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-import mysql.connector
 from database.config import db_config
+from database.db_helper import get_db_connection, get_cursor, handle_db_error
 from datetime import datetime
 
 # Create the blueprint
@@ -34,8 +34,8 @@ def save_search_location(customer_id):
         address_line2 = data.get('address_line2')
         zip_code = data.get('zip_code')
         
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Check if customer exists
         cursor.execute('SELECT id FROM customers WHERE id = %s', (customer_id,))
@@ -89,16 +89,15 @@ def save_search_location(customer_id):
             
             message = 'Search location updated'
         else:
-            # Insert new location
+            # Insert new location (PostgreSQL with RETURNING)
             cursor.execute('''
                 INSERT INTO customer_search_locations 
                 (customer_id, location_name, address_line1, address_line2, city, state, zip_code, 
                  latitude, longitude, last_used_at, usage_count)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 1)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 1) RETURNING id
             ''', (customer_id, location_name, address_line1, address_line2, city, state, zip_code, 
                   latitude, longitude))
-            
-            location_id = cursor.lastrowid
+            location_id = cursor.fetchone()[0]
             message = 'Search location saved'
         
         conn.commit()
@@ -156,8 +155,8 @@ def get_search_locations(customer_id):
         if limit > 50:
             limit = 50
         
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Check if customer exists
         cursor.execute('SELECT id FROM customers WHERE id = %s', (customer_id,))
@@ -221,7 +220,7 @@ def update_search_location(customer_id, location_id):
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Check if location exists and belongs to customer
@@ -278,8 +277,8 @@ def mark_location_used(customer_id, location_id):
     Call this when user selects a saved location for searching
     """
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Check if location exists and belongs to customer
         cursor.execute('''
@@ -322,7 +321,7 @@ def delete_search_location(customer_id, location_id):
     Delete a saved search location
     """
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Check if location exists and belongs to customer
@@ -363,7 +362,7 @@ def cleanup_old_locations(customer_id):
         days_old = request.args.get('days', 90, type=int)
         keep_count = request.args.get('keep', 20, type=int)
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Delete old locations, but keep the most recent ones
@@ -379,7 +378,7 @@ def cleanup_old_locations(customer_id):
                     LIMIT %s
                 ) AS keep_locations
             )
-            AND last_used_at < DATE_SUB(NOW(), INTERVAL %s DAY)
+            AND last_used_at < NOW() - INTERVAL '%s DAY'
         ''', (customer_id, customer_id, keep_count, days_old))
         
         deleted_count = cursor.rowcount

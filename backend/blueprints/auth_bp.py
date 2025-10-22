@@ -1,10 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_bcrypt import Bcrypt
-import mysql.connector
 import jwt
 import re
 from datetime import datetime, timedelta
 from database.config import db_config
+from database.db_helper import get_db_connection, get_cursor, handle_db_error
 
 def validate_email(email):
     email_regex = r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -66,31 +66,29 @@ def signup():
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
        
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         # Check if email already exists
         cursor.execute('SELECT id FROM users WHERE email = %s', (email,))
         if cursor.fetchone():
             return jsonify({'error': 'Email already registered'}), 409
 
-        
+        # PostgreSQL: INSERT with RETURNING
         cursor.execute('''
             INSERT INTO users (email, password, user_type)
-            VALUES (%s, %s, %s)
+            VALUES (%s, %s, %s) RETURNING id
         ''', (email, hashed_password, user_type))
-        
-        user_id = cursor.lastrowid
+        user_id = cursor.fetchone()['id']
         
         # Create chef or customer profile based on user type
         if user_type == 'chef':
-            # Insert into chefs table
+            # Insert into chefs table with RETURNING
             cursor.execute('''
                 INSERT INTO chefs (first_name, last_name, email, phone)
-                VALUES (%s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s) RETURNING id
             ''', (first_name, last_name, email, phone))
-            
-            chef_id = cursor.lastrowid
+            chef_id = cursor.fetchone()['id']
             
             # Update user with chef_id
             cursor.execute('''
@@ -104,13 +102,12 @@ def signup():
             ''', (chef_id, address, address2, city, state, zip_code, True))
             
         elif user_type == 'customer':
-            # Insert into customers table
+            # Insert into customers table with RETURNING
             cursor.execute('''
                 INSERT INTO customers (first_name, last_name, email, phone)
-                VALUES (%s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s) RETURNING id
             ''', (first_name, last_name, email, phone))
-            
-            customer_id = cursor.lastrowid
+            customer_id = cursor.fetchone()['id']
             
             # Update user with customer_id
             cursor.execute('''
@@ -179,8 +176,8 @@ def signin():
             return jsonify({'error': 'Password cannot be empty'}), 400
 
         
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         # Get user
         cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
@@ -234,8 +231,8 @@ def get_user_profile():
         if not user_id:
             return jsonify({'error': 'user_id is required'}), 400
 
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         # Get user information with linked profile
         cursor.execute('''
