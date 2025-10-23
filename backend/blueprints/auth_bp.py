@@ -5,6 +5,10 @@ import re
 from datetime import datetime, timedelta
 from database.config import db_config
 from database.db_helper import get_db_connection, get_cursor, handle_db_error
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services.geocoding_service import geocoding_service
 
 def validate_email(email):
     email_regex = r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -95,11 +99,20 @@ def signup():
                 UPDATE users SET chef_id = %s WHERE id = %s
             ''', (chef_id, user_id))
             
-            # Insert chef address
+            # Get coordinates from address
+            full_address = f"{address}, {city}, {state} {zip_code}"
+            geocode_result = geocoding_service.geocode_address(full_address)
+            # geocode_result returns (latitude, longitude) tuple or None
+            if geocode_result:
+                latitude, longitude = geocode_result
+            else:
+                latitude, longitude = None, None
+            
+            # Insert chef address with coordinates
             cursor.execute('''
-                INSERT INTO chef_addresses (chef_id, address_line1, address_line2, city, state, zip_code, is_default)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ''', (chef_id, address, address2, city, state, zip_code, True))
+                INSERT INTO chef_addresses (chef_id, address_line1, address_line2, city, state, zip_code, latitude, longitude, is_default)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (chef_id, address, address2, city, state, zip_code, latitude, longitude, True))
             
         elif user_type == 'customer':
             # Insert into customers table with RETURNING
@@ -114,11 +127,20 @@ def signup():
                 UPDATE users SET customer_id = %s WHERE id = %s
             ''', (customer_id, user_id))
             
-            # Insert customer address
+            # Get coordinates from address
+            full_address = f"{address}, {city}, {state} {zip_code}"
+            geocode_result = geocoding_service.geocode_address(full_address)
+            # geocode_result returns (latitude, longitude) tuple or None
+            if geocode_result:
+                latitude, longitude = geocode_result
+            else:
+                latitude, longitude = None, None
+            
+            # Insert customer address with coordinates
             cursor.execute('''
-                INSERT INTO customer_addresses (customer_id, address_line1, address_line2, city, state, zip_code, is_default)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ''', (customer_id, address, address2, city, state, zip_code, True))
+                INSERT INTO customer_addresses (customer_id, address_line1, address_line2, city, state, zip_code, latitude, longitude, is_default)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (customer_id, address, address2, city, state, zip_code, latitude, longitude, True))
         
         conn.commit()
         
