@@ -25,7 +25,7 @@ export default function Stepper({
 
     return (
         <View className="">
-            {label && <Text className={`text-sm font-semibold mb-1 mt-2 text-olive-400 ${labelStyle}`}>{label}</Text>}
+            {label && <Text className={`text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400 ${labelStyle}`}>{label}</Text>}
             <View className="flex-row items-center justify-center space-x-1">
                 <View>
                     <Button
@@ -35,8 +35,8 @@ export default function Stepper({
                         customClasses='rounded-lg w-12 h-12 m-1'
                     />
                 </View>
-                <View className="w-12 h-12 flex items-center justify-center border-2 border-olive-300 rounded-lg bg-olive-100 shadow-sm shadow-olive-500">
-                    <Text className="text-xl font-bold text-olive-500">{numericValue}</Text>
+                <View className="w-12 h-12 flex items-center justify-center border-2 border-primary-300 rounded-lg bg-primary-100 shadow-sm shadow-primary-500 dark:border-dark-300 dark:bg-dark-100">
+                    <Text className="text-xl font-bold text-primary-500">{numericValue}</Text>
                 </View>
                 <View>
                     <Button
@@ -47,8 +47,6 @@ export default function Stepper({
                     />
                 </View>
             </View>
-
         </View>
-
     );
 }

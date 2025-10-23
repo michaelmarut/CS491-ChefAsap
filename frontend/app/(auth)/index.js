@@ -3,16 +3,16 @@ import Button from '../components/Button';
 
 export default function LandingScreen() {
   return (
-    <View className="flex-1 justify-center items-center bg-base-100">
-      <View className="p-6 rounded-2xl bg-olive-200 items-center w-[80%] h-[90%] shadow-lg shadow-olive-400">
+    <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
+      <View className="p-6 rounded-2xl bg-primary-200 items-center w-[80%] h-[90%] shadow-lg shadow-primary-400 dark:bg-dark-200 dark:shadow-dark-400">
         <View className="mb-8 items-center">
           <Image
             source={require('../assets/images/chefAsapLogo1Circle.png')}
             className="w-48 h-48 mb-4"
             resizeMode="contain"
           />
-          <Text className="text-5xl font-bold text-olive-500 title-shadow-md">ChefAsap</Text>
-          <Text className="text-xl font-bold text-olive-400 title-shadow-md">Find a Chef</Text>
+          <Text className="text-5xl font-bold text-primary-500 title-shadow-md">ChefAsap</Text>
+          <Text className="text-xl font-bold text-primary-400 title-shadow-md dark:text-dark-400">Find a Chef</Text>
         </View>
 
         <View className="absolute bottom-[100px] justify-center">

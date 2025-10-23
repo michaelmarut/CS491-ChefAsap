@@ -13,7 +13,7 @@ export default function ProfilePicture({
             {photoUrl ? (
                 <Image
                     source={{ uri: `${apiUrl}${photoUrl}` }}
-                    className={"rounded-full shadow-sm shadow-olive-500"}
+                    className={"rounded-full shadow-sm shadow-primary-500"}
                     style={{
                         width: size * 4,
                         height: size * 4,
@@ -22,7 +22,7 @@ export default function ProfilePicture({
                     }}
                 />
             ) : (
-                <View className="rounded-full shadow-sm shadow-olive-500 justify-center items-center bg-olive-100"
+                <View className="rounded-full shadow-sm shadow-primary-500 justify-center items-center bg-primary-100 dark:bg-dark-100"
                     style={{
                         width: size * 4,
                         height: size * 4,
@@ -30,7 +30,7 @@ export default function ProfilePicture({
                         borderColor: "#4D7C0F",
                     }}
                 >
-                    <Text className="text-olive-400 font-bold text-center" style={{fontSize: size*1.5}}>{firstName[0]} {lastName[0]}</Text>
+                    <Text className="text-primary-400 font-bold text-center dark:text-dark-400" style={{ fontSize: size * 1.5 }}>{firstName[0]} {lastName[0]}</Text>
                 </View>
             )}
         </View>
