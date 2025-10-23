@@ -1,7 +1,16 @@
+"""
+Database configuration for ChefAsap backend
+PostgreSQL (Render Cloud)
+"""
+
+import os
+
+# PostgreSQL configuration (Render Cloud)
 db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'your_password', 
-    #'password': 'xiaobailei1943',
-    'database': 'chefasap'
+    'host': os.getenv('RENDER_DB_HOST', 'dpg-d3s29ihr0fns73e69pp0-a.oregon-postgres.render.com'),
+    'port': int(os.getenv('RENDER_DB_PORT', '5432')),
+    'user': os.getenv('RENDER_DB_USER', 'chefasap_user'),
+    'password': os.getenv('RENDER_DB_PASSWORD', '5YVNDyhzIl93LOvG7RyPfaAVx46LdFW2'),
+    'database': os.getenv('RENDER_DB_NAME', 'chefasap'),
+    'sslmode': 'require'
 }

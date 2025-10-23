@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import Octicons from '@expo/vector-icons/Octicons';
 import Button from './Button';
+import { useTheme } from '../providers/ThemeProvider';
 
 export default function Card({
     title,
@@ -14,9 +15,12 @@ export default function Card({
     startExpanded = false,
     customClasses = '',
     customCard = '',
-    customHeader = ''
+    customHeader = '',
+    customHeaderText = ''
 }) {
     const [isExpanded, setIsExpanded] = useState(isCollapsible ? startExpanded : true);
+
+    const { manualTheme } = useTheme();
 
     const ContentWrapper = isScrollable ? ScrollView : View;
 
@@ -25,14 +29,14 @@ export default function Card({
             horizontal: scrollDirection === 'horizontal',
             showsHorizontalScrollIndicator: scrollDirection === 'horizontal',
             showsVerticalScrollIndicator: scrollDirection === 'vertical',
-            contentContainerStyle: scrollDirection === 'horizontal' ? { paddingHorizontal: 4 } : {}
+            contentContainerStyle: scrollDirection === 'horizontal' ? { paddingHorizontal: 4 } : {},
         }
         : {};
 
-    const cardClasses = "bg-white rounded-xl shadow-sm shadow-olive-500 mb-4 p-0 overflow-hidden " + customClasses;
-    const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-olive-100" + customHeader;
-    const contentWrapperClasses = "p-4 " + customCard;
-    const footerClasses = "p-4";
+    const cardClasses = "bg-white dark:bg-black rounded-xl shadow-sm shadow-primary-500 mb-4 p-0 overflow-hidden " + customClasses;
+    const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-primary-100 dark:bg-dark-100 " + customHeader;
+    const contentWrapperClasses = "m-4 " + customCard;
+    const footerClasses = "p-4 pt-0";
 
     const HeaderContent = (
         <View className="flex-row items-center">
@@ -40,11 +44,11 @@ export default function Card({
                 <Octicons
                     name={headerIcon}
                     size={20}
-                    color="#4d7c0f" // olive-400
+                    color={manualTheme === 'light' ? '#4D7C0F' : "#BEF264"}
                     style={{ marginRight: 8 }}
                 />
             )}
-            <Text className="text-lg font-bold text-olive-400">{title}</Text>
+            <Text className={`text-lg font-bold text-primary-400 dark:text-dark-400 ${customHeaderText}`}>{title}</Text>
         </View>
     );
 
@@ -63,7 +67,7 @@ export default function Card({
                         <Octicons
                             name={isExpanded ? 'chevron-up' : 'chevron-down'}
                             size={20}
-                            color="#4d7c0f" // olive-400
+                            color="#4d7c0f" // primary-400
                         />
                     )}
                 </TouchableOpacity>
@@ -82,6 +86,7 @@ export default function Card({
                         style={footerButtonProps.style || 'accent'}
                         onPress={footerButtonProps.onPress}
                         href={footerButtonProps.href}
+                        icon={footerButtonProps.icon}
                         customClasses="w-full"
                     />
                 </View>

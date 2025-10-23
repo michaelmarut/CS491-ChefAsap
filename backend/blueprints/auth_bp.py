@@ -1,10 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_bcrypt import Bcrypt
-import mysql.connector
 import jwt
 import re
 from datetime import datetime, timedelta
 from database.config import db_config
+from database.db_helper import get_db_connection, get_cursor, handle_db_error
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services.geocoding_service import geocoding_service
 
 def validate_email(email):
     email_regex = r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -66,62 +70,77 @@ def signup():
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
        
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         # Check if email already exists
         cursor.execute('SELECT id FROM users WHERE email = %s', (email,))
         if cursor.fetchone():
             return jsonify({'error': 'Email already registered'}), 409
 
-        
+        # PostgreSQL: INSERT with RETURNING
         cursor.execute('''
             INSERT INTO users (email, password, user_type)
-            VALUES (%s, %s, %s)
+            VALUES (%s, %s, %s) RETURNING id
         ''', (email, hashed_password, user_type))
-        
-        user_id = cursor.lastrowid
+        user_id = cursor.fetchone()['id']
         
         # Create chef or customer profile based on user type
         if user_type == 'chef':
-            # Insert into chefs table
+            # Insert into chefs table with RETURNING
             cursor.execute('''
                 INSERT INTO chefs (first_name, last_name, email, phone)
-                VALUES (%s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s) RETURNING id
             ''', (first_name, last_name, email, phone))
-            
-            chef_id = cursor.lastrowid
+            chef_id = cursor.fetchone()['id']
             
             # Update user with chef_id
             cursor.execute('''
                 UPDATE users SET chef_id = %s WHERE id = %s
             ''', (chef_id, user_id))
             
-            # Insert chef address
+            # Get coordinates from address
+            full_address = f"{address}, {city}, {state} {zip_code}"
+            geocode_result = geocoding_service.geocode_address(full_address)
+            # geocode_result returns (latitude, longitude) tuple or None
+            if geocode_result:
+                latitude, longitude = geocode_result
+            else:
+                latitude, longitude = None, None
+            
+            # Insert chef address with coordinates
             cursor.execute('''
-                INSERT INTO chef_addresses (chef_id, address_line1, address_line2, city, state, zip_code, is_default)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ''', (chef_id, address, address2, city, state, zip_code, True))
+                INSERT INTO chef_addresses (chef_id, address_line1, address_line2, city, state, zip_code, latitude, longitude, is_default)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (chef_id, address, address2, city, state, zip_code, latitude, longitude, True))
             
         elif user_type == 'customer':
-            # Insert into customers table
+            # Insert into customers table with RETURNING
             cursor.execute('''
                 INSERT INTO customers (first_name, last_name, email, phone)
-                VALUES (%s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s) RETURNING id
             ''', (first_name, last_name, email, phone))
-            
-            customer_id = cursor.lastrowid
+            customer_id = cursor.fetchone()['id']
             
             # Update user with customer_id
             cursor.execute('''
                 UPDATE users SET customer_id = %s WHERE id = %s
             ''', (customer_id, user_id))
             
-            # Insert customer address
+            # Get coordinates from address
+            full_address = f"{address}, {city}, {state} {zip_code}"
+            geocode_result = geocoding_service.geocode_address(full_address)
+            # geocode_result returns (latitude, longitude) tuple or None
+            if geocode_result:
+                latitude, longitude = geocode_result
+            else:
+                latitude, longitude = None, None
+            
+            # Insert customer address with coordinates
             cursor.execute('''
-                INSERT INTO customer_addresses (customer_id, address_line1, address_line2, city, state, zip_code, is_default)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ''', (customer_id, address, address2, city, state, zip_code, True))
+                INSERT INTO customer_addresses (customer_id, address_line1, address_line2, city, state, zip_code, latitude, longitude, is_default)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (customer_id, address, address2, city, state, zip_code, latitude, longitude, True))
         
         conn.commit()
         
@@ -179,8 +198,8 @@ def signin():
             return jsonify({'error': 'Password cannot be empty'}), 400
 
         
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         # Get user
         cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
@@ -234,8 +253,8 @@ def get_user_profile():
         if not user_id:
             return jsonify({'error': 'user_id is required'}), 400
 
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         # Get user information with linked profile
         cursor.execute('''
