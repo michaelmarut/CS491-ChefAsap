@@ -75,14 +75,24 @@ def get_chef_profile(chef_id):
         
         # Get chef ratings average
         cursor.execute('''
-            SELECT 
-                AVG(rating) as avg_rating,
-                COUNT(*) as total_ratings
-            FROM chef_ratings 
-            WHERE chef_id = %s
-        ''', (chef_id,))
+            SELECT COUNT(*) as total_ratings, SUM(r.rating) as rating_sum FROM chef_rating r
+            where chef_id = %s''', (chef_id))
+        ratings_data = cursor.fetchall()
+
+        cursor.execute('''
+            SELECT r.customer_id, r.rating, r.comment, r.created_at FROM chef_rating r
+            where chef_id = %s
+            ORDER_BY created_at DESC''', (chef_id))
+        comments = curser.fetchall()
+
+        #returns rating avg and comments
+        '''return jsonify({
+            'chef': chef_id,
+            'rating' : ratings_data['rating_sum'] / ratings_data['total_ratings'],
+            'total_reviews': ratings_data['total_ratings'],
+            'reviews': comments
+        }), 200'''
         
-        rating_info = cursor.fetchone()
         
         profile_data = {
             'chef_id': chef_profile['id'],
@@ -100,8 +110,9 @@ def get_chef_profile(chef_id):
                 'zip_code': chef_profile['zip_code']
             },
             'cuisines': cuisines,
-            'average_rating': float(rating_info['avg_rating'] or 0),
-            'total_ratings': rating_info['total_ratings'],
+            'avg_rating' : ratings_data['rating_sum'] / ratings_data['total_ratings'],
+            'total_reviews': ratings_data['total_ratings'],
+            'reviews': comments
             'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None
         }
         
@@ -460,3 +471,29 @@ def upload_chef_photo(chef_id):
         return jsonify({'photo_url': photo_url}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@profile_bp.route('/chef/<int:chef_id>/rating', methods=['POST'])
+def add_chef_rating():
+    data = request.get_json()
+    chef_id = data.get('chef_id')
+    customer_id = data.get('customer_id')
+    #currently ratings will be done on chef profile so booking_id may be needed later on
+    #booking_id = data.get('booking_id')
+    rating = data.get('rating')
+    comment = data.get('comment', '')
+
+    if not all([chef_id, customer_id, rating]):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        curser.execute('''
+            INSERT INTO chef_rating(chef_id, customer_id, rating, comment)
+            VALUES (%s, %s, %s, %s)''', (chef_id, customer_id, rating, comment))
+        
+        finally:
+            cursor.close()
+            conn.close()
+            return jsonify({'message': 'Rating successfully posted'}), 201
