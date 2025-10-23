@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-import mysql.connector
 from database.config import db_config
+from database.db_helper import get_db_connection, get_cursor, handle_db_error
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/api/chat")
 
@@ -22,7 +22,7 @@ def send_message():
     sender_id = customer_id if sender_type == 'customer' else chef_id
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # First, find or create a chat session
@@ -37,12 +37,12 @@ def send_message():
         if chat_result:
             chat_id = chat_result[0]
         else:
-            # Create new chat session
+            # Create new chat session (PostgreSQL with RETURNING)
             cursor.execute("""
                 INSERT INTO chats (customer_id, chef_id, booking_id) 
-                VALUES (%s, %s, %s)
+                VALUES (%s, %s, %s) RETURNING id
             """, (customer_id, chef_id, booking_id))
-            chat_id = cursor.lastrowid
+            chat_id = cursor.fetchone()[0]
         
         # Insert the message
         cursor.execute("""
@@ -60,7 +60,7 @@ def send_message():
         conn.commit()
         return jsonify(message="Message sent", chat_id=chat_id), 201
 
-    except mysql.connector.Error as e:
+    except Exception as e:
         print("Error inserting message:", e)
         return jsonify(error="Internal server error"), 500
 
@@ -84,8 +84,8 @@ def get_chat_history():
         return jsonify(error=f"Missing query param(s): {', '.join(missing)}"), 400
 
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Find the chat session
         cursor.execute("""
@@ -113,7 +113,7 @@ def get_chat_history():
         messages = cursor.fetchall()
         return jsonify(messages), 200
 
-    except mysql.connector.Error as e:
+    except Exception as e:
         print("Error loading messages:", e)
         return jsonify(error="Internal server error"), 500
 
@@ -133,8 +133,8 @@ def list_bookings():
         return jsonify(error=f"Missing query param(s): {', '.join(missing)}"), 400
 
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         cursor.execute("""
             SELECT
                 id as booking_id,
@@ -154,7 +154,7 @@ def list_bookings():
         bookings = cursor.fetchall()
         return jsonify(bookings), 200
 
-    except mysql.connector.Error as e:
+    except Exception as e:
         print("Error listing bookings:", e)
         return jsonify(error="Internal server error"), 500
 
@@ -175,8 +175,8 @@ def list_contacts():
         return jsonify(error="Provide exactly one of chef_id or customer_id"), 400
 
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         if chef_id:
             # fetch distinct customer IDs + names for this chef
@@ -207,7 +207,7 @@ def list_contacts():
         ]
         return jsonify(contacts), 200
 
-    except mysql.connector.Error as e:
+    except Exception as e:
         print("Error listing contacts:", e)
         return jsonify(error="Internal server error"), 500
 
@@ -229,8 +229,8 @@ def get_conversations():
         return jsonify(error="Provide exactly one of chef_id or customer_id"), 400
 
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         if chef_id:
             # Get conversations for a chef
@@ -296,7 +296,7 @@ def get_conversations():
         conversations = cursor.fetchall()
         return jsonify(conversations), 200
 
-    except mysql.connector.Error as e:
+    except Exception as e:
         print("Error getting conversations:", e)
         return jsonify(error="Internal server error"), 500
 
@@ -318,7 +318,7 @@ def mark_messages_read():
     user_type = data['user_type']  # 'customer' or 'chef'
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Mark all messages as read for this conversation where the user is NOT the sender
@@ -344,7 +344,7 @@ def mark_messages_read():
         conn.commit()
         return jsonify(message="Messages marked as read"), 200
 
-    except mysql.connector.Error as e:
+    except Exception as e:
         print("Error marking messages as read:", e)
         return jsonify(error="Internal server error"), 500
 

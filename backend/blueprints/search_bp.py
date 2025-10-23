@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-import mysql.connector
 from database.config import db_config
+from database.db_helper import get_db_connection, get_cursor, handle_db_error
 
 # Create the search blueprint
 search_bp = Blueprint('search', __name__)
@@ -43,8 +43,8 @@ def search_nearby_chefs():
                 'message': 'Please provide latitude and longitude'
             }), 400
 
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         # Start with base parameters for distance calculation
         params = [customer_lat, customer_lon, customer_lat]
@@ -55,7 +55,7 @@ def search_nearby_chefs():
                 c.id as chef_id,
                 c.first_name,
                 c.last_name,
-                CONCAT(c.first_name, ' ', c.last_name) as full_name,
+                c.first_name || ' ' || c.last_name as full_name,
                 c.email,
                 c.phone,
                 c.gender,
@@ -80,7 +80,7 @@ def search_nearby_chefs():
                 ca.longitude,
                 
                 -- Cuisine information
-                GROUP_CONCAT(DISTINCT ct.name ORDER BY ct.name) as cuisines,
+                STRING_AGG(ct.name, ', ' ORDER BY ct.name) as cuisines,
                 
                 -- Rating information from summary table
                 crs.average_rating,
@@ -112,7 +112,7 @@ def search_nearby_chefs():
         if chef_name:
             query += ''' AND (c.first_name LIKE %s 
                             OR c.last_name LIKE %s 
-                            OR CONCAT(c.first_name, " ", c.last_name) LIKE %s
+                            OR c.first_name || ' ' || c.last_name LIKE %s
                             OR EXISTS (
                                 SELECT 1 FROM chef_cuisines cc2
                                 JOIN cuisine_types ct2 ON cc2.cuisine_id = ct2.id
@@ -131,14 +131,17 @@ def search_nearby_chefs():
                      cp.base_rate_per_person, cp.minimum_people, cp.maximum_people, cp.produce_supply_extra_cost,
                      ca.address_line1, ca.city, ca.state, ca.zip_code, ca.latitude, ca.longitude,
                      crs.average_rating, crs.total_reviews
-            HAVING distance_miles <= %s
+            HAVING (3959 * acos(cos(radians(%s)) * cos(radians(ca.latitude)) * 
+                cos(radians(ca.longitude) - radians(%s)) + 
+                sin(radians(%s)) * sin(radians(ca.latitude)))) <= %s
         '''
-        params.append(radius)
+        params.extend([customer_lat, customer_lon, customer_lat, radius])
         
         # Add additional HAVING conditions
         if cuisine:
-            query += ' AND FIND_IN_SET(%s, cuisines) > 0'
-            params.append(cuisine)
+            # PostgreSQL: Use POSITION or LIKE for substring search in aggregated cuisines
+            query += ' AND cuisines LIKE %s'
+            params.append(f'%{cuisine}%')
 
         if min_rating is not None and min_rating > 0:
             # Use COALESCE to treat NULL ratings as 0
@@ -169,8 +172,12 @@ def search_nearby_chefs():
         params.extend([limit, offset])
 
         print(f'Executing nearby search query for location ({customer_lat}, {customer_lon}) within {radius} miles')
+        print(f'Parameters: chef_name={chef_name}, gender={gender}, timing={timing}, cuisine={cuisine}')
+        print(f'Params list length: {len(params)}')
+        print(f'Query params: {params}')
         cursor.execute(query, params)
         chefs = cursor.fetchall()
+        print(f'Query returned {len(chefs)} chef(s)')
 
         # Process results
         results = []
@@ -242,6 +249,8 @@ def search_nearby_chefs():
 
     except Exception as e:
         print(f'Error in search_nearby_chefs: {str(e)}')
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e),
@@ -260,8 +269,8 @@ def get_available_cuisines():
     conn = None
     cursor = None
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
         cursor.execute('''
             SELECT DISTINCT ct.name, COUNT(cc.chef_id) as chef_count

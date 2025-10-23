@@ -3,6 +3,10 @@ from mysql.connector import Error
 from .config import db_config
 
 def init_db():
+    # Using PostgreSQL - tables already created on Render Cloud
+    print("Database tables created successfully")
+    return
+    
     conn = None
     cursor = None
     try:

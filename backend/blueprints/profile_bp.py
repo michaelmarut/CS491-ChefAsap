@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-import mysql.connector
 from database.config import db_config
+from database.db_helper import get_db_connection, get_cursor, handle_db_error
 import re
 import os
 import time
@@ -26,14 +26,17 @@ def validate_image_url(url):
 @profile_bp.route('/chef/<int:chef_id>', methods=['GET'])
 def get_chef_profile(chef_id):
     """Get chef profile information"""
+    print(f"=== Getting chef profile for chef_id: {chef_id} ===")
     # Check if this is a public view (for customers) or private view (for chef themselves)
     show_private_info = request.args.get('private', 'false').lower() == 'true'
     
     conn = None
     cursor = None
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True, buffered=True)
+        print(f"Connecting to database...")
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True, buffered=True)
+        print(f"Database connected, fetching chef info...")
         
         # Get chef basic info with default address
         cursor.execute('''
@@ -180,6 +183,9 @@ def get_chef_profile(chef_id):
         return jsonify({'profile': profile_data}), 200
         
     except Exception as e:
+        print(f"ERROR in get_chef_profile: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
     finally:
         # Ensure proper cleanup
@@ -194,8 +200,8 @@ def get_chef_public_profile(chef_id):
     conn = None
     cursor = None
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True, buffered=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True, buffered=True)
         
         # Get chef basic info (excluding private information)
         cursor.execute('''
@@ -368,7 +374,7 @@ def update_chef_profile(chef_id):
         if photo_url and not validate_image_url(photo_url):
             return jsonify({'error': 'Invalid image URL format'}), 400
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Check if chef exists
@@ -462,8 +468,8 @@ def update_chef_profile(chef_id):
 def get_customer_profile(customer_id):
     """Get customer profile information"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Get customer basic info with default address
         cursor.execute('''
@@ -567,7 +573,7 @@ def update_customer_profile(customer_id):
         if photo_url and not validate_image_url(photo_url):
             return jsonify({'error': 'Invalid image URL format'}), 400
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Check if customer exists
@@ -671,14 +677,19 @@ def upload_customer_photo(customer_id):
         if photo.filename == '':
             return jsonify({'error': 'No selected file'}), 400
 
+        # Ensure directory exists (use absolute path)
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        photo_dir = os.path.join(base_dir, 'static', 'profile_photos')
+        os.makedirs(photo_dir, exist_ok=True)
+
         filename = secure_filename(f"profile_customer{customer_id}.{photo.filename.rsplit('.', 1)[-1]}")
-        filepath = os.path.join('static/profile_photos', filename)
+        filepath = os.path.join(photo_dir, filename)
         photo.save(filepath)
 
         photo_url = f"/static/profile_photos/{filename}"
 
         # Update photo_url in database
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('UPDATE customers SET photo_url = %s WHERE id = %s', (photo_url, customer_id))
         conn.commit()
@@ -699,14 +710,19 @@ def upload_chef_photo(chef_id):
         if photo.filename == '':
             return jsonify({'error': 'No selected file'}), 400
 
+        # Ensure directory exists (use absolute path)
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        photo_dir = os.path.join(base_dir, 'static', 'profile_photos')
+        os.makedirs(photo_dir, exist_ok=True)
+
         filename = secure_filename(f"profile_chef{chef_id}.{photo.filename.rsplit('.', 1)[-1]}")
-        filepath = os.path.join('static/profile_photos', filename)
+        filepath = os.path.join(photo_dir, filename)
         photo.save(filepath)
 
         photo_url = f"/static/profile_photos/{filename}"
 
         # Update photo_url in database
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('UPDATE chefs SET photo_url = %s WHERE id = %s', (photo_url, chef_id))
         conn.commit()
@@ -725,7 +741,7 @@ def upload_chef_cuisine_photos(chef_id):
     """Upload cuisine photos for chef"""
     try:
         # Check if chef exists
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT id FROM chefs WHERE id = %s', (chef_id,))
         if not cursor.fetchone():
@@ -797,8 +813,9 @@ def upload_chef_cuisine_photos(chef_id):
                 'trying_to_add': new_photos_count
             }), 400
 
-        # Create directory if it doesn't exist
-        cuisine_photos_dir = 'static/cuisine_photos'
+        # Create directory if it doesn't exist (use absolute path)
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cuisine_photos_dir = os.path.join(base_dir, 'static', 'cuisine_photos')
         os.makedirs(cuisine_photos_dir, exist_ok=True)
 
         # Process each photo
@@ -827,15 +844,16 @@ def upload_chef_cuisine_photos(chef_id):
                 result = cursor.fetchone()
                 display_order = (result[0] or 0) + 1 + i
 
-                # Insert photo record
+                # Insert photo record (PostgreSQL with RETURNING)
                 cursor.execute('''
                     INSERT INTO chef_cuisine_photos 
                     (chef_id, cuisine_type, photo_url, photo_title, photo_description, is_featured, display_order)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
                 ''', (chef_id, cuisine_type, photo_url, photo_title, photo_description, is_featured, display_order))
+                photo_id = cursor.fetchone()[0]
 
                 uploaded_photos.append({
-                    'photo_id': cursor.lastrowid,
+                    'photo_id': photo_id,
                     'photo_url': photo_url,
                     'cuisine_type': cuisine_type,
                     'photo_title': photo_title,
@@ -861,8 +879,8 @@ def upload_chef_cuisine_photos(chef_id):
 def get_chef_cuisine_photos(chef_id):
     """Get all cuisine photos for a chef"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         cuisine_type = request.args.get('cuisine_type')  # Optional filter
         
@@ -921,7 +939,7 @@ def update_cuisine_photo(chef_id, photo_id):
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Check if photo exists and belongs to chef
@@ -981,7 +999,7 @@ def update_cuisine_photo(chef_id, photo_id):
 def delete_cuisine_photo(chef_id, photo_id):
     """Delete a cuisine photo"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Get photo info first
@@ -1025,8 +1043,8 @@ def delete_cuisine_photo(chef_id, photo_id):
 def get_chef_photo_limits(chef_id):
     """Get chef's current photo upload limits and usage"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Photo limits constants
         MAX_PHOTOS_PER_CUISINE = 10
@@ -1104,7 +1122,7 @@ def reorder_cuisine_photos(chef_id):
         if not isinstance(photo_order, list):
             return jsonify({'error': 'photo_order must be an array of photo IDs'}), 400
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # Verify chef exists
@@ -1170,8 +1188,8 @@ def move_photo_position(chef_id, photo_id):
         if not isinstance(new_position, int) or new_position < 1:
             return jsonify({'error': 'new_position must be a positive integer starting from 1'}), 400
         
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Get photo info
         cursor.execute('''
@@ -1239,8 +1257,8 @@ def move_photo_position(chef_id, photo_id):
 def toggle_photo_featured(chef_id, photo_id):
     """Toggle photo featured status (featured photos appear first)"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Get current featured status
         cursor.execute('''

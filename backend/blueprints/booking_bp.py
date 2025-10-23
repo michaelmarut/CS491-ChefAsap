@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-import mysql.connector
 from datetime import datetime, timedelta
 from database.config import db_config
+from database.db_helper import get_db_connection, get_cursor, handle_db_error
 import math
 from services.geocoding_service import geocoding_service, get_coordinates_for_zip
 
@@ -56,19 +56,18 @@ def create_booking():
         if booking_datetime <= datetime.now():
             return jsonify({'error': 'Booking date must be in the future'}), 400
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
-
+        # PostgreSQL: INSERT with RETURNING
         cursor.execute('''
             INSERT INTO bookings (customer_id, cuisine_type, meal_type, event_type, 
                                 booking_date, booking_time, produce_supply, 
                                 number_of_people, special_notes)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
         ''', (customer_id, cuisine_type, meal_type, event_type, 
               booking_date, booking_time, produce_supply, number_of_people, special_notes))
-        
-        booking_id = cursor.lastrowid
+        booking_id = cursor.fetchone()[0]
         conn.commit()
         
         cursor.close()
@@ -97,8 +96,8 @@ def search_chefs():
         if not all([cuisine_type, booking_date, booking_time, customer_zip]):
             return jsonify({'error': 'Missing required search criteria'}), 400
         
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Use improved geocoding service
         customer_lat, customer_lon = get_zip_coordinates(customer_zip)
@@ -120,7 +119,7 @@ def search_chefs():
                 cp.produce_supply_extra_cost,
                 cp.minimum_people,
                 cp.maximum_people,
-                GROUP_CONCAT(DISTINCT ct.name) as cuisines
+                STRING_AGG(ct.name, ', ') as cuisines
             FROM chefs c
             JOIN chef_cuisines cc ON c.id = cc.chef_id
             JOIN cuisine_types ct ON cc.cuisine_id = ct.id
@@ -206,7 +205,7 @@ def book_chef():
         if not all([booking_id, chef_id]):
             return jsonify({'error': 'Missing booking_id or chef_id'}), 400
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
       
@@ -232,8 +231,8 @@ def book_chef():
 def get_customer_dashboard(customer_id):
     """Get categorized bookings for customer dashboard: previous, today's, and upcoming"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         # Get today's date
         from datetime import date
@@ -253,7 +252,7 @@ def get_customer_dashboard(customer_id):
                 b.status,
                 b.total_cost,
                 b.created_at,
-                CONCAT(c.first_name, ' ', c.last_name) as chef_name,
+                c.first_name || ' ' || c.last_name as chef_name,
                 c.email as chef_email,
                 c.phone as chef_phone,
                 c.photo_url as chef_photo,
@@ -325,8 +324,8 @@ def get_customer_dashboard(customer_id):
 def get_customer_bookings(customer_id):
     """Get all bookings for a customer (legacy endpoint - use dashboard for categorized data)"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         cursor.execute('''
             SELECT 
@@ -341,7 +340,7 @@ def get_customer_bookings(customer_id):
                 b.status,
                 b.total_cost,
                 b.created_at,
-                CONCAT(c.first_name, ' ', c.last_name) as chef_name,
+                c.first_name || ' ' || c.last_name as chef_name,
                 c.email as chef_email,
                 c.phone as chef_phone
             FROM bookings b
@@ -378,19 +377,19 @@ def get_customer_bookings(customer_id):
 def get_favorite_chefs(customer_id):
     """Get customer's favorite chefs"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         cursor.execute('''
             SELECT 
                 c.id as chef_id,
                 c.first_name,
                 c.last_name,
-                CONCAT(c.first_name, ' ', c.last_name) as chef_name,
+                c.first_name || ' ' || c.last_name as chef_name,
                 c.email,
                 c.phone,
                 c.photo_url,
-                GROUP_CONCAT(DISTINCT ct.name ORDER BY ct.name) as cuisines,
+                STRING_AGG(ct.name, ', ' ORDER BY ct.name) as cuisines,
                 AVG(cr.rating) as average_rating,
                 COUNT(cr.rating) as total_reviews,
                 csa.city,
@@ -448,12 +447,11 @@ def add_favorite_chef(customer_id):
         if not chef_id:
             return jsonify({'error': 'chef_id is required'}), 400
         
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT IGNORE INTO customer_favorite_chefs (customer_id, chef_id)
-            VALUES (%s, %s)
+            INSERT INTO customer_favorite_chefs (customer_id, chef_id) VALUES (%s, %s) ON CONFLICT DO NOTHING
         ''', (customer_id, chef_id))
         
         conn.commit()
@@ -469,7 +467,7 @@ def add_favorite_chef(customer_id):
 def remove_favorite_chef(customer_id, chef_id):
     """Remove a chef from customer's favorites"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -490,8 +488,8 @@ def remove_favorite_chef(customer_id, chef_id):
 def get_recent_chefs(customer_id):
     """Get chefs the customer has recently completed appointments with"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         limit = request.args.get('limit', 10, type=int)
         
@@ -500,11 +498,11 @@ def get_recent_chefs(customer_id):
                 c.id as chef_id,
                 c.first_name,
                 c.last_name,
-                CONCAT(c.first_name, ' ', c.last_name) as chef_name,
+                c.first_name || ' ' || c.last_name as chef_name,
                 c.email,
                 c.phone,
                 c.photo_url,
-                GROUP_CONCAT(DISTINCT ct.name ORDER BY ct.name) as cuisines,
+                STRING_AGG(ct.name, ', ' ORDER BY ct.name) as cuisines,
                 AVG(cr.rating) as average_rating,
                 COUNT(cr.rating) as total_reviews,
                 csa.city,
@@ -558,8 +556,8 @@ def get_recent_chefs(customer_id):
 def get_nearby_chefs(customer_id):
     """Get chefs near the customer's location"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
         
         limit = request.args.get('limit', 20, type=int)
         max_distance = request.args.get('max_distance', 25, type=int)  # miles
@@ -583,11 +581,11 @@ def get_nearby_chefs(customer_id):
                 c.id as chef_id,
                 c.first_name,
                 c.last_name,
-                CONCAT(c.first_name, ' ', c.last_name) as chef_name,
+                c.first_name || ' ' || c.last_name as chef_name,
                 c.email,
                 c.phone,
                 c.photo_url,
-                GROUP_CONCAT(DISTINCT ct.name ORDER BY ct.name) as cuisines,
+                STRING_AGG(ct.name, ', ' ORDER BY ct.name) as cuisines,
                 AVG(cr.rating) as average_rating,
                 COUNT(cr.rating) as total_reviews,
                 csa.city,
