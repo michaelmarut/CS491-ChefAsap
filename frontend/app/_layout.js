@@ -29,6 +29,8 @@ function RootStack() {
                 ) : (
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 )}
+                <Stack.Screen name="ChefProfileScreen" options={{ headerShown: false }} />
+                <Stack.Screen name="ChefMenu" options={{ headerShown: false }} />
             </Stack>
         </View>
     );

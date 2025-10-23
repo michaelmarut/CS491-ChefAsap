@@ -67,7 +67,7 @@ export default function Card({
             <View className="flex-row w-full justify-between items-center p-2 pl-4 pr-4">
 
                 <Text className="text-3xl font-bold text-primary-400 text-center dark:text-dark-400">{profileData?.first_name} {profileData?.last_name}</Text>
-                <Text className="text-md text-primary-100 dark:text-dark-100">{distance} Mi.</Text>
+                <Text className="text-md text-primary-400 dark:text-dark-400">{distance} Mi.</Text>
             </View>
 
 

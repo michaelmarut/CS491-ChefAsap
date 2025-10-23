@@ -89,7 +89,7 @@ export default function ChefProfileScreen() {
             <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
                 {/*<Text>{JSON.stringify(chefData)}</Text>*/}
                 <Card
-                    title={`${chefData?.first_name} ${chefData?.last_name} `}
+                    title={`${chefData?.first_name} ${chefData?.last_name}`}
                     customHeader='justify-center'
                     customHeaderText='text-3xl'
                 >
@@ -164,7 +164,7 @@ export default function ChefProfileScreen() {
                     title="View Menu"
                     style="primary"
                     customClasses="min-w-[60%]"
-                    onPress={() => alert("Info Placeholder")}
+                    href={`/ChefMenu/${id}`}
                 />
 
                 <Button
