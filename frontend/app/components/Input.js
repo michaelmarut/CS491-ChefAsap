@@ -2,18 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import Octicons from '@expo/vector-icons/Octicons';
 
-/**
- * A generalized, styled text input component.
- * @param {string} label - Text label displayed above the input.
- * @param {string} error - Optional error message displayed below the input.
- * @param {string} containerClasses - Optional NativeWind classes for the surrounding View.
- * @param {boolean} isTextArea - If true, applies styling for a multi-line text area.
- * @param {object} props - All standard React Native TextInput props (value, onChangeText, etc.).
- */
 export default function Input({
     label, // input label
     error, // error message
-    containerClasses = "mb-2", // optional container classes
+    containerClasses = "mb-1", // optional container classes
     isTextArea = false, // allows for multi-line input
     secureTextEntry, //allows for password hiding
     disabled = false, // disables input
@@ -25,11 +17,11 @@ export default function Input({
         setIsPasswordVisible(prev => !prev);
     };
 
-    const baseClasses = "border border-olive-200 bg-white rounded-full py-3 px-4 text-base text-olive-500 focus:border-olive-300";
+    const baseClasses = "border border-primary-200 bg-white dark:bg-black rounded-full py-3 px-4 text-base text-primary-500 focus:border-primary-300 shadow-sm shadow-primary-500 dark:border-dark-200 dark:focus:border-dark-300";
     const finalInputClasses = isTextArea
         ? `${baseClasses.replace('rounded-full', 'rounded-lg')} h-24 text-top`
         : `${baseClasses} rounded-full`;
-    
+
     const finalSecureTextEntry = isPasswordField && isPasswordVisible;
 
     const eyeLocation = label ? 'top-[37px]' : 'top-[4px]';
@@ -37,7 +29,7 @@ export default function Input({
     return (
         <View className={containerClasses}>
             {label && (
-                <Text className="text-sm font-semibold mb-1 mt-2 text-olive-400">
+                <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">
                     {label}
                 </Text>
             )}
@@ -46,15 +38,15 @@ export default function Input({
                 className={finalInputClasses}
                 placeholderTextColor="#6b7280" // base-200
                 style={isTextArea ? { textAlignVertical: 'top' } : {}}
-                secureTextEntry={finalSecureTextEntry} 
-                disabled={disabled}
+                secureTextEntry={finalSecureTextEntry}
+                editable={!disabled}
                 {...props}
             />
 
             {isPasswordField && (
                 <TouchableOpacity
                     onPress={togglePasswordVisibility}
-                    className= {`absolute right-0 p-3 ${eyeLocation}`} 
+                    className={`absolute right-0 p-3 ${eyeLocation}`}
                 >
                     <Octicons
                         name={isPasswordVisible ? 'eye' : 'eye-closed'}

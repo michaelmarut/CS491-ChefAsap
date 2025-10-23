@@ -18,6 +18,10 @@ export default function AuthLayout() {
                 options={{ headerShown: false }}
             />
 
+            <Stack.Screen
+                name="ForgetPasswordScreen"
+                options={{ headerShown: false }}
+            />
         </Stack>
     );
 }

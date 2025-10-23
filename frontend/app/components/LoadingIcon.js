@@ -12,14 +12,14 @@ const styles = StyleSheet.create({
 
 export default function LoadingIcon({ message = "Just a moment..." }) {
     return (
-        <View className="flex-1 justify-center items-center bg-base-100 pb-16">
+        <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100 pb-32">
             <LottieView
                 source={FryingPanAsset}
-                style={styles.lottieSize} 
+                style={styles.lottieSize}
                 autoPlay
                 loop
             />
-            <Text className="text-lg font-semibold text-olive-500 mt-4">
+            <Text className="text-lg font-semibold text-primary-400 mt-4 dark:text-dark-400">
                 {message}
             </Text>
         </View>
