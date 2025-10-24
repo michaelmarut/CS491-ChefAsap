@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from database.config import db_config
-from database.setup import init_db
+
 from database.db_helper import get_db_connection, get_cursor
 from blueprints.auth_bp import auth_bp
 from blueprints.booking_bp import booking_bp
@@ -65,9 +65,6 @@ def serve_static(filename):
     return send_from_directory('static', filename)
 
 if __name__ == '__main__':
-    init_db() 
-    
-
     hostname = socket.gethostname()
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:

@@ -169,7 +169,7 @@ def get_chef_profile(chef_id):
             'cuisines': cuisines,
             'avg_rating' : ratings_data['rating_sum'] / ratings_data['total_ratings'],
             'total_reviews': ratings_data['total_ratings'],
-            'reviews': comments
+            'reviews': comments,
             'cuisine_photos': cuisine_photos,
             'average_rating': float(rating_info['avg_rating'] or 0),
             'total_ratings': rating_info['total_ratings'] or 0,
@@ -794,10 +794,17 @@ def add_chef_rating():
             INSERT INTO chef_rating(chef_id, customer_id, rating, comment)
             VALUES (%s, %s, %s, %s)''', (chef_id, customer_id, rating, comment))
         
-        finally:
+        conn.commit()
+        return jsonify({'message': 'Rating successfully posted'}), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+        
+    finally:
+        if 'cursor' in locals():
             cursor.close()
+        if 'conn' in locals():
             conn.close()
-            return jsonify({'message': 'Rating successfully posted'}), 201
 
 # ============= Chef Cuisine Photos Management =============
 
