@@ -745,6 +745,33 @@ def upload_chef_photo(chef_id):
         return jsonify({'photo_url': photo_url}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@profile_bp.route('/chef/<int:chef_id>/photo', methods=['GET'])
+def get_chef_photo(chef_id):
+    """Fetch the chef's profile photo URL from the database."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT photo_url FROM chefs WHERE id = %s', (chef_id,))
+        
+        result = cursor.fetchone() 
+        
+        cursor.close()
+        conn.close()
+
+        if result:
+            photo_url = result[0]
+            if photo_url:
+                return jsonify({'chef_id': chef_id, 'photo_url': photo_url}), 200
+            else:
+                return jsonify({'chef_id': chef_id, 'photo_url': None, 'message': 'No photo uploaded yet'}), 200
+        else:
+            return jsonify({'error': 'Chef not found'}), 404
+
+    except Exception as e:
+        print(f"Error fetching photo for chef {chef_id}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @profile_bp.route('/chef/<int:chef_id>/rating', methods=['POST'])
 def add_chef_rating():
