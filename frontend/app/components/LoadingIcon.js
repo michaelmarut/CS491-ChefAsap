@@ -1,27 +1,38 @@
 import LottieView from 'lottie-react-native';
 import { View, Text, StyleSheet } from 'react-native';
 
-const FryingPanAsset = require('../assets/lotties/loadingLottie.json');
+const lottieSrc = {
+    'pan': require('../assets/lotties/panLoading.json'),
+    'spinner': require('../assets/lotties/spinnerLoading.json'),
+    'flame': require('../assets/lotties/flameLoading.json'),
+    'food': require('../assets/lotties/foodLoading.json'),
+}
 
-const styles = StyleSheet.create({
-    lottieSize: {
-        width: 192,
-        height: 192,
-    }
-});
+export default function LoadingIcon({
+    message = "Just a moment...",
+    icon = "pan",
+    size = 192
+}) {
+    const styles = StyleSheet.create({
+        lottieSize: {
+            width: size,
+            height: size,
+        }
+    });
 
-export default function LoadingIcon({ message = "Just a moment..." }) {
     return (
-        <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100 pb-32">
+        <View className="flex-1 justify-center items-center">
             <LottieView
-                source={FryingPanAsset}
+                source={lottieSrc[icon]}
                 style={styles.lottieSize}
                 autoPlay
                 loop
             />
-            <Text className="text-lg font-semibold text-primary-400 mt-4 dark:text-dark-400">
-                {message}
-            </Text>
+            {message &&
+                <Text className="text-lg font-semibold text-primary-400 mt-4 dark:text-dark-400">
+                    {message}
+                </Text>
+            }
         </View>
     );
 }

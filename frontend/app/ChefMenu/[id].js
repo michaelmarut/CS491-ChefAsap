@@ -13,15 +13,16 @@ import Card from "../components/Card";
 
 const tempImageComponent = (
     <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
-        <View className="bg-white h-[200px] w-[200px] justify-center">
+        <View className="bg-white h-[100px] w-[100px] justify-center">
             <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE GOES HERE</Text>
         </View>
-        <Text className="text-primary-400 text-md pt-2 w-[200px] text-center text-justified dark:text-dark-400">
+        <Text className="text-primary-400 text-md pt-2 w-[100px] text-center text-justified dark:text-dark-400">
             Caption goes here.
         </Text>
         <Button
             title={"Add to order"}
             onPress={() => alert("Added to order")}
+            customClasses='rounded-xl'
         />
     </View>
 );
@@ -121,19 +122,19 @@ export default function ChefMenu() {
                                 ))}
                             </View>
                             <Text className="text-md text-primary-400 pt-2 dark:text-dark-400">Available:</Text>
-                            <Text className="text-md text-primary-400 pb-2 dark:text-dark-400">{timing.join(', ')}</Text>
+                            <Text className="text-md text-primary-400 pb-2 dark:text-dark-400">{timing?.join(', ')}</Text>
                         </View>
                         <View className="flex justify-center items-center w-1/2 p-4 rounded-br-3xl">
                             <ProfilePicture photoUrl={chefData?.photo_url} firstName={chefData?.first_name} lastName={chefData?.last_name} size={28} />
                             <View className="flex-row justify-center items-center pt-2">
-                                {Array.from({ length: chefData.average_rating }, (a, i) => i).map((num, index) =>
+                                {Array.from({ length: chefData?.average_rating }, (a, i) => i).map((num, index) =>
                                     <Octicons
                                         key={index}
                                         name={"star-fill"}
                                         size={24}
                                         color={"#65A30D"}
                                     />)}
-                                {Array.from({ length: 5 - chefData.average_rating }, (a, i) => i).map((num, index) =>
+                                {Array.from({ length: 5 - chefData?.average_rating }, (a, i) => i).map((num, index) =>
                                     <Octicons
                                         key={index}
                                         name={"star"}
@@ -143,7 +144,7 @@ export default function ChefMenu() {
                             </View>
                         </View>
                     </View>
-                    <Text className="text-sm text-center text-primary-400 pt-2 border-t border-primary-200 dark:text-dark-400 dark:border-dark-200 w-full">Serving Since: {chefData.member_since}</Text>
+                    <Text className="text-sm text-center text-primary-400 pt-2 border-t border-primary-200 dark:text-dark-400 dark:border-dark-200 w-full">Serving Since: {chefData?.member_since}</Text>
                 </View>
 
                 <Card
@@ -168,6 +169,7 @@ export default function ChefMenu() {
                         keyExtractor={(item) => item.id}
                         numColumns={2}
                         contentContainerStyle={{ padding: 8 }}
+                        scrollEnabled={false}
                     />
                 </Card>
 
