@@ -694,6 +694,53 @@ def init_postgres_db():
         ''')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_search_location ON customer_search_locations(latitude, longitude)')
 
+        # Chef menu items
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_menu_items (
+                id SERIAL PRIMARY KEY,
+                chef_id INTEGER NOT NULL,
+                dish_name VARCHAR(255) NOT NULL,
+                description TEXT,
+                photo_url VARCHAR(500),
+                servings INTEGER,
+                cuisine_type VARCHAR(100),
+                dietary_info VARCHAR(255),
+                spice_level VARCHAR(50),
+                is_available BOOLEAN DEFAULT TRUE,
+                is_featured BOOLEAN DEFAULT FALSE,
+                display_order INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                CONSTRAINT unique_chef_dish UNIQUE (chef_id, dish_name)
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_chef_menu_chef_id ON chef_menu_items(chef_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_chef_menu_available ON chef_menu_items(chef_id, is_available)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_chef_menu_featured ON chef_menu_items(chef_id, is_featured)')
+
+        # Trigger to update updated_at for chef_menu_items
+        cursor.execute('''
+            CREATE OR REPLACE FUNCTION update_chef_menu_updated_at()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                NEW.updated_at = CURRENT_TIMESTAMP;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        ''')
+        
+        cursor.execute('''
+            DROP TRIGGER IF EXISTS trigger_update_chef_menu_timestamp ON chef_menu_items;
+        ''')
+        
+        cursor.execute('''
+            CREATE TRIGGER trigger_update_chef_menu_timestamp
+            BEFORE UPDATE ON chef_menu_items
+            FOR EACH ROW
+            EXECUTE FUNCTION update_chef_menu_updated_at();
+        ''')
+
         # Add foreign key constraints for users table
         # Check if constraint exists before adding
         try:

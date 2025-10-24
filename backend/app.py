@@ -11,6 +11,7 @@ from blueprints.chat_bp import chat_bp
 from blueprints.search_bp import search_bp
 from blueprints.geocoding_bp import geocoding_bp
 from blueprints.search_location_bp import search_location_bp
+from blueprints.menu_bp import menu_bp
 import socket
 import os
 
@@ -44,6 +45,8 @@ app.register_blueprint(search_bp, url_prefix='/search')
 app.register_blueprint(geocoding_bp, url_prefix='/geocoding')
 
 app.register_blueprint(search_location_bp, url_prefix='/api')
+
+app.register_blueprint(menu_bp)
 
 @app.route('/')
 def index():
