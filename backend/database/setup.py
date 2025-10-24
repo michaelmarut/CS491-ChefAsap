@@ -366,7 +366,7 @@ def init_db():
         ''')
 
         # Chef ratings table - customers rate chefs after completed appointments
-        cursor.execute('''
+        """cursor.execute('''
             CREATE TABLE IF NOT EXISTS chef_ratings (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 booking_id INT NOT NULL,
@@ -667,6 +667,21 @@ def init_db():
                 INDEX idx_customer_fees (customer_id, status),
                 INDEX idx_booking_fee (booking_id),
                 INDEX idx_fee_status (status)
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_rating(
+                rating_id INT AUTO_INCREMENT PRIMARY KEY,
+                chef_id INT NOT NULL,
+                customer_id INT NOT NULL,
+                booking_id INT NOT NULL,
+                rating FLOAT NOT NULL CHECK (rating >= 1.0 AND rating <= 5.0),
+                comment VARCHAR(1000),
+                FOREIGN KEY (chef_id) references chefs(id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+                INDEX idx_chef_rating (chef_id)
             )
         ''')
 

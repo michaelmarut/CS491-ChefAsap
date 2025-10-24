@@ -10,12 +10,6 @@ import SearchBarComponent from '../components/SearchBar';
 import SearchResultCard from '../components/SearchResultCard';
 import ProfilePicture from '../components/ProfilePicture';
 
-const SEARCH_RESULTS = [
-    { chef_id: 5, distance: 1.1, cuisine: ["Italian"], timing: ["Lunch"], rating: 5 },
-    { chef_id: 6, distance: 1.7, cuisine: ["French", "Italian"], timing: ["Lunch", "Dinner"], rating: 3 },
-    { chef_id: 7, distance: 2.2, cuisine: ["Italian", "Vietnamese"], timing: ["Lunch", "Dinner"], rating: 4 },
-];
-
 const tempChefCard = (
     <View className="flex bg-primary-100 shadow-sm shadow-primary-300 mr-4 rounded-xl border-2 border-primary-400 dark:bg-dark-100 dark:shadow-dark-300 dark:border-dark-400">
         <View className="w-full p-2">
@@ -181,15 +175,21 @@ export default function SearchScreen() {
                 isScrollable={true}
                 scrollDirection="vertical"
             >
-                {searchResults.map((result, index) =>
+                
+                {searchResults.length != 0 ? searchResults.map((result, index) =>
                     <SearchResultCard
                         key={index}
                         chef_id={result["chef_id"]}
+                        first_name={result["first_name"]}
+                        last_name={result["last_name"]}
                         distance={result["distance"]}
                         cuisine={result["cuisine"]}
                         timing={result["timing"]}
                         rating={result["rating"]}
-                    />)}
+                    />)
+                    :
+                    <LoadingIcon icon='food' size={64} message='Fetching Nearby Chefs...'/>
+                }
             </Card>
             <View className="h-24" />
         </ScrollView>

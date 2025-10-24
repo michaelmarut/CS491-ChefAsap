@@ -67,8 +67,10 @@ export default function Card({
                         <Octicons
                             name={isExpanded ? 'chevron-up' : 'chevron-down'}
                             size={20}
-                            color="#4d7c0f" // primary-400
+                            color="#4d7c0f"
+                            style={{ position: 'absolute', right: 20 }}
                         />
+                        
                     )}
                 </TouchableOpacity>
             )}
