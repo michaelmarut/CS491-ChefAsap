@@ -10,6 +10,7 @@ import LoadingIcon from "../components/LoadingIcon";
 import Button from "../components/Button";
 import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
+import RatingsDisplay from '../components/RatingsDisplay';
 
 const tempImageComponent = (
     <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
@@ -23,7 +24,7 @@ const tempImageComponent = (
 );
 
 const timing = ["Lunch", "Dinner"];
-const cuisine = ["Gluten-Free", "Italian", "Vegetarian", "Vietnamese"];
+const cuisine = ["Gluten-Free", "Italian", "Vegetarian", "Vietnamese", "Desserts", "BBQ"];
 
 export default function ChefProfileScreen() {
     const { id } = useLocalSearchParams();
@@ -80,7 +81,11 @@ export default function ChefProfileScreen() {
     }, [id]);
 
     if (loading) {
-        return <LoadingIcon message='Loading Chef Profile...' />;
+        return (
+            <View className="flex-1 bg-base-100 dark:bg-base-dark-100 pb-16 items-center justify-center">
+                <LoadingIcon message='Loading Chef Profile...' />
+            </View>
+        );
     }
 
     return (
@@ -93,23 +98,8 @@ export default function ChefProfileScreen() {
                     customHeader='justify-center'
                     customHeaderText='text-3xl'
                 >
-                    <ProfilePicture photoUrl={chefData.photo_url} firstName={chefData?.first_name} lastName={chefData?.last_name} />
-                    <View className="flex-row justify-center items-center pt-2">
-                        {Array.from({ length: chefData.average_rating }, (a, i) => i).map((num, index) =>
-                            <Octicons
-                                key={index}
-                                name={"star-fill"}
-                                size={24}
-                                color={"#65A30D"}
-                            />)}
-                        {Array.from({ length: 5 - chefData.average_rating }, (a, i) => i).map((num, index) =>
-                            <Octicons
-                                key={index}
-                                name={"star"}
-                                size={24}
-                                color={"#65A30D"}
-                            />)}
-                    </View>
+                    <ProfilePicture photoUrl={chefData?.photo_url} firstName={chefData?.first_name} lastName={chefData?.last_name} />
+                    <RatingsDisplay rating={chefData?.average_rating} />
                     <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
                         {chefData.total_ratings} Total Reviews
                         <Button
@@ -130,7 +120,7 @@ export default function ChefProfileScreen() {
 
                 <Card>
                     <Text className="text-lg text-primary-400 text-center font-semibold mb-2 dark:text-dark-400">Serves: {timing.join(', ')}</Text>
-                    <View className="flex-row justify-center items-center w-full gap-x-1">
+                    <View className="flex-row flex-wrap justify-center items-center w-full gap-1">
                         {cuisine.map((c) => (
                             <Text key={c} className="text-md text-primary-400 bg-primary-100 rounded-3xl p-1 dark:text-dark-400 dark:bg-dark-100">{c}</Text>
                         ))}

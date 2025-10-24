@@ -58,10 +58,11 @@ export default function ProfileScreen() {
     if (loading) {
         return (
             <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
-                <LoadingIcon />
+                <LoadingIcon message="Loading Profile..."/>
                 <Button
                     title="Log out"
                     style="primary"
+                    customClasses="min-w-[50%]"
                     onPress={logout}
                 />
             </View>
@@ -75,6 +76,7 @@ export default function ProfileScreen() {
                 <Button
                     title="Log out"
                     style="primary"
+                    customClasses="min-w-[50%]"
                     onPress={logout}
                 />
             </View>

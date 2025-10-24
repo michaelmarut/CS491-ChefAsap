@@ -8,8 +8,10 @@ import { useAuth } from "../context/AuthContext";
 import LoadingIcon from './LoadingIcon';
 import ProfilePicture from './ProfilePicture';
 import Button from './Button';
+import TagsBox from './TagsBox';
+import RatingsDisplay from './RatingsDisplay';
 
-export default function Card({
+export default function SearchResultCard({
     chef_id,
     first_name,
     last_name,
@@ -72,47 +74,28 @@ export default function Card({
             </View>
 
             {loading ?
-                <View className="h-[100px] w-full justify-center items-center bg-primary-100 rounded-3xl mb-4 border-2 border-primary-100 shadow-sm shadow-primary-500 dark:bg-dark-100 dark:border-dark-100">
+                <View className="h-[100px] w-full justify-center items-center pt-4 mb-4 bg-primary-100 dark:bg-dark-100 border-t-2 border-primary-300 dark:border-dark-300">
                     <LoadingIcon message='' icon='spinner' size={64} />
                 </View>
                 :
                 <View className="flex-row w-full justify-between bg-base-100 dark:bg-base-dark-100 rounded-b-3xl border-t-2 border-primary-300 dark:border-dark-300">
-                    <View className="flex justify-center items-center w-1/2 bg-primary-100 pt-2 pl-4 pr-4 rounded-bl-3xl dark:bg-dark-100">
-                        <View className="flex-row justify-center items-center w-full gap-x-1">
-                            {cuisine.map((c) => (
-                                <Text key={c} className="text-md text-primary-400 bg-base-100 dark:bg-base-dark-100 rounded-3xl p-1 dark:text-dark-400">{c}</Text>
-                            ))}
-                        </View>
-                        <Text className="text-md text-primary-400 pt-2 dark:text-dark-400">Available:</Text>
-                        <Text className="text-md text-primary-400 pb-2 dark:text-dark-400">{timing.join(', ')}</Text>
+                    <View className="flex justify-center items-center w-1/2 bg-primary-100 pt-2 px-1 rounded-bl-3xl dark:bg-dark-100">
+                        <TagsBox words={cuisine} />
+                        <Text className="text-md text-primary-400 dark:text-dark-400 pt-2">Available:</Text>
+                        <Text className="text-md text-primary-400 dark:text-dark-400 pb-2 text-wrap">{timing.join(', ')}</Text>
                         <Button
                             title={"View Chef "}
                             style={"accent"}
                             href={`/ChefProfileScreen/${chef_id}`}
                             icon={"link-external"}
-                            customClasses="w-full rounded-3xl"
+                            customClasses="w-[90%] rounded-3xl"
                             customTextClasses='text-sm font-medium'
                             iconGap={6}
                         />
                     </View>
                     <View className="flex justify-center items-center w-1/2 p-4 rounded-br-3xl">
                         <ProfilePicture photoUrl={photoData} firstName={first_name} lastName={last_name} size={28} />
-                        <View className="flex-row justify-center items-center pt-2">
-                            {Array.from({ length: rating }, (a, i) => i).map((num, index) =>
-                                <Octicons
-                                    key={index}
-                                    name={"star-fill"}
-                                    size={24}
-                                    color={"#65A30D"}
-                                />)}
-                            {Array.from({ length: 5 - rating }, (a, i) => i).map((num, index) =>
-                                <Octicons
-                                    key={index}
-                                    name={"star"}
-                                    size={24}
-                                    color={"#65A30D"}
-                                />)}
-                        </View>
+                        <RatingsDisplay rating={rating} />
                     </View>
                 </View>
             }

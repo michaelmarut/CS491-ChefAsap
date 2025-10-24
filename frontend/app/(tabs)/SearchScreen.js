@@ -188,7 +188,7 @@ export default function SearchScreen() {
                         rating={result["rating"]}
                     />)
                     :
-                    <LoadingIcon icon='food' size={64} message='Fetching Nearby Chefs'/>
+                    <LoadingIcon icon='food' size={64} message='Fetching Nearby Chefs...'/>
                 }
             </Card>
             <View className="h-24" />
