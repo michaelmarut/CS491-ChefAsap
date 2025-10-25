@@ -33,8 +33,8 @@ export default function Card({
         }
         : {};
 
-    const cardClasses = "bg-white dark:bg-black rounded-xl shadow-sm shadow-primary-500 mb-4 p-0 overflow-hidden " + customClasses;
-    const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-primary-100 dark:bg-dark-100 " + customHeader;
+    const cardClasses = "bg-white dark:bg-black rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 mb-4 p-0 overflow-hidden " + customClasses;
+    const headerClasses = "flex-row items-center justify-between p-4 bg-primary-100 dark:bg-dark-100 " + customHeader;
     const contentWrapperClasses = "m-4 " + customCard;
     const footerClasses = "p-4 pt-0";
 

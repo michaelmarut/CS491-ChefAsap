@@ -22,7 +22,7 @@ export default function TabLayout() {
 
     const tabBarOptions = {
         headerShown: false,
-        tabBarActiveTintColor: manualTheme === 'light' ? '#D9F99D' : "3F3F1F", // primary-100
+        tabBarActiveTintColor: manualTheme === 'light' ? '#D9F99D' : "#36401F", // primary-100
         tabBarInactiveTintColor: manualTheme === 'light' ? '#3F3F1F' : "#D9F99D", // primary-500
         //tabBarActiveBackgroundColor: '#BEF264', // primary-200
         //tabBarInactiveBackgroundColor: '#65A30D', // primary-300

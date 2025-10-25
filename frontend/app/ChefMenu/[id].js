@@ -47,20 +47,54 @@ const tempMenuComponent = ({ item }) => (
     </View>
 );
 
+const tempitemCard = ({ item }) => (
+    <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mb-4 w-full" key={item?.id}>
+        <View className="flex-row">
+            <View className="flex w-1/2 justify-between pr-2">
+                <Text className="text-lg font-medium pt-2 mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
+                    {item?.name || 'Food Not Found'}
+                </Text>
+                <Text className="text-primary-400 text-md pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                    {item?.desc || 'Food Description'}
+                </Text>
+                <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                    Will require {item?.preptime || '?'} min.
+                </Text>
+            </View>
+            <View className="flex w-1/2">
+                <View className="bg-white h-[150px] justify-center">
+                    <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE GOES HERE</Text>
+                </View>
+                
+            </View>
+        </View>
+        
+        <Text className="text-primary-400 text-md pt-2 mb-2 text-center text-justified dark:text-dark-400">
+            ${item?.price || '?'}
+        </Text>
+        <Button
+            title={"Add to order"}
+            onPress={() => alert("Added to order")}
+            customClasses='rounded-xl'
+            customTextClasses='text-sm'
+        />
+    </View>
+);
+
 const tempOptionsList = {
     'Fruits': [
-        { id: 'f1', name: 'Apple' },
-        { id: 'f2', name: 'Banana' },
-        { id: 'f3', name: 'Grape' },
-        { id: 'f4', name: 'Orange' },
+        { id: 'f1', name: 'Apple', desc: 'A sweet red fruit picked straight from a local tree', price: 2.99, preptime: 20 },
+        { id: 'f2', name: 'Banana', desc: 'A sweet red fruit', price: 2.99, preptime: 10 },
+        { id: 'f3', name: 'Grape', desc: 'A sweet red fruit', price: 5.99, preptime: 20 },
+        { id: 'f4', name: 'Orange', desc: 'A sweet red fruit', price: 10.99, preptime: 30 },
     ],
     'Vegetables': [
-        { id: 'v1', name: 'Carrot' },
-        { id: 'v2', name: 'Broccoli' },
-        { id: 'v3', name: 'Spinach' },
-        { id: 'v4', name: 'Cabbage' },
-        { id: 'v5', name: 'Peppers' },
-        { id: 'v6', name: 'Cucumber' },
+        { id: 'v1', name: 'Carrot', desc: 'A sweet red fruit', price: 2.99, preptime: 10 },
+        { id: 'v2', name: 'Broccoli', desc: 'A sweet red fruit', price: 5.99, preptime: 20 },
+        { id: 'v3', name: 'Spinach', desc: 'A sweet red fruit', price: 6.99, preptime: 10 },
+        { id: 'v4', name: 'Cabbage', desc: 'A sweet red fruit', price: 7.99, preptime: 40 },
+        { id: 'v5', name: 'Peppers', desc: 'A sweet red fruit', price: 9.99, preptime: 10 },
+        { id: 'v6', name: 'Cucumber', desc: 'A sweet red fruit', price: 10.99, preptime: 50 },
     ],
 };
 
@@ -165,14 +199,13 @@ export default function ChefMenu() {
                     customHeader='justify-center'
                     customHeaderText='text-xl'
                     isScrollable={true}
-                    scrollDirection='horizontal'
-                    customCard="py-1"
+                    customCard=""
                     isCollapsible={true}
                     startExpanded={true}
                 >
-                    {tempFeatureComponent}
-                    {tempFeatureComponent}
-                    {tempFeatureComponent}
+                    {tempitemCard(tempOptionsList.Fruits[0])}
+                    {tempitemCard(tempOptionsList.Fruits[0])}
+                    {tempitemCard(tempOptionsList.Fruits[0])}
                 </Card>
 
                 {Object.entries(tempOptionsList).map(([key, value]) => (
@@ -182,17 +215,18 @@ export default function ChefMenu() {
                         isCollapsible={true}
                         customHeader='justify-center'
                     >
-                        <FlatList
+                        {value.map(item => tempitemCard({ item }))}
+                        {/*<FlatList
                             data={value}
                             renderItem={renderGridItem}
                             keyExtractor={(item) => item.id}
                             numColumns={2}
                             columnWrapperStyle={{ justifyContent: 'space-between', width: '100%' }}
                             scrollEnabled={false}
-                        />
+                        />*/}
                     </Card>
                 ))}
-                
+
                 <Button
                     title="View Order"
                     style="primary"

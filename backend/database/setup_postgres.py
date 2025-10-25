@@ -391,6 +391,21 @@ def init_postgres_db():
             )
         ''')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_chef_ratings ON chef_ratings(chef_id, rating)')
+        
+        #chef ratings with review
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_rating (
+                rating_id SERIAL PRIMARY KEY,
+                chef_id INT NOT NULL,
+                customer_id INT NOT NULL,
+                booking_id INT NOT NULL,
+                rating FLOAT NOT NULL CHECK (rating >= 1.0 AND rating <= 5.0),
+                comment VARCHAR(1000),
+                FOREIGN KEY (chef_id) references chefs(id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+            );
+        ''')
 
         # Chef rating summary
         cursor.execute('''
