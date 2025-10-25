@@ -12,6 +12,31 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import RatingsDisplay from '../components/RatingsDisplay';
 
+const featuredDishComponent = (item) => (
+    <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
+        {item.photo_url ? (
+            <View className="bg-white h-[200px] w-[200px] justify-center">
+                <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE: {item.photo_url}</Text>
+            </View>
+        ) : (
+            <View className="bg-white h-[200px] w-[200px] justify-center">
+                <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
+            </View>
+        )}
+        <Text className="text-primary-400 text-md font-semibold pt-2 w-[200px] text-center dark:text-dark-400">
+            {item.dish_name}
+        </Text>
+        <Text className="text-primary-400 text-sm pt-1 w-[200px] text-center text-justified dark:text-dark-400">
+            {item.description || 'No description'}
+        </Text>
+        {item.cuisine_type && (
+            <Text className="text-primary-400 text-xs pt-1 w-[200px] text-center dark:text-dark-400">
+                {item.cuisine_type}
+            </Text>
+        )}
+    </View>
+);
+
 const tempImageComponent = (
     <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
         <View className="bg-white h-[200px] w-[200px] justify-center">
@@ -33,6 +58,7 @@ export default function ChefProfileScreen() {
     const { apiUrl } = getEnvVars();
 
     const [chefData, setChefData] = useState(null);
+    const [featuredItems, setFeaturedItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -43,16 +69,16 @@ export default function ChefProfileScreen() {
 
         console.log(`Fetching profile data for Chef ID: ${chefId}`);
 
-        const fetchProfile = async () => {
+        const fetchData = async () => {
             if (!chefId) return;
 
             setLoading(true);
             setError(null);
 
             try {
-                const url = `${apiUrl}/profile/chef/${chefId}/public`;
-
-                const response = await fetch(url, {
+                // Fetch chef profile
+                const profileUrl = `${apiUrl}/profile/chef/${chefId}/public`;
+                const profileResponse = await fetch(profileUrl, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -60,25 +86,46 @@ export default function ChefProfileScreen() {
                     },
                 });
 
-                const data = await response.json();
+                const profileData = await profileResponse.json();
 
-                if (response.ok) {
-                    setChefData(data.profile);
+                if (profileResponse.ok) {
+                    setChefData(profileData.profile);
                 } else {
-                    setError(data.error || 'Failed to load profile.');
-                    Alert.alert('Error', data.error || 'Failed to load profile.');
+                    setError(profileData.error || 'Failed to load profile.');
+                    Alert.alert('Error', profileData.error || 'Failed to load profile.');
                 }
+
+                // Fetch featured dishes (max 3 dishes marked as featured by chef)
+                const featuredUrl = `${apiUrl}/api/menu/chef/${chefId}/featured`;
+                const featuredResponse = await fetch(featuredUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const featuredData = await featuredResponse.json();
+
+                if (featuredResponse.ok) {
+                    setFeaturedItems(featuredData.featured_items || []);
+                    console.log('Featured items loaded:', featuredData.featured_items?.length || 0);
+                } else {
+                    console.log('Featured fetch error:', featuredData.error);
+                    setFeaturedItems([]);
+                }
+
             } catch (err) {
                 setError('Network error. Could not connect to API.');
-                alert('Error: ' + (err.message || 'Network error. Could not connect to API.'));
+                console.error('Fetch error:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchProfile();
+        fetchData();
 
-    }, [id]);
+    }, [id, apiUrl, token]);
 
     if (loading) {
         return (
@@ -145,9 +192,13 @@ export default function ChefProfileScreen() {
                     scrollDirection='horizontal'
                     customCard="py-1"
                 >
-                    {tempImageComponent}
-                    {tempImageComponent}
-                    {tempImageComponent}
+                    {featuredItems.length > 0 ? (
+                        featuredItems.map(item => featuredDishComponent(item))
+                    ) : (
+                        <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
+                            No featured dishes available
+                        </Text>
+                    )}
                 </Card>
 
                 <Button

@@ -47,36 +47,56 @@ const tempMenuComponent = ({ item }) => (
     </View>
 );
 
-const tempitemCard = ({ item }) => (
+const menuItemCard = ({ item }) => (
     <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mb-4 w-full" key={item?.id}>
         <View className="flex-row">
             <View className="flex w-1/2 justify-between pr-2">
                 <Text className="text-lg font-medium pt-2 mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
-                    {item?.name || 'Food Not Found'}
+                    {item?.dish_name || 'Dish Name'}
                 </Text>
                 <Text className="text-primary-400 text-md pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                    {item?.desc || 'Food Description'}
+                    {item?.description || 'No description available'}
                 </Text>
-                <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                    Will require {item?.preptime || '?'} min.
-                </Text>
+                {item?.servings && (
+                    <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                        Servings: {item.servings}
+                    </Text>
+                )}
+                {item?.spice_level && (
+                    <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                        Spice: {item.spice_level}
+                    </Text>
+                )}
             </View>
             <View className="flex w-1/2">
-                <View className="bg-white h-[150px] justify-center">
-                    <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE GOES HERE</Text>
-                </View>
-                
+                {item?.photo_url ? (
+                    <View className="bg-white h-[150px] justify-center">
+                        <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE: {item.photo_url}</Text>
+                    </View>
+                ) : (
+                    <View className="bg-white h-[150px] justify-center">
+                        <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
+                    </View>
+                )}
             </View>
         </View>
         
-        <Text className="text-primary-400 text-md pt-2 mb-2 text-center text-justified dark:text-dark-400">
-            ${item?.price || '?'}
-        </Text>
+        {item?.cuisine_type && (
+            <Text className="text-primary-400 text-sm pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                {item.cuisine_type}
+            </Text>
+        )}
+        {item?.dietary_info && (
+            <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                {item.dietary_info}
+            </Text>
+        )}
         <Button
-            title={"Add to order"}
-            onPress={() => alert("Added to order")}
+            title={item?.is_available ? "Add to order" : "Not available"}
+            onPress={() => item?.is_available && alert("Added to order")}
             customClasses='rounded-xl'
             customTextClasses='text-sm'
+            disabled={!item?.is_available}
         />
     </View>
 );
@@ -109,6 +129,8 @@ export default function ChefMenu() {
     const { apiUrl } = getEnvVars();
 
     const [chefData, setChefData] = useState(null);
+    const [menuItems, setMenuItems] = useState([]);
+    const [featuredItems, setFeaturedItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -119,16 +141,16 @@ export default function ChefMenu() {
 
         console.log(`Fetching menu data for Chef ID: ${chefId}`);
 
-        const fetchProfile = async () => {
+        const fetchData = async () => {
             if (!chefId) return;
 
             setLoading(true);
             setError(null);
 
             try {
-                const url = `${apiUrl}/profile/chef/${chefId}/public`;
-
-                const response = await fetch(url, {
+                // Fetch chef profile
+                const profileUrl = `${apiUrl}/profile/chef/${chefId}/public`;
+                const profileResponse = await fetch(profileUrl, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -136,25 +158,66 @@ export default function ChefMenu() {
                     },
                 });
 
-                const data = await response.json();
+                const profileData = await profileResponse.json();
 
-                if (response.ok) {
-                    setChefData(data.profile);
+                if (profileResponse.ok) {
+                    setChefData(profileData.profile);
                 } else {
-                    setError(data.error || 'Failed to load profile.');
-                    Alert.alert('Error', data.error || 'Failed to load profile.');
+                    setError(profileData.error || 'Failed to load profile.');
+                    Alert.alert('Error', profileData.error || 'Failed to load profile.');
                 }
+
+                // Fetch menu items
+                const menuUrl = `${apiUrl}/api/menu/chef/${chefId}`;
+                const menuResponse = await fetch(menuUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const menuData = await menuResponse.json();
+
+                if (menuResponse.ok) {
+                    setMenuItems(menuData.menu_items || []);
+                    console.log('Menu items loaded:', menuData.menu_items?.length || 0);
+                } else {
+                    console.log('Menu fetch error:', menuData.error);
+                    setMenuItems([]);
+                }
+
+                // Fetch featured items
+                const featuredUrl = `${apiUrl}/api/menu/chef/${chefId}/featured`;
+                const featuredResponse = await fetch(featuredUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const featuredData = await featuredResponse.json();
+
+                if (featuredResponse.ok) {
+                    setFeaturedItems(featuredData.featured_items || []);
+                    console.log('Featured items loaded:', featuredData.featured_items?.length || 0);
+                } else {
+                    console.log('Featured items fetch error:', featuredData.error);
+                    setFeaturedItems([]);
+                }
+
             } catch (err) {
                 setError('Network error. Could not connect to API.');
-                alert('Error: ' + (err.message || 'Network error. Could not connect to API.'));
+                console.error('Fetch error:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchProfile();
+        fetchData();
 
-    }, [id]);
+    }, [id, apiUrl, token]);
 
     const renderGridItem = ({ item }) => (
         tempMenuComponent({ item })
@@ -203,29 +266,34 @@ export default function ChefMenu() {
                     isCollapsible={true}
                     startExpanded={true}
                 >
-                    {tempitemCard(tempOptionsList.Fruits[0])}
-                    {tempitemCard(tempOptionsList.Fruits[0])}
-                    {tempitemCard(tempOptionsList.Fruits[0])}
+                    {featuredItems.length > 0 ? (
+                        featuredItems.map(item => menuItemCard({ item }))
+                    ) : (
+                        <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
+                            No featured dishes available
+                        </Text>
+                    )}
                 </Card>
 
-                {Object.entries(tempOptionsList).map(([key, value]) => (
+                {menuItems.length > 0 ? (
                     <Card
-                        key={key}
-                        title={key}
+                        title="All Menu Items"
                         isCollapsible={true}
                         customHeader='justify-center'
                     >
-                        {value.map(item => tempitemCard({ item }))}
-                        {/*<FlatList
-                            data={value}
-                            renderItem={renderGridItem}
-                            keyExtractor={(item) => item.id}
-                            numColumns={2}
-                            columnWrapperStyle={{ justifyContent: 'space-between', width: '100%' }}
-                            scrollEnabled={false}
-                        />*/}
+                        {menuItems.map(item => menuItemCard({ item }))}
                     </Card>
-                ))}
+                ) : (
+                    <Card
+                        title="Menu"
+                        isCollapsible={true}
+                        customHeader='justify-center'
+                    >
+                        <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
+                            No menu items available yet
+                        </Text>
+                    </Card>
+                )}
 
                 <Button
                     title="View Order"

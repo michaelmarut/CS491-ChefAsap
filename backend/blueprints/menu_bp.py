@@ -313,7 +313,7 @@ def get_featured_dishes(chef_id):
         return jsonify({
             'success': True,
             'chef_id': chef_id,
-            'featured_dishes': featured_dishes,
+            'featured_items': featured_dishes,  # Changed from 'featured_dishes' to 'featured_items'
             'auto_selected': len(rows) > 0 and not rows[0][10]  # is_featured = False means auto-selected
         }), 200
         

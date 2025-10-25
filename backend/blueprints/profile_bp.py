@@ -269,23 +269,20 @@ def get_chef_public_profile(chef_id):
         
         # Get chef ratings average
         cursor.execute('''
-            SELECT 
-                AVG(rating) as avg_rating,
-                COUNT(*) as total_ratings
-            FROM chef_ratings 
-            WHERE chef_id = %s
-        ''', (chef_id,))
+            SELECT COUNT(*) as total_ratings, SUM(r.rating) as rating_sum FROM chef_rating r
+            WHERE chef_id = %s''', (chef_id,))
         
-        rating_info = cursor.fetchone()
+        ratings_data = cursor.fetchone()
         
-        # Clear any remaining results
-        try:
-            cursor.nextset()
-        except:
-            pass
-            
-        if not rating_info:
-            rating_info = {'avg_rating': 0, 'total_ratings': 0}
+        # Process rating data
+        total_ratings = ratings_data['total_ratings'] if ratings_data else 0
+        rating_sum = ratings_data['rating_sum'] if ratings_data else 0
+        avg_rating = (rating_sum / total_ratings) if total_ratings > 0 else 0
+        
+        rating_info = {
+            'avg_rating': avg_rating,
+            'total_ratings': total_ratings
+        }
         
         # Get chef cuisine photos
         cursor.execute('''
