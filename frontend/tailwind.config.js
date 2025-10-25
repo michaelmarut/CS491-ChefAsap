@@ -18,19 +18,19 @@ module.exports = {
         'primary-400': '#4d7c0f',   // rich olive
         'primary-500': '#36401F',   // earthy dark olive
 
-        'dark-500': '#d9f99d',   // light olive
-        'dark-400': '#bef264',   // olive accent
-        'dark-300': '#65a30d',   // olive green
-        'dark-200': '#4d7c0f',   // rich olive
-        'dark-100': '#36401F',   // earthy dark olive
+        'dark-500': '#d9f99d',
+        'dark-400': '#bef264',
+        'dark-300': '#65a30d',
+        'dark-200': '#4d7c0f',
+        'dark-100': '#36401F',
 
         'base-100': '#fefce8',    // soft cream 
         'base-200': '#6b7280',    // neutral slate
         'base-300': '#2c3e50',    // fallback background color
 
-        'base-dark-300': '#fefce8',    // soft cream 
-        'base-dark-200': '#6b7280',    // neutral slate
-        'base-dark-100': '#2c3e50',    // fallback background color
+        'base-dark-300': '#fefce8',
+        'base-dark-200': '#6b7280',
+        'base-dark-100': '#27292aff',
 
         'warm-gray': '#78716c',   // warm gray
       },

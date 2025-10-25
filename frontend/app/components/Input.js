@@ -17,7 +17,7 @@ export default function Input({
         setIsPasswordVisible(prev => !prev);
     };
 
-    const baseClasses = "border border-primary-200 bg-white dark:bg-black rounded-full py-3 px-4 text-base text-primary-500 focus:border-primary-300 shadow-sm shadow-primary-500 dark:border-dark-200 dark:focus:border-dark-300";
+    const baseClasses = "border border-primary-200 bg-white dark:bg-black rounded-full py-3 px-4 text-base text-primary-500 focus:border-primary-300 shadow-sm shadow-primary-500 dark:border-dark-200 dark:focus:border-dark-300 dark:text-dark-500";
     const finalInputClasses = isTextArea
         ? `${baseClasses.replace('rounded-full', 'rounded-lg')} h-24 text-top`
         : `${baseClasses} rounded-full`;
