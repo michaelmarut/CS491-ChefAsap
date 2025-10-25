@@ -21,7 +21,7 @@ def add_chef_rating():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
 
-        curser.execute('''
+        cursor.execute('''
             INSERT INTO chef_rating(chef_id, customer_id, rating, comment)
             VALUES (%s, %s, %s, %s)''', (chef_id, customer_id, rating, comment))
         
