@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, View, TouchableOpacity, Text } from 'react-native';
 import Button from './Button';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
@@ -14,12 +14,12 @@ const discovery = {
   revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
 };
 
-export default function CalendarConnectButton({ onSynced }) {
+export default function CalendarConnectButton({ onSynced, compact = false }) {
   const { apiUrl } = getEnvVars();
   const { token, userId } = useAuth();
 
   // TODO: replace with your Google Web Client ID (from Google Cloud Console)
-  const GOOGLE_WEB_CLIENT_ID = 'YOUR_GOOGLE_WEB_CLIENT_ID';
+  const GOOGLE_WEB_CLIENT_ID = '557607716445-t8lpu5sgvn07gp4alr63v02l6pu8dumi.apps.googleusercontent.com';
 
   const redirectUri = useMemo(
     () => AuthSession.makeRedirectUri({ useProxy: true }),
@@ -89,6 +89,27 @@ export default function CalendarConnectButton({ onSynced }) {
     }
   };
 
+  // Render compact pill or full button
+  if (compact) {
+    const pill = { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 9999, borderWidth: 1, borderColor: '#d1d5db', backgroundColor: '#ffffff' };
+    const txt = { fontSize: 12, color: '#111827' };
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity
+          onPress={() => promptAsync({ useProxy: true, showInRecents: true })}
+          disabled={!request}
+          style={[pill, { marginRight: 8, opacity: request ? 1 : 0.6 }]}
+        >
+          <Text style={txt}>Connect Google</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={syncNow} style={pill}>
+          <Text style={txt}>Sync</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // fallback to full-size buttons
   return (
     <View>
       <Button

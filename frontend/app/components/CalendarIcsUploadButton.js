@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useCallback } from 'react';
+import { TouchableOpacity, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
 import getEnvVars from '../../config';
 import { useAuth } from '../context/AuthContext';
 import Button from './Button';
 
-export default function CalendarIcsUploadButton() {
+export default function CalendarIcsUploadButton({ compact = false, ...props }) {
   const { apiUrl } = getEnvVars();
-  const { userId } = useAuth();
+  const { token, userType, profileId } = useAuth();
 
-  const upload = async () => {
+  const pickAndUpload = useCallback(async () => {
     try {
       const res = await DocumentPicker.getDocumentAsync({
         type: ['text/calendar', 'application/octet-stream', 'application/ics'],
@@ -20,30 +21,47 @@ export default function CalendarIcsUploadButton() {
 
       const file = res.assets[0];
       const form = new FormData();
-      form.append('user_id', String(userId));
+      // Provide the booking owner (customer profile id)
+      if (userType === 'customer' && profileId) {
+        form.append('customer_id', String(profileId));
+      }
       form.append('ics', {
         uri: file.uri,
         name: file.name || 'calendar.ics',
-        type: 'text/calendar',
+        type: file.mimeType || 'text/calendar',
       });
 
-      const r = await fetch(`${apiUrl}/api/calendar/ics/upload`, {
+      await fetch(`${apiUrl}/calendar/ics/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: form,
       });
-      const data = await r.json();
-      if (r.ok) {
-        Alert.alert('Imported', `${data.imported || 0} events imported`);
-      } else {
-        Alert.alert('Error', data.error || 'Failed to import');
-      }
+      //response handling
     } catch (e) {
       Alert.alert('Error', 'Upload failed');
     }
-  };
+  }, [apiUrl, token, userType, profileId]);
+
+  // Render compact pill or full button
+  if (compact) {
+    const pill = {
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: 9999,
+      borderWidth: 1,
+      borderColor: '#d1d5db',
+      backgroundColor: '#ffffff',
+    };
+    const txt = { fontSize: 12, color: '#111827' };
+
+    return (
+      <TouchableOpacity onPress={pickAndUpload} style={pill}>
+        <Text style={txt}>Upload .ics</Text>
+      </TouchableOpacity>
+    );
+  }
 
   return (
-    <Button title="Import .ics Calendar" variant="secondary" onPress={upload} />
+    <Button title="Import .ics Calendar" variant="secondary" onPress={pickAndUpload} {...props} />
   );
 }
