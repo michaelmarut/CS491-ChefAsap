@@ -59,6 +59,7 @@ def search_nearby_chefs():
                 c.email,
                 c.phone,
                 c.gender,
+                c.meal_timings,
                 
                 -- Distance calculation (Haversine formula)
                 (3959 * acos(cos(radians(%s)) * cos(radians(ca.latitude)) * 
@@ -190,6 +191,7 @@ def search_nearby_chefs():
                 'email': chef['email'],
                 'phone': chef['phone'],
                 'gender': chef['gender'],
+                'meal_timings': chef['meal_timings'] if chef['meal_timings'] else [],
                 
                 # Distance information
                 'distance_miles': round(float(chef['distance_miles']), 1) if chef['distance_miles'] else None,
@@ -478,6 +480,7 @@ def get_viewed_chefs(customer_id):
                 c.email,
                 c.phone,
                 c.gender,
+                c.meal_timings,
                 
                 -- Get cuisines
                 STRING_AGG(DISTINCT ct.name, ', ' ORDER BY ct.name) as cuisines,
@@ -496,7 +499,7 @@ def get_viewed_chefs(customer_id):
             LEFT JOIN cuisine_types ct ON cc.cuisine_id = ct.id
             LEFT JOIN chef_rating_summary crs ON c.id = crs.chef_id
             WHERE cvc.customer_id = %s
-            GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone, c.gender,
+            GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone, c.gender, c.meal_timings,
                      crs.average_rating, crs.total_reviews, cvc.viewed_at, cvc.view_count
             ORDER BY cvc.viewed_at DESC
             LIMIT %s
@@ -514,6 +517,7 @@ def get_viewed_chefs(customer_id):
                 'email': chef['email'],
                 'phone': chef['phone'],
                 'gender': chef['gender'],
+                'meal_timings': chef['meal_timings'] if chef['meal_timings'] else [],
                 'cuisines': chef['cuisines'].split(', ') if chef['cuisines'] else [],
                 'rating': {
                     'average_rating': round(float(chef['average_rating']), 1) if chef['average_rating'] else None,

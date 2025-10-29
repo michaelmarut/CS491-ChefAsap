@@ -166,7 +166,7 @@ export default function SearchScreen() {
                     last_name: chef.last_name,
                     distance: chef.distance_miles,
                     cuisine: chef.cuisines || [],
-                    timing: [], // TODO: Add meal availability data from backend
+                    timing: chef.meal_timings || [],
                     rating: Math.round(chef.rating?.average_rating || 0)
                 }));
                 setSearchResults(transformedResults);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View, Alert } from "react-native";
+import { ScrollView, Text, View, Alert, TouchableOpacity, TextInput, Modal } from "react-native";
 
 import getEnvVars from "../../config";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +10,7 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import ThemeButton from "../components/ThemeButton";
 import RatingsDisplay from "../components/RatingsDisplay";
+import { Octicons } from '@expo/vector-icons';
 
 const timing = ["Lunch", "Dinner"];
 const cuisine = ["Gluten-Free", "Italian", "Vegetarian", "Vietnamese", "Desserts", "BBQ"];
@@ -21,6 +22,14 @@ export default function ProfileScreen() {
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [editingAbout, setEditingAbout] = useState(false);
+    const [aboutText, setAboutText] = useState('');
+    const [savingAbout, setSavingAbout] = useState(false);
+    const [editingDetails, setEditingDetails] = useState(false);
+    const [allCuisines, setAllCuisines] = useState([]);
+    const [selectedCuisines, setSelectedCuisines] = useState([]);
+    const [selectedMealTimings, setSelectedMealTimings] = useState(['Lunch', 'Dinner']);
+    const [savingDetails, setSavingDetails] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -44,6 +53,9 @@ export default function ProfileScreen() {
 
                 if (response.ok) {
                     setProfileData(data.profile);
+                    setAboutText(data.profile.description || '');
+                    setSelectedCuisines(data.profile.cuisines || []);
+                    setSelectedMealTimings(data.profile.meal_timings || ['Breakfast', 'Lunch', 'Dinner']);
                 } else {
                     setError(data.error || 'Failed to load profile.');
                     Alert.alert('Error', data.error || 'Failed to load profile.');
@@ -58,6 +70,149 @@ export default function ProfileScreen() {
 
         fetchProfile();
     }, [profileId, userId, userType, token, apiUrl]);
+
+    useEffect(() => {
+        // Fetch all available cuisines for chef users
+        const fetchCuisines = async () => {
+            if (userType !== 'chef') return;
+
+            try {
+                const response = await fetch(`${apiUrl}/profile/cuisines`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    setAllCuisines(data.cuisines || []);
+                }
+            } catch (error) {
+                console.error('Failed to fetch cuisines:', error);
+            }
+        };
+
+        fetchCuisines();
+    }, [userType, apiUrl, token]);
+
+    const handleSaveAbout = async () => {
+        if (aboutText.length > 500) {
+            Alert.alert('Error', 'Description cannot exceed 500 characters');
+            return;
+        }
+
+        setSavingAbout(true);
+        try {
+            const response = await fetch(`${apiUrl}/profile/chef/${profileId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ description: aboutText }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Alert.alert('Success', 'About section updated successfully');
+                setProfileData({ ...profileData, description: aboutText });
+                setEditingAbout(false);
+            } else {
+                Alert.alert('Error', result.error || 'Failed to update');
+            }
+        } catch (error) {
+            console.error('Failed to save about:', error);
+            Alert.alert('Error', 'Network error. Please try again.');
+        } finally {
+            setSavingAbout(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setAboutText(profileData?.description || '');
+        setEditingAbout(false);
+    };
+
+    const handleSaveDetails = async () => {
+        setSavingDetails(true);
+        try {
+            // Save cuisines
+            const cuisinesResponse = await fetch(`${apiUrl}/profile/chef/${profileId}/cuisines`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ cuisines: selectedCuisines }),
+            });
+
+            const cuisinesResult = await cuisinesResponse.json();
+
+            if (!cuisinesResponse.ok) {
+                Alert.alert('Error', cuisinesResult.error || 'Failed to update cuisines');
+                setSavingDetails(false);
+                return;
+            }
+
+            // Save meal timings
+            const timingsResponse = await fetch(`${apiUrl}/profile/chef/${profileId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ meal_timings: selectedMealTimings }),
+            });
+
+            const timingsResult = await timingsResponse.json();
+
+            if (timingsResponse.ok) {
+                Alert.alert('Success', 'Chef details updated successfully');
+                setProfileData({ 
+                    ...profileData, 
+                    cuisines: selectedCuisines,
+                    meal_timings: selectedMealTimings
+                });
+                setEditingDetails(false);
+            } else {
+                Alert.alert('Error', timingsResult.error || 'Failed to update meal timings');
+            }
+        } catch (error) {
+            console.error('Failed to save details:', error);
+            Alert.alert('Error', 'Network error. Please try again.');
+        } finally {
+            setSavingDetails(false);
+        }
+    };
+
+    const handleCancelDetailsEdit = () => {
+        setSelectedCuisines(profileData?.cuisines || []);
+        setSelectedMealTimings(profileData?.meal_timings || ['Breakfast', 'Lunch', 'Dinner']);
+        setEditingDetails(false);
+    };
+
+    const toggleCuisine = (cuisineName) => {
+        setSelectedCuisines(prev => {
+            if (prev.includes(cuisineName)) {
+                return prev.filter(c => c !== cuisineName);
+            } else {
+                return [...prev, cuisineName];
+            }
+        });
+    };
+
+    const toggleMealTiming = (timing) => {
+        setSelectedMealTimings(prev => {
+            if (prev.includes(timing)) {
+                return prev.filter(t => t !== timing);
+            } else {
+                return [...prev, timing];
+            }
+        });
+    };
 
     if (loading) {
         return (
@@ -139,21 +294,110 @@ export default function ProfileScreen() {
             ) : (
                 <>
                     <Card
-                            title="Chef Details"
-                            customHeader='justify-center'
-                            customHeaderText='text-xl'
+                        title="Chef Details"
+                        customHeader='justify-center'
+                        customHeaderText='text-xl'
+                    >
+                        {!editingDetails && (
+                            <TouchableOpacity
+                                onPress={() => setEditingDetails(true)}
+                                className="absolute -top-[70px] -right-2 z-10 bg-lime-600 p-3 rounded-full"
                             >
-                            <Button
-                                icon="paintbrush"
-                                style="accent"
-                                customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
-                            />
-                        <Text className="text-lg text-primary-400 text-center font-semibold mb-2 dark:text-dark-400">Serves: {timing.join(', ')}</Text>
-                        <View className="flex-row flex-wrap justify-center items-center w-full gap-1">
-                            {cuisine.map((c) => (
-                                <Text key={c} className="text-md text-primary-400 bg-primary-100 rounded-3xl p-1 dark:text-dark-400 dark:bg-dark-100">{c}</Text>
-                            ))}
-                        </View>
+                                <Octicons name="pencil" size={20} color="white" />
+                            </TouchableOpacity>
+                        )}
+
+                        {editingDetails ? (
+                            <View>
+                                <Text className="text-md font-semibold mb-2 text-primary-400 dark:text-dark-400">
+                                    Meal Timings:
+                                </Text>
+                                <View className="flex-row flex-wrap gap-2 mb-4">
+                                    {['Breakfast', 'Lunch', 'Dinner'].map((timing) => (
+                                        <TouchableOpacity
+                                            key={timing}
+                                            onPress={() => toggleMealTiming(timing)}
+                                            className={`px-4 py-2 rounded-full ${
+                                                selectedMealTimings.includes(timing)
+                                                    ? 'bg-lime-600'
+                                                    : 'bg-gray-300 dark:bg-gray-600'
+                                            }`}
+                                        >
+                                            <Text className={`${
+                                                selectedMealTimings.includes(timing)
+                                                    ? 'text-white'
+                                                    : 'text-gray-700 dark:text-gray-200'
+                                            }`}>
+                                                {timing}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <Text className="text-md font-semibold mb-2 text-primary-400 dark:text-dark-400">
+                                    Cuisines ({selectedCuisines.length} selected):
+                                </Text>
+                                <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                    Tap to select/deselect cuisines. Scroll to see all options.
+                                </Text>
+                                <ScrollView className="max-h-[300px] mb-4 border border-primary-200 dark:border-dark-200 rounded-lg p-3">
+                                    <View className="flex-row flex-wrap gap-2">
+                                        {allCuisines.sort((a, b) => a.name.localeCompare(b.name)).map((cuisine) => (
+                                            <TouchableOpacity
+                                                key={cuisine.id}
+                                                onPress={() => toggleCuisine(cuisine.name)}
+                                                className={`px-3 py-1.5 rounded-full ${
+                                                    selectedCuisines.includes(cuisine.name)
+                                                        ? 'bg-lime-600'
+                                                        : 'bg-gray-200 dark:bg-gray-700'
+                                                }`}
+                                            >
+                                                <Text className={`text-sm ${
+                                                    selectedCuisines.includes(cuisine.name)
+                                                        ? 'text-white font-semibold'
+                                                        : 'text-gray-700 dark:text-gray-300'
+                                                }`}>
+                                                    {cuisine.name}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </ScrollView>
+
+                                <View className="flex-row justify-end gap-2 mt-3">
+                                    <TouchableOpacity
+                                        onPress={handleCancelDetailsEdit}
+                                        className="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-full"
+                                    >
+                                        <Text className="text-gray-700 dark:text-gray-200 font-semibold">Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleSaveDetails}
+                                        disabled={savingDetails}
+                                        className="bg-lime-600 px-4 py-2 rounded-full"
+                                    >
+                                        <Text className="text-white font-semibold">
+                                            {savingDetails ? 'Saving...' : 'Save'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : (
+                            <>
+                                <Text className="text-lg text-primary-400 text-center font-semibold mb-2 dark:text-dark-400">
+                                    Serves: {selectedMealTimings.join(', ')}
+                                </Text>
+                                <View className="flex-row flex-wrap justify-center items-center w-full gap-1">
+                                    {profileData?.cuisines && profileData.cuisines.length > 0 ? (
+                                        profileData.cuisines.map((c) => (
+                                            <Text key={c} className="text-md text-primary-400 bg-primary-100 rounded-3xl p-1 dark:text-dark-400 dark:bg-dark-100">{c}</Text>
+                                        ))
+                                    ) : (
+                                        <Text className="text-primary-400 dark:text-dark-400">No cuisines set</Text>
+                                    )}
+                                </View>
+                            </>
+                        )}
                     </Card>
 
                     <Card
@@ -161,14 +405,54 @@ export default function ProfileScreen() {
                         customHeader='justify-center'
                         customHeaderText='text-xl'
                     >
-                        <Button
-                            icon="paintbrush"
-                            style="accent"
-                            customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
-                        />
-                        <Text className="text-lg text-center text-primary-400 text-pretty dark:text-dark-400">
-                            Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibu
-                        </Text>
+                        {!editingAbout && (
+                            <TouchableOpacity
+                                onPress={() => setEditingAbout(true)}
+                                className="absolute -top-[70px] -right-2 z-10 bg-lime-600 p-3 rounded-full"
+                            >
+                                <Octicons name="pencil" size={20} color="white" />
+                            </TouchableOpacity>
+                        )}
+
+                        {editingAbout ? (
+                            <View>
+                                <TextInput
+                                    className="border border-primary-200 dark:border-dark-200 rounded-lg p-3 text-primary-400 dark:text-dark-400 bg-white dark:bg-gray-800 min-h-[150px]"
+                                    multiline
+                                    numberOfLines={6}
+                                    value={aboutText}
+                                    onChangeText={setAboutText}
+                                    placeholder="Tell customers about yourself and your cooking..."
+                                    placeholderTextColor="#9CA3AF"
+                                    maxLength={500}
+                                    textAlignVertical="top"
+                                />
+                                <Text className="text-sm text-right text-gray-500 mt-1 dark:text-gray-400">
+                                    {aboutText.length}/500
+                                </Text>
+                                <View className="flex-row justify-end gap-2 mt-3">
+                                    <TouchableOpacity
+                                        onPress={handleCancelEdit}
+                                        className="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-full"
+                                    >
+                                        <Text className="text-gray-700 dark:text-gray-200 font-semibold">Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleSaveAbout}
+                                        disabled={savingAbout}
+                                        className="bg-lime-600 px-4 py-2 rounded-full"
+                                    >
+                                        <Text className="text-white font-semibold">
+                                            {savingAbout ? 'Saving...' : 'Save'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : (
+                            <Text className="text-lg text-center text-primary-400 text-pretty dark:text-dark-400">
+                                {profileData?.description || 'No description available. Click the edit button to add one.'}
+                            </Text>
+                        )}
                     </Card>
                     <Button
                         title="Manage Menu"

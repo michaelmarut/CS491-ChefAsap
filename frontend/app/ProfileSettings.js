@@ -335,13 +335,24 @@ export default function ProfileSettings() {
             </Card>
 
             <Card title={"Other"} headerIcon="three-bars" customClasses="w-full">
-              <Input
-                value={form.allergy_notes}
-                onChangeText={v => handleChange("allergy_notes", v)}
-                label="Allergy Notes"
-                placeholder="Allergy Notes"
-                isTextArea={true}
-              />
+              {userType === 'customer' ? (
+                <Input
+                  value={form.allergy_notes}
+                  onChangeText={v => handleChange("allergy_notes", v)}
+                  label="Allergy Notes"
+                  placeholder="Allergy Notes"
+                  isTextArea={true}
+                />
+              ) : (
+                <Input
+                  value={form.description}
+                  onChangeText={v => handleChange("description", v)}
+                  label="About / Bio"
+                  placeholder="Tell customers about yourself and your cooking..."
+                  isTextArea={true}
+                  maxLength={500}
+                />
+              )}
               <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">Member Since</Text>
               <Text className="border border-gray-300 bg-white rounded-full py-3 px-4 text-base text-gray-400">{profile.member_since}</Text>
             </Card>
@@ -392,9 +403,15 @@ export default function ProfileSettings() {
             </Card>
             <Card title={"Other"} headerIcon="three-bars" customClasses="w-full">
 
-              <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
-                <Text className="font-semibold">Allergy Notes: </Text>{profile.allergy_notes || "None"}
-              </Text>
+              {userType === 'customer' ? (
+                <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">Allergy Notes: </Text>{profile.allergy_notes || "None"}
+                </Text>
+              ) : (
+                <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
+                  <Text className="font-semibold">About / Bio: </Text>{profile.description || "No description yet"}
+                </Text>
+              )}
               <Text className="text-lg text-primary-400 mb-2 dark:text-dark-400" style={{ textAlign: "left" }}>
                 <Text className="font-semibold">Member Since: </Text>{profile.member_since}
               </Text>

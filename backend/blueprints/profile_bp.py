@@ -47,6 +47,8 @@ def get_chef_profile(chef_id):
                 c.email,
                 c.phone,
                 c.photo_url,
+                c.description,
+                c.meal_timings,
                 c.created_at,
                 ca.address_line1,
                 ca.address_line2,
@@ -172,6 +174,8 @@ def get_chef_profile(chef_id):
             'first_name': chef_profile['first_name'],
             'last_name': chef_profile['last_name'],
             'photo_url': chef_profile['photo_url'],
+            'description': chef_profile['description'],
+            'meal_timings': chef_profile['meal_timings'] if chef_profile['meal_timings'] else [],
             'residency': residency,
             'cuisines': cuisines,
             'avg_rating' : rating_info['avg_rating'],
@@ -228,6 +232,8 @@ def get_chef_public_profile(chef_id):
                 c.first_name,
                 c.last_name,
                 c.photo_url,
+                c.description,
+                c.meal_timings,
                 c.created_at,
                 ca.city,
                 ca.state
@@ -329,6 +335,8 @@ def get_chef_public_profile(chef_id):
             'first_name': chef_profile['first_name'],
             'last_name': chef_profile['last_name'],
             'photo_url': chef_profile['photo_url'],
+            'description': chef_profile['description'],
+            'meal_timings': chef_profile['meal_timings'] if chef_profile['meal_timings'] else [],
             'public_location': public_location,
             'cuisines': cuisines,
             'cuisine_photos': cuisine_photos,
@@ -363,6 +371,8 @@ def update_chef_profile(chef_id):
         last_name = data.get('last_name')
         phone = data.get('phone')
         photo_url = data.get('photo_url')
+        description = data.get('description')  # About/bio field
+        meal_timings = data.get('meal_timings')  # Array of meal timings: ['Breakfast', 'Lunch', 'Dinner']
         
         # Address fields - all editable
         address_line1 = data.get('address_line1')
@@ -387,6 +397,10 @@ def update_chef_profile(chef_id):
         
         if photo_url and not validate_image_url(photo_url):
             return jsonify({'error': 'Invalid image URL format'}), 400
+        
+        # Validate description length (max 500 chars based on DB schema)
+        if description is not None and len(description) > 500:
+            return jsonify({'error': 'Description cannot exceed 500 characters'}), 400
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -415,6 +429,14 @@ def update_chef_profile(chef_id):
         if photo_url is not None:
             update_fields.append('photo_url = %s')
             update_values.append(photo_url)
+        
+        if description is not None:
+            update_fields.append('description = %s')
+            update_values.append(description)
+        
+        if meal_timings is not None:
+            update_fields.append('meal_timings = %s')
+            update_values.append(meal_timings)
         
         # Always update the timestamp
         update_fields.append('updated_at = NOW()')
@@ -474,6 +496,77 @@ def update_chef_profile(chef_id):
         conn.close()
         
         return jsonify({'message': 'Profile updated successfully'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@profile_bp.route('/chef/<int:chef_id>/cuisines', methods=['PUT'])
+def update_chef_cuisines(chef_id):
+    """Update chef's cuisines"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'cuisines' not in data:
+            return jsonify({'error': 'Cuisines list is required'}), 400
+        
+        cuisine_names = data.get('cuisines', [])
+        
+        if not isinstance(cuisine_names, list):
+            return jsonify({'error': 'Cuisines must be an array'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if chef exists
+        cursor.execute('SELECT id FROM chefs WHERE id = %s', (chef_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Chef not found'}), 404
+        
+        # Delete existing cuisines
+        cursor.execute('DELETE FROM chef_cuisines WHERE chef_id = %s', (chef_id,))
+        
+        # Add new cuisines
+        for cuisine_name in cuisine_names:
+            # Get cuisine_id from cuisine_types table
+            cursor.execute('SELECT id FROM cuisine_types WHERE name = %s', (cuisine_name,))
+            cuisine_result = cursor.fetchone()
+            
+            if cuisine_result:
+                cuisine_id = cuisine_result[0]
+                # Insert into chef_cuisines
+                cursor.execute('''
+                    INSERT INTO chef_cuisines (chef_id, cuisine_id)
+                    VALUES (%s, %s)
+                    ON CONFLICT (chef_id, cuisine_id) DO NOTHING
+                ''', (chef_id, cuisine_id))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'message': 'Cuisines updated successfully', 'cuisines': cuisine_names}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@profile_bp.route('/cuisines', methods=['GET'])
+def get_all_cuisines():
+    """Get all available cuisine types"""
+    try:
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+        
+        cursor.execute('SELECT id, name FROM cuisine_types ORDER BY name')
+        cuisines = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+        
+        cuisine_list = [{'id': c['id'], 'name': c['name']} for c in cuisines]
+        
+        return jsonify({'cuisines': cuisine_list}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

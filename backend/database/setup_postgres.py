@@ -53,6 +53,7 @@ def init_postgres_db():
                 email VARCHAR(100) NOT NULL UNIQUE,
                 phone VARCHAR(20),
                 description VARCHAR(500),
+                meal_timings TEXT[] DEFAULT ARRAY['Breakfast', 'Lunch', 'Dinner'],
                 photo_url VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

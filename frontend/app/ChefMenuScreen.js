@@ -23,13 +23,23 @@ const menuItemCard = ({ item }) => (
                 <Text className="text-primary-400 text-md pt-2 mb-2 text-center text-justified dark:text-dark-400">
                     {item?.description || 'No description available'}
                 </Text>
+                {item?.price !== null && item?.price !== undefined && (
+                    <Text className="text-primary-400 text-lg font-bold pt-2 mb-2 text-center dark:text-dark-400">
+                        ${Number(item.price).toFixed(2)}
+                    </Text>
+                )}
+                {item?.prep_time && (
+                    <Text className="text-primary-400 text-xs pt-1 mb-2 text-center dark:text-dark-400">
+                        Prep time: {item.prep_time} min
+                    </Text>
+                )}
                 {item?.servings && (
-                    <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                    <Text className="text-primary-400 text-xs pt-1 mb-2 text-center text-justified dark:text-dark-400">
                         Servings: {item.servings}
                     </Text>
                 )}
                 {item?.spice_level && (
-                    <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                    <Text className="text-primary-400 text-xs pt-1 mb-2 text-center text-justified dark:text-dark-400">
                         Spice: {item.spice_level}
                     </Text>
                 )}
@@ -49,12 +59,12 @@ const menuItemCard = ({ item }) => (
 
         {item?.cuisine_type && (
             <Text className="text-primary-400 text-sm pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                {item.cuisine_type}
+                Cuisine: {item.cuisine_type}
             </Text>
         )}
         {item?.dietary_info && (
             <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                {item.dietary_info}
+                Dietary: {item.dietary_info}
             </Text>
         )}
         <Button

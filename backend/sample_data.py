@@ -1,4 +1,4 @@
-import mysql.connector
+import psycopg2
 from database.config import db_config
 from flask_bcrypt import Bcrypt
 
@@ -9,18 +9,35 @@ def add_sample_data():
     conn = None
     cursor = None
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = psycopg2.connect(**db_config)
         cursor = conn.cursor()
 
         # Add cuisine types
         cuisines = [
             'Italian', 'Chinese', 'Mexican', 'Indian', 'Japanese', 'Thai', 'French',
-            'Mediterranean', 'American', 'Caribbean', 'Korean', 'Vietnamese', 'Greek'
+            'Mediterranean', 'American', 'Caribbean', 'Korean', 'Vietnamese', 'Greek',
+            'Turkish', 'Spanish', 'Lebanese', 'Moroccan', 'Brazilian', 'Ethiopian',
+            'Persian', 'Indonesian', 'Filipino', 'Malaysian', 'Pakistani', 'Egyptian',
+            'German', 'British', 'Russian', 'Polish', 'Portuguese', 'Argentinian',
+            'Peruvian', 'Colombian', 'Venezuelan', 'Cuban', 'Jamaican', 'Nigerian',
+            'Kenyan', 'South African', 'Fusion', 'BBQ', 'Seafood', 'Vegetarian',
+            'Vegan', 'Gluten-Free', 'Organic', 'Farm-to-Table', 'Soul Food', 'Cajun',
+            'Creole', 'Tex-Mex', 'Southern', 'Nordic', 'Scandinavian', 'Irish',
+            'Scottish', 'Ukrainian', 'Hungarian', 'Austrian', 'Swiss', 'Belgian',
+            'Dutch', 'Balkan', 'Georgian', 'Armenian', 'Israeli', 'Afghani',
+            'Nepalese', 'Tibetan', 'Burmese', 'Singaporean', 'Taiwanese', 'Hong Kong',
+            'Cantonese', 'Szechuan', 'Hunan', 'Hakka', 'Dim Sum', 'Sushi',
+            'Ramen', 'Izakaya', 'Tapas', 'Basque', 'Catalan', 'Galician',
+            'Andalusian', 'Tuscan', 'Sicilian', 'Neapolitan', 'Roman', 'Venetian',
+            'Punjabi', 'Bengali', 'South Indian', 'North Indian', 'Goan', 'Hyderabadi',
+            'Street Food', 'Comfort Food', 'Fine Dining', 'Contemporary', 'Modern European',
+            'Desserts', 'Bakery', 'Pastry', 'Ice Cream', 'Bubble Tea'
         ]
         
         for cuisine in cuisines:
             cursor.execute('''
-                INSERT IGNORE INTO cuisine_types (name) VALUES (%s)
+                INSERT INTO cuisine_types (name) VALUES (%s)
+                ON CONFLICT (name) DO NOTHING
             ''', (cuisine,))
 
         # Add sample users (chefs and customers)
@@ -41,7 +58,8 @@ def add_sample_data():
         for email, password, user_type in sample_users:
             hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
             cursor.execute('''
-                INSERT IGNORE INTO users (email, password, user_type) VALUES (%s, %s, %s)
+                INSERT INTO users (email, password, user_type) VALUES (%s, %s, %s)
+                ON CONFLICT (email) DO NOTHING
             ''', (email, hashed_password, user_type))
 
         # Add sample chefs (100 chefs)
@@ -96,7 +114,8 @@ def add_sample_data():
 
         for first_name, last_name, email, phone, description in sample_chefs:
             cursor.execute('''
-                INSERT IGNORE INTO chefs (first_name, last_name, email, phone, description) VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO chefs (first_name, last_name, email, phone, description) VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (email) DO NOTHING
             ''', (first_name, last_name, email, phone, description))
 
         # Add sample customers (100 customers)
@@ -133,7 +152,7 @@ def add_sample_data():
 
         for first_name, last_name, email, phone in sample_customers:
             cursor.execute('''
-                INSERT IGNORE INTO customers (first_name, last_name, email, phone) 
+                INSERT INTO customers (first_name, last_name, email, phone) 
                 VALUES (%s, %s, %s, %s)
             ''', (first_name, last_name, email, phone))
 
@@ -151,7 +170,7 @@ def add_sample_data():
 
         for first_name, last_name, email, phone in ny_users:
             cursor.execute('''
-                INSERT IGNORE INTO customers (first_name, last_name, email, phone) 
+                INSERT INTO customers (first_name, last_name, email, phone) 
                 VALUES (%s, %s, %s, %s)
             ''', (first_name, last_name, email, phone))
 
@@ -206,7 +225,8 @@ def add_sample_data():
                 for cuisine_name in chef_cuisines:
                     if cuisine_name in cuisine_ids:
                         cursor.execute('''
-                            INSERT IGNORE INTO chef_cuisines (chef_id, cuisine_id) VALUES (%s, %s)
+                            INSERT INTO chef_cuisines (chef_id, cuisine_id) VALUES (%s, %s)
+                            ON CONFLICT (chef_id, cuisine_id) DO NOTHING
                         ''', (chef_id, cuisine_ids[cuisine_name]))
 
         # Add chef service areas (for all 100 chefs) - Extended to 100 major US cities
@@ -263,7 +283,7 @@ def add_sample_data():
             if chef_email in chefs:
                 chef_id = chefs[chef_email]
                 cursor.execute('''
-                    INSERT IGNORE INTO chef_service_areas (chef_id, city, state, zip_code, service_radius_miles) 
+                    INSERT INTO chef_service_areas (chef_id, city, state, zip_code, service_radius_miles) 
                     VALUES (%s, %s, %s, %s, %s)
                 ''', (chef_id, city, state, zip_code, radius))
 
@@ -284,7 +304,7 @@ def add_sample_data():
             if chef_email in chefs:
                 chef_id = chefs[chef_email]
                 cursor.execute('''
-                    INSERT IGNORE INTO chef_pricing (chef_id, base_rate_per_person, produce_supply_extra_cost, minimum_people, maximum_people) 
+                    INSERT INTO chef_pricing (chef_id, base_rate_per_person, produce_supply_extra_cost, minimum_people, maximum_people) 
                     VALUES (%s, %s, %s, %s, %s)
                 ''', (chef_id, base_rate, produce_cost, min_people, max_people))
 
@@ -325,7 +345,7 @@ def add_sample_data():
 
         for chef_id, day, start_time, end_time in chef_availability:
             cursor.execute('''
-                INSERT IGNORE INTO chef_availability_days (chef_id, day_of_week, start_time, end_time) 
+                INSERT INTO chef_availability_days (chef_id, day_of_week, start_time, end_time) 
                 VALUES (%s, %s, %s, %s)
             ''', (chef_id, day, start_time, end_time))
 
@@ -360,7 +380,7 @@ def add_sample_data():
                 city, state, zip_code = cities_data[(i-1) % len(cities_data)]
                 
                 cursor.execute('''
-                    INSERT IGNORE INTO customer_addresses (customer_id, address_line1, city, state, zip_code, is_default) 
+                    INSERT INTO customer_addresses (customer_id, address_line1, city, state, zip_code, is_default) 
                     VALUES (%s, %s, %s, %s, %s, %s)
                 ''', (customer_id, address, city, state, zip_code, True))
 
@@ -378,7 +398,7 @@ def add_sample_data():
                 address = f'{street_num} {street_name}'
                 
                 cursor.execute('''
-                    INSERT IGNORE INTO customer_addresses (customer_id, address_line1, city, state, zip_code, is_default) 
+                    INSERT INTO customer_addresses (customer_id, address_line1, city, state, zip_code, is_default) 
                     VALUES (%s, %s, %s, %s, %s, %s)
                 ''', (customer_id, address, 'New York', 'NY', '10001', True))
 
@@ -413,7 +433,7 @@ def add_sample_data():
         
         for customer_id, chef_id in sample_favorites:
             cursor.execute('''
-                INSERT IGNORE INTO customer_favorite_chefs (customer_id, chef_id)
+                INSERT INTO customer_favorite_chefs (customer_id, chef_id)
                 VALUES (%s, %s)
             ''', (customer_id, chef_id))
         print(f"Added {len(sample_favorites)} favorite chef relationships (2-3 per customer)")
@@ -502,7 +522,7 @@ def add_sample_data():
             cursor.execute(query)
             conn.commit()
             print("COLUMN 'description' ADDED TO TABLE 'chefs'")
-        except mysql.connector.Error as e:
+        except psycopg2.Error as e:
             if "Duplicate column name" in str(e):
                 print("COLUMN 'description' ALREADY EXISTS IN TABLE 'chefs'")
             else:
@@ -587,7 +607,7 @@ def add_sample_data():
                 address = f'{street_num} {street_name}'
                 
                 cursor.execute('''
-                    INSERT IGNORE INTO chef_addresses (chef_id, address_line1, city, state, latitude, longitude, is_default) 
+                    INSERT INTO chef_addresses (chef_id, address_line1, city, state, latitude, longitude, is_default) 
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ''', (chef_id, address, city, state, final_lat, final_lng, True))
         
@@ -598,7 +618,7 @@ def add_sample_data():
             cursor.execute(query)
             conn.commit()
             print("COLUMN 'description' ADDED TO TABLE 'chefs'")
-        except mysql.connector.Error as e:
+        except psycopg2.Error as e:
             if "Duplicate column name" in str(e):
                 print("COLUMN 'description' ALREADY EXISTS IN TABLE 'chefs'")
             else:
