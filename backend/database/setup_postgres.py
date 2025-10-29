@@ -721,6 +721,8 @@ def init_postgres_db():
                 cuisine_type VARCHAR(100),
                 dietary_info VARCHAR(255),
                 spice_level VARCHAR(50),
+                price DECIMAL(10, 2),
+                prep_time INTEGER,
                 is_available BOOLEAN DEFAULT TRUE,
                 is_featured BOOLEAN DEFAULT FALSE,
                 display_order INTEGER DEFAULT 0,
@@ -755,6 +757,49 @@ def init_postgres_db():
             FOR EACH ROW
             EXECUTE FUNCTION update_chef_menu_updated_at();
         ''')
+
+        # Orders table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id SERIAL PRIMARY KEY,
+                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                chef_id INTEGER NOT NULL REFERENCES chefs(id) ON DELETE CASCADE,
+                order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                delivery_datetime TIMESTAMP,
+                status VARCHAR(50) DEFAULT 'pending',
+                total_amount DECIMAL(10, 2) NOT NULL,
+                estimated_prep_time INTEGER,
+                delivery_address TEXT,
+                special_instructions TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT valid_status CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'))
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_chef ON orders(chef_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date DESC)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_delivery_datetime ON orders(delivery_datetime)')
+
+        # Order items table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS order_items (
+                id SERIAL PRIMARY KEY,
+                order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+                menu_item_id INTEGER NOT NULL REFERENCES chef_menu_items(id) ON DELETE RESTRICT,
+                dish_name VARCHAR(255) NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                unit_price DECIMAL(10, 2) NOT NULL,
+                subtotal DECIMAL(10, 2) NOT NULL,
+                special_requests TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT positive_quantity CHECK (quantity > 0),
+                CONSTRAINT positive_price CHECK (unit_price >= 0)
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_order_items_menu_item ON order_items(menu_item_id)')
 
         # Add foreign key constraints for users table
         # Check if constraint exists before adding
@@ -791,12 +836,12 @@ def init_postgres_db():
             print(f"Note: customer_id constraint - {e}")
 
         conn.commit()
-        print("\n✅ All tables created successfully in PostgreSQL!")
+        print("\n All tables created successfully in PostgreSQL!")
         print(f"\nDatabase: {db_config['database']}")
-        print(f"Total tables created: 42")
+        print(f"Total tables created: 44")  # Updated from 42 to 44 (added orders + order_items)
         
     except Error as e:
-        print(f"\n❌ Error creating tables: {e}")
+        print(f"\n Error creating tables: {e}")
         if conn:
             conn.rollback()
             

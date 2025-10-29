@@ -34,6 +34,16 @@ const featuredDishComponent = (item) => (
                 {item.cuisine_type}
             </Text>
         )}
+        {item.price && (
+            <Text className="text-primary-400 text-lg font-bold pt-2 w-[200px] text-center dark:text-dark-400">
+                ${item.price.toFixed(2)}
+            </Text>
+        )}
+        {item.prep_time && (
+            <Text className="text-primary-400 text-xs pt-1 w-[200px] text-center dark:text-dark-400">
+                Prep time: {item.prep_time} min
+            </Text>
+        )}
     </View>
 );
 
@@ -98,9 +108,7 @@ export default function ChefProfileScreen() {
 
                 if (featuredResponse.ok) {
                     setFeaturedItems(featuredData.featured_items || []);
-                    console.log('Featured items loaded:', featuredData.featured_items?.length || 0);
                 } else {
-                    console.log('Featured fetch error:', featuredData.error);
                     setFeaturedItems([]);
                 }
 
@@ -184,7 +192,11 @@ export default function ChefProfileScreen() {
                     scrollDirection='horizontal'
                     customCard="py-1"
                 >
-                    {featuredItems.length > 0 ? (
+                    {loading ? (
+                        <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
+                            Loading featured dishes...
+                        </Text>
+                    ) : featuredItems.length > 0 ? (
                         featuredItems.map(item => featuredDishComponent(item))
                     ) : (
                         <Text className="text-primary-400 text-center py-4 dark:text-dark-400">

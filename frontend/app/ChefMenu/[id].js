@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { ScrollView, Text, Alert, View, FlatList } from "react-native";
 import { Octicons } from '@expo/vector-icons';
 
@@ -13,13 +13,18 @@ import Card from "../components/Card";
 import TagsBox from '../components/TagsBox';
 import RatingsDisplay from '../components/RatingsDisplay';
 
-const menuItemCard = ({ item }) => (
+const menuItemCard = ({ item, onAddToOrder }) => (
     <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mb-4 w-full" key={item?.id}>
         <View className="flex-row">
             <View className="flex w-1/2 justify-between pr-2">
                 <Text className="text-lg font-medium pt-2 mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
                     {item?.dish_name || 'Dish Name'}
                 </Text>
+                {item?.price && (
+                    <Text className="text-primary-400 text-xl font-bold pt-2 mb-2 text-center dark:text-dark-400">
+                        ${item.price.toFixed(2)}
+                    </Text>
+                )}
                 <Text className="text-primary-400 text-md pt-2 mb-2 text-center text-justified dark:text-dark-400">
                     {item?.description || 'No description available'}
                 </Text>
@@ -28,9 +33,14 @@ const menuItemCard = ({ item }) => (
                         Servings: {item.servings}
                     </Text>
                 )}
+                {item?.prep_time && (
+                    <Text className="text-primary-400 text-sm pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                        ⏱️ Prep: {item.prep_time} min
+                    </Text>
+                )}
                 {item?.spice_level && (
                     <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                        Spice: {item.spice_level}
+                        🌶️ Spice: {item.spice_level}
                     </Text>
                 )}
             </View>
@@ -59,7 +69,7 @@ const menuItemCard = ({ item }) => (
         )}
         <Button
             title={item?.is_available ? "Add to order" : "Not available"}
-            onPress={() => item?.is_available && alert("Added to order")}
+            onPress={() => onAddToOrder && onAddToOrder(item)}
             customClasses='rounded-xl'
             customTextClasses='text-sm'
             disabled={!item?.is_available}
@@ -73,6 +83,7 @@ const distance = 3.1
 
 export default function ChefMenu() {
     const { id } = useLocalSearchParams();
+    const router = useRouter();
 
     const { token, userId, profileId, userType } = useAuth();
     const { apiUrl } = getEnvVars();
@@ -168,6 +179,23 @@ export default function ChefMenu() {
 
     }, [id, apiUrl, token]);
 
+    // Handle adding item to order
+    const handleAddToOrder = (item) => {
+        if (!item.is_available) {
+            Alert.alert('Not Available', 'This dish is currently not available.');
+            return;
+        }
+
+        Alert.alert(
+            'Item Info',
+            `${item.dish_name} - $${item.price ? item.price.toFixed(2) : 'N/A'}`
+        );
+    };
+
+    const renderGridItem = ({ item }) => (
+        tempMenuComponent({ item })
+    );
+
     if (loading) {
         return (
             <>
@@ -215,7 +243,7 @@ export default function ChefMenu() {
                     startExpanded={true}
                 >
                     {featuredItems.length > 0 ? (
-                        featuredItems.map(item => menuItemCard({ item }))
+                        featuredItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder }))
                     ) : (
                         <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
                             No featured dishes available
@@ -228,7 +256,7 @@ export default function ChefMenu() {
                         title="All Menu Items"
                         customHeader='justify-center'
                     >
-                        {menuItems.map(item => menuItemCard({ item }))}
+                        {menuItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder }))}
                     </Card>
                 ) : (
                     <Card
@@ -242,13 +270,6 @@ export default function ChefMenu() {
                     </Card>
                 )}
 
-                <Button
-                    title="View Order"
-                    style="primary"
-                    customClasses="min-w-[60%]"
-                    onPress={() => alert("Checkout Placeholder")}
-                    disabled={userType === 'chef'}
-                />
                 <Button
                     title="← Return"
                     style="secondary"

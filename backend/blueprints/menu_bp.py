@@ -21,7 +21,8 @@ def get_chef_menu(chef_id):
             cursor.execute("""
                 SELECT id, chef_id, dish_name, description, photo_url,
                        servings, cuisine_type, dietary_info,
-                       spice_level, is_available, is_featured, display_order, created_at
+                       spice_level, is_available, is_featured, display_order, created_at,
+                       price, prep_time
                 FROM chef_menu_items
                 WHERE chef_id = %s
                 ORDER BY display_order, dish_name
@@ -30,7 +31,8 @@ def get_chef_menu(chef_id):
             cursor.execute("""
                 SELECT id, chef_id, dish_name, description, photo_url,
                        servings, cuisine_type, dietary_info,
-                       spice_level, is_available, is_featured, display_order, created_at
+                       spice_level, is_available, is_featured, display_order, created_at,
+                       price, prep_time
                 FROM chef_menu_items
                 WHERE chef_id = %s AND is_available = TRUE
                 ORDER BY display_order, dish_name
@@ -53,7 +55,9 @@ def get_chef_menu(chef_id):
                 'is_available': row[9],
                 'is_featured': row[10],
                 'display_order': row[11],
-                'created_at': row[12].isoformat() if row[12] else None
+                'created_at': row[12].isoformat() if row[12] else None,
+                'price': float(row[13]) if row[13] else None,
+                'prep_time': row[14]
             })
         
         cursor.close()
@@ -79,7 +83,8 @@ def get_menu_item(item_id):
         cursor.execute("""
             SELECT id, chef_id, dish_name, description, photo_url,
                    servings, cuisine_type, dietary_info,
-                   spice_level, is_available, display_order, created_at, updated_at
+                   spice_level, is_available, display_order, created_at, updated_at,
+                   price, prep_time
             FROM chef_menu_items
             WHERE id = %s
         """, (item_id,))
@@ -102,7 +107,9 @@ def get_menu_item(item_id):
             'is_available': row[9],
             'display_order': row[10],
             'created_at': row[11].isoformat() if row[11] else None,
-            'updated_at': row[12].isoformat() if row[12] else None
+            'updated_at': row[12].isoformat() if row[12] else None,
+            'price': float(row[13]) if row[13] else None,
+            'prep_time': row[14]
         }
         
         cursor.close()
@@ -142,8 +149,9 @@ def add_menu_item(chef_id):
         cursor.execute("""
             INSERT INTO chef_menu_items 
             (chef_id, dish_name, description, photo_url,
-             servings, cuisine_type, dietary_info, spice_level, display_order)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+             servings, cuisine_type, dietary_info, spice_level, display_order,
+             price, prep_time)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
             chef_id,
@@ -154,7 +162,9 @@ def add_menu_item(chef_id):
             data.get('cuisine_type'),
             data.get('dietary_info'),
             data.get('spice_level'),
-            data.get('display_order', 0)
+            data.get('display_order', 0),
+            data.get('price'),
+            data.get('prep_time')
         ))
         
         new_id = cursor.fetchone()[0]
@@ -195,7 +205,8 @@ def update_menu_item(item_id):
         allowed_fields = [
             'dish_name', 'description', 'photo_url', 'servings',
             'cuisine_type', 'dietary_info', 'spice_level', 
-            'is_available', 'is_featured', 'display_order'
+            'is_available', 'is_featured', 'display_order',
+            'price', 'prep_time'
         ]
         
         for field in allowed_fields:
@@ -268,7 +279,8 @@ def get_featured_dishes(chef_id):
         cursor.execute("""
             SELECT id, chef_id, dish_name, description, photo_url,
                    servings, cuisine_type, dietary_info,
-                   spice_level, is_available, is_featured, display_order
+                   spice_level, is_available, is_featured, display_order,
+                   price, prep_time
             FROM chef_menu_items
             WHERE chef_id = %s AND is_featured = TRUE AND is_available = TRUE
             ORDER BY display_order, dish_name
@@ -282,7 +294,8 @@ def get_featured_dishes(chef_id):
             cursor.execute("""
                 SELECT id, chef_id, dish_name, description, photo_url,
                        servings, cuisine_type, dietary_info,
-                       spice_level, is_available, is_featured, display_order
+                       spice_level, is_available, is_featured, display_order,
+                       price, prep_time
                 FROM chef_menu_items
                 WHERE chef_id = %s AND is_available = TRUE
                 ORDER BY display_order, created_at, dish_name
@@ -304,7 +317,9 @@ def get_featured_dishes(chef_id):
                 'spice_level': row[8],
                 'is_available': row[9],
                 'is_featured': row[10],
-                'display_order': row[11]
+                'display_order': row[11],
+                'price': float(row[12]) if row[12] else None,
+                'prep_time': row[13]
             })
         
         cursor.close()
