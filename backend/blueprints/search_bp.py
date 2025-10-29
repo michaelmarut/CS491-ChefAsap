@@ -217,7 +217,7 @@ def search_nearby_chefs():
                 
                 # Rating information
                 'rating': {
-                    'average_rating': round(float(chef['average_rating']), 2) if chef['average_rating'] else None,
+                    'average_rating': round(float(chef['average_rating']), 0) if chef['average_rating'] else None,
                     'total_reviews': chef['total_reviews'] or 0
                 }
             }

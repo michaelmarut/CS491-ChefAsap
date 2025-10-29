@@ -89,11 +89,21 @@ def get_chef_profile(chef_id):
         except:
             pass
         
-        # Get chef ratings average - consume all results  
+        # Get chef ratings average
         cursor.execute('''
-            SELECT COUNT(*) as total_ratings, SUM(r.rating) as rating_sum FROM chef_rating r
-            where chef_id = %s''', (chef_id,))
+            SELECT average_rating, total_reviews FROM chef_rating_summary crs
+            WHERE chef_id = %s''', (chef_id,))
+        
         ratings_data = cursor.fetchone()
+        
+        # Process rating data
+        total_ratings = ratings_data['total_reviews'] if ratings_data else 0
+        avg_rating = round(float(ratings_data['average_rating']), 0) if ratings_data else 0
+        
+        rating_info = {
+            'avg_rating': avg_rating,
+            'total_ratings': total_ratings
+        }
 
         cursor.execute('''
             SELECT r.customer_id, r.rating, r.comment FROM chef_rating r
@@ -104,7 +114,7 @@ def get_chef_profile(chef_id):
         #returns rating avg and comments
         '''return jsonify({
             'chef': chef_id,
-            'rating' : ratings_data['rating_sum'] / ratings_data['total_ratings'],
+            'rating' : ratings_data['avg_rating'],
             'total_reviews': ratings_data['total_ratings'],
             'reviews': comments
         }), 200'''
@@ -115,16 +125,6 @@ def get_chef_profile(chef_id):
             cursor.nextset()
         except:
             pass
-        
-        # Process rating data
-        total_ratings = ratings_data['total_ratings'] if ratings_data else 0
-        rating_sum = ratings_data['rating_sum'] if ratings_data else 0
-        avg_rating = (rating_sum / total_ratings) if total_ratings > 0 else 0
-        
-        rating_info = {
-            'avg_rating': avg_rating,
-            'total_ratings': total_ratings
-        }
         
         # Get chef cuisine photos
         cursor.execute('''
@@ -174,8 +174,8 @@ def get_chef_profile(chef_id):
             'photo_url': chef_profile['photo_url'],
             'residency': residency,
             'cuisines': cuisines,
-            'avg_rating' : (ratings_data['rating_sum'] / ratings_data['total_ratings']) if ratings_data['total_ratings'] and ratings_data['total_ratings'] > 0 else 0,
-            'total_reviews': ratings_data['total_ratings'] or 0,
+            'avg_rating' : rating_info['avg_rating'],
+            'total_reviews': rating_info['total_ratings'],
             'reviews': comments,
             'cuisine_photos': cuisine_photos,
             'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None
@@ -269,15 +269,14 @@ def get_chef_public_profile(chef_id):
         
         # Get chef ratings average
         cursor.execute('''
-            SELECT COUNT(*) as total_ratings, SUM(r.rating) as rating_sum FROM chef_rating r
+            SELECT average_rating, total_reviews FROM chef_rating_summary crs
             WHERE chef_id = %s''', (chef_id,))
         
         ratings_data = cursor.fetchone()
         
         # Process rating data
-        total_ratings = ratings_data['total_ratings'] if ratings_data else 0
-        rating_sum = ratings_data['rating_sum'] if ratings_data else 0
-        avg_rating = (rating_sum / total_ratings) if total_ratings > 0 else 0
+        total_ratings = ratings_data['total_reviews'] if ratings_data else 0
+        avg_rating = round(float(ratings_data['average_rating']), 0) if ratings_data else 0
         
         rating_info = {
             'avg_rating': avg_rating,

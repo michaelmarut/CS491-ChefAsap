@@ -223,7 +223,16 @@ export default function ProfileSettings() {
   // Show error if there is one
   if (error) return <Text className="text-red-500">{error}</Text>;
   // Show loading message while profile is being fetched
-  if (!profile || !form) return <LoadingIcon message="Loading User Profile..." />;
+  if (!profile || !form) {
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
+          <LoadingIcon message="Loading User Profile..." />
+        </View>
+      </>
+    );
+  }
 
   return (
     <>

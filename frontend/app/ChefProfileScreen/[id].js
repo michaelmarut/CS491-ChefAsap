@@ -37,24 +37,13 @@ const featuredDishComponent = (item) => (
     </View>
 );
 
-const tempImageComponent = (
-    <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
-        <View className="bg-white h-[200px] w-[200px] justify-center">
-            <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE GOES HERE</Text>
-        </View>
-        <Text className="text-primary-400 text-md pt-2 w-[200px] text-center text-justified dark:text-dark-400">
-            Caption goes here.
-        </Text>
-    </View>
-);
-
 const timing = ["Lunch", "Dinner"];
 const cuisine = ["Gluten-Free", "Italian", "Vegetarian", "Vietnamese", "Desserts", "BBQ"];
 
 export default function ChefProfileScreen() {
     const { id } = useLocalSearchParams();
 
-    const { token, userId, profileId } = useAuth();
+    const { token, userId, profileId, userType } = useAuth();
     const { apiUrl } = getEnvVars();
 
     const [chefData, setChefData] = useState(null);
@@ -129,9 +118,12 @@ export default function ChefProfileScreen() {
 
     if (loading) {
         return (
-            <View className="flex-1 bg-base-100 dark:bg-base-dark-100 pb-16 items-center justify-center">
-                <LoadingIcon message='Loading Chef Profile...' />
-            </View>
+            <>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
+                    <LoadingIcon message="Loading Chef Profile..." />
+                </View>
+            </>
         );
     }
 
@@ -139,7 +131,7 @@ export default function ChefProfileScreen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
-                {/*<Text>{JSON.stringify(chefData)}</Text>*/}
+                {/*console.log(JSON.stringify(chefData))*/}
                 <Card
                     title={`${chefData?.first_name} ${chefData?.last_name}`}
                     customHeader='justify-center'
@@ -211,7 +203,7 @@ export default function ChefProfileScreen() {
                 <Button
                     title="← Return"
                     style="secondary"
-                    href="/(tabs)/SearchScreen"
+                    href= {userType === 'customer' ? "/(tabs)/SearchScreen" : "/(tabs)/Profile"}
                     customClasses="min-w-[60%]"
                 />
                 <View className="h-24" />
