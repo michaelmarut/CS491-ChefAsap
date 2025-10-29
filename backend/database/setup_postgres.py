@@ -709,6 +709,45 @@ def init_postgres_db():
         ''')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_search_location ON customer_search_locations(latitude, longitude)')
 
+        # Customer recent searches - stores search history with keywords and filters
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customer_recent_searches (
+                id SERIAL PRIMARY KEY,
+                customer_id INTEGER NOT NULL,
+                search_query VARCHAR(255),
+                cuisine VARCHAR(100),
+                gender VARCHAR(10),
+                meal_timing VARCHAR(20),
+                min_rating DECIMAL(2, 1),
+                max_price DECIMAL(10, 2),
+                radius DECIMAL(6, 2),
+                latitude DECIMAL(10, 8),
+                longitude DECIMAL(11, 8),
+                location_name VARCHAR(200),
+                results_count INTEGER DEFAULT 0,
+                searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_recent_searches_customer ON customer_recent_searches(customer_id, searched_at DESC)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_recent_searches_query ON customer_recent_searches(search_query)')
+
+        # Customer viewed chefs - tracks which chefs a customer has viewed
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customer_viewed_chefs (
+                id SERIAL PRIMARY KEY,
+                customer_id INTEGER NOT NULL,
+                chef_id INTEGER NOT NULL,
+                viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                view_count INTEGER DEFAULT 1,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+                FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
+                UNIQUE(customer_id, chef_id)
+            )
+        ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_viewed_chefs_customer ON customer_viewed_chefs(customer_id, viewed_at DESC)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_viewed_chefs_chef ON customer_viewed_chefs(chef_id)')
+
         # Chef menu items
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS chef_menu_items (
@@ -776,11 +815,28 @@ def init_postgres_db():
                 CONSTRAINT valid_status CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'))
             )
         ''')
+        
+        # Add delivery_datetime column if it doesn't exist (for existing orders tables)
+        cursor.execute('''
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name = 'orders' AND column_name = 'delivery_datetime'
+                ) THEN
+                    ALTER TABLE orders ADD COLUMN delivery_datetime TIMESTAMP;
+                END IF;
+            END $$;
+        ''')
+        
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_chef ON orders(chef_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date DESC)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_orders_delivery_datetime ON orders(delivery_datetime)')
+        
+        # Drop old delivery_datetime index if it exists, then create new one
+        cursor.execute('DROP INDEX IF EXISTS idx_orders_delivery_datetime')
+        cursor.execute('CREATE INDEX idx_orders_delivery_datetime ON orders(delivery_datetime)')
 
         # Order items table
         cursor.execute('''
@@ -838,10 +894,12 @@ def init_postgres_db():
         conn.commit()
         print("\n All tables created successfully in PostgreSQL!")
         print(f"\nDatabase: {db_config['database']}")
-        print(f"Total tables created: 44")  # Updated from 42 to 44 (added orders + order_items)
+        print(f"Total tables created: 46")  # Updated from 45 to 46 (added customer_viewed_chefs)
         
     except Error as e:
         print(f"\n Error creating tables: {e}")
+        import traceback
+        traceback.print_exc()
         if conn:
             conn.rollback()
             

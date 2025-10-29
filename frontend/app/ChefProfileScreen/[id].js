@@ -112,6 +112,25 @@ export default function ChefProfileScreen() {
                     setFeaturedItems([]);
                 }
 
+                // Save chef view record (only for customers)
+                if (userType === 'customer' && profileId) {
+                    try {
+                        const viewUrl = `${apiUrl}/search/viewed-chefs/${profileId}`;
+                        await fetch(viewUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ chef_id: chefId }),
+                        });
+                        console.log(`Saved view record for chef ${chefId}`);
+                    } catch (viewError) {
+                        console.error('Failed to save view record:', viewError);
+                        // Don't show error to user, just log it
+                    }
+                }
+
             } catch (err) {
                 setError('Network error. Could not connect to API.');
                 console.error('Fetch error:', err);
