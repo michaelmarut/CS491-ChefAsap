@@ -645,3 +645,117 @@ def get_nearby_chefs(customer_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@booking_bp.route('/chef/<int:chef_id>/bookings', methods=['GET'])
+def get_chef_bookings(chef_id):
+    """Get all bookings for a specific chef"""
+    try:
+        status = request.args.get('status', 'all')
+        
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+        
+        # Base query
+        query = '''
+            SELECT 
+                b.id as booking_id,
+                b.booking_date,
+                b.booking_time,
+                b.cuisine_type,
+                b.meal_type,
+                b.event_type,
+                b.number_of_people,
+                b.special_notes,
+                b.status,
+                b.total_cost,
+                b.produce_supply,
+                b.created_at,
+                b.updated_at,
+                c.first_name || ' ' || c.last_name as customer_name,
+                c.email as customer_email,
+                c.phone as customer_phone,
+                ca.address_line1,
+                ca.address_line2,
+                ca.city,
+                ca.state,
+                ca.zip_code
+            FROM bookings b
+            JOIN customers c ON b.customer_id = c.id
+            LEFT JOIN customer_addresses ca ON c.id = ca.customer_id AND ca.is_default = true
+            WHERE b.chef_id = %s
+        '''
+        
+        params = [chef_id]
+        
+        if status != 'all':
+            query += ' AND b.status = %s'
+            params.append(status)
+        
+        query += ' ORDER BY b.booking_date DESC, b.booking_time DESC'
+        
+        cursor.execute(query, tuple(params))
+        bookings = cursor.fetchall()
+        
+        # Format the results
+        formatted_bookings = []
+        for booking in bookings:
+            formatted_booking = dict(booking)
+            # Format date and time
+            if formatted_booking.get('booking_date'):
+                formatted_booking['booking_date'] = formatted_booking['booking_date'].strftime('%Y-%m-%d')
+            if formatted_booking.get('booking_time'):
+                formatted_booking['booking_time'] = str(formatted_booking['booking_time'])
+            if formatted_booking.get('total_cost'):
+                formatted_booking['total_cost'] = float(formatted_booking['total_cost'])
+            formatted_bookings.append(formatted_booking)
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'bookings': formatted_bookings,
+            'count': len(formatted_bookings)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@booking_bp.route('/booking/<int:booking_id>/status', methods=['PUT'])
+def update_booking_status(booking_id):
+    """Update booking status (for chef to accept/decline bookings)"""
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        if not new_status:
+            return jsonify({'error': 'Status is required'}), 400
+        
+        # Validate status
+        valid_statuses = ['pending', 'accepted', 'declined', 'completed', 'cancelled']
+        if new_status not in valid_statuses:
+            return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE bookings 
+            SET status = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (new_status, booking_id))
+        
+        if cursor.rowcount == 0:
+            return jsonify({'error': 'Booking not found'}), 404
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Booking status updated to {new_status}'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

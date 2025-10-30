@@ -462,7 +462,7 @@ def save_viewed_chef(customer_id):
 @search_bp.route('/viewed-chefs/<int:customer_id>', methods=['GET'])
 def get_viewed_chefs(customer_id):
     """
-    Get recently viewed chefs for a customer
+    Get recently booked chefs (based on completed bookings) for a customer
     """
     conn = None
     cursor = None
@@ -472,6 +472,7 @@ def get_viewed_chefs(customer_id):
         conn = get_db_connection()
         cursor = get_cursor(conn, dictionary=True)
 
+        # Get chefs from completed bookings, ordered by most recent completion
         cursor.execute('''
             SELECT 
                 c.id as chef_id,
@@ -489,19 +490,21 @@ def get_viewed_chefs(customer_id):
                 crs.average_rating,
                 crs.total_reviews,
                 
-                -- View info
-                cvc.viewed_at,
-                cvc.view_count
+                -- Booking info
+                MAX(b.updated_at) as last_booking_date,
+                COUNT(b.id) as total_bookings
                 
-            FROM customer_viewed_chefs cvc
-            INNER JOIN chefs c ON cvc.chef_id = c.id
+            FROM bookings b
+            INNER JOIN chefs c ON b.chef_id = c.id
             LEFT JOIN chef_cuisines cc ON c.id = cc.chef_id
             LEFT JOIN cuisine_types ct ON cc.cuisine_id = ct.id
             LEFT JOIN chef_rating_summary crs ON c.id = crs.chef_id
-            WHERE cvc.customer_id = %s
+            WHERE b.customer_id = %s 
+                AND b.status = 'completed'
+                AND b.chef_id IS NOT NULL
             GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone, c.gender, c.meal_timings,
-                     crs.average_rating, crs.total_reviews, cvc.viewed_at, cvc.view_count
-            ORDER BY cvc.viewed_at DESC
+                     crs.average_rating, crs.total_reviews
+            ORDER BY last_booking_date DESC
             LIMIT %s
         ''', (customer_id, limit))
         
@@ -523,8 +526,8 @@ def get_viewed_chefs(customer_id):
                     'average_rating': round(float(chef['average_rating']), 2) if chef['average_rating'] else None,
                     'total_reviews': chef['total_reviews'] or 0
                 },
-                'viewed_at': chef['viewed_at'].isoformat() if chef['viewed_at'] else None,
-                'view_count': chef['view_count']
+                'last_booking_date': chef['last_booking_date'].isoformat() if chef['last_booking_date'] else None,
+                'total_bookings': chef['total_bookings']
             }
             results.append(chef_data)
 

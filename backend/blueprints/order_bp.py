@@ -158,6 +158,7 @@ def get_chef_orders(chef_id):
             SELECT 
                 o.id as order_id,
                 o.order_date,
+                o.delivery_datetime,
                 o.status,
                 o.total_amount,
                 o.estimated_prep_time,
@@ -180,7 +181,7 @@ def get_chef_orders(chef_id):
             params.append(status_filter)
         
         query += '''
-            GROUP BY o.id, o.order_date, o.status, o.total_amount, o.estimated_prep_time,
+            GROUP BY o.id, o.order_date, o.delivery_datetime, o.status, o.total_amount, o.estimated_prep_time,
                      o.delivery_address, o.special_instructions,
                      cu.first_name, cu.last_name, cu.phone
             ORDER BY o.order_date DESC
@@ -195,6 +196,8 @@ def get_chef_orders(chef_id):
             formatted_order = dict(order)
             if formatted_order.get('order_date'):
                 formatted_order['order_date'] = formatted_order['order_date'].isoformat()
+            if formatted_order.get('delivery_datetime'):
+                formatted_order['delivery_datetime'] = formatted_order['delivery_datetime'].isoformat()
             if formatted_order.get('total_amount'):
                 formatted_order['total_amount'] = float(formatted_order['total_amount'])
             formatted_order['customer_name'] = f"{formatted_order['customer_first_name']} {formatted_order['customer_last_name']}"
