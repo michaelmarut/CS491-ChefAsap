@@ -56,11 +56,10 @@ export default function Button({
 
     const content = (
         <TouchableOpacity
-            onPress={onPress}
+            onPress={onPress || href ? onPress : () => alert("Button pressed")}
             disabled={disabled}
-            className={`${styles.button} ${buttonClass.button} items-center flex-row justify-center ${customClasses}`}
+            className={`${styles.button} ${buttonClass.button} items-center flex-row justify-center ${customClasses} ${disabled ? 'opacity-50' : ''}`}
         >
-
             {title ? (
                 <Text className={`${styles.text} ${buttonClass.text} ${customTextClasses}`}>
                     {title}

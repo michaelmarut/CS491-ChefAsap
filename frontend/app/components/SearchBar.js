@@ -1,21 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Button from './Button';
 import Input from './Input';
 import CustomPicker from './Picker';
 import Stepper from './Stepper';
 import LocationInput from './LocationInput';
-
-//mock history
-const INITIAL_HISTORY = [
-    { query: 'Italian', type: 'cuisine' },
-    { query: 'Jane Doe', type: 'chef' },
-    { query: 'Burger', type: 'dish' },
-];
+import getEnvVars from '../../config';
+import { useAuth } from '../context/AuthContext';
 
 export default function SearchBarComponent({ formData, setFormData, handleSearch }) {
-    const [recentSearches, setRecentSearches] = useState(INITIAL_HISTORY);
+    const [recentSearches, setRecentSearches] = useState([]);
     const [isDropVisible, setIsDropVisible] = useState(false);
+    const { apiUrl } = getEnvVars();
+    const { token, profileId } = useAuth();
+
+    // Fetch recent searches from API
+    useEffect(() => {
+        const fetchRecentSearches = async () => {
+            if (!profileId || !token) return;
+
+            try {
+                const url = `${apiUrl}/search/recent/${profileId}?limit=3`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Transform API data to match the expected format
+                    const formattedSearches = data.recent_searches.map(search => {
+                        let query = search.search_query || search.cuisine || 'Recent search';
+                        let type = 'chef';
+                        
+                        if (search.cuisine && !search.search_query) {
+                            type = 'cuisine';
+                        } else if (search.search_query) {
+                            // Try to guess the type based on the query
+                            type = 'chef';
+                        }
+
+                        return { 
+                            query, 
+                            type,
+                            fullData: search // Keep full search data for re-executing search
+                        };
+                    });
+
+                    setRecentSearches(formattedSearches);
+                }
+            } catch (err) {
+                console.error('Failed to fetch recent searches:', err);
+            }
+        };
+
+        fetchRecentSearches();
+    }, [profileId, token, apiUrl]);
 
     const genderItems = [
         { label: "All", value: "all" },
@@ -43,7 +87,24 @@ export default function SearchBarComponent({ formData, setFormData, handleSearch
     };
 
     const handleHistoryClick = (item) => {
-        setFormData(prev => ({ ...prev, searchQuery: item.query, searchType: item.type }));
+        // Re-apply the full search parameters from history
+        if (item.fullData) {
+            setFormData(prev => ({
+                ...prev,
+                searchQuery: item.fullData.search_query || '',
+                cuisine: item.fullData.cuisine || '',
+                gender: item.fullData.gender || 'all',
+                timing: item.fullData.meal_timing || 'all',
+                min_rating: item.fullData.min_rating || 0,
+                max_price: item.fullData.max_price || 500,
+                radius: item.fullData.radius || 10,
+                latitude: item.fullData.latitude || prev.latitude,
+                longitude: item.fullData.longitude || prev.longitude,
+            }));
+        } else {
+            // Fallback to just setting query and type
+            setFormData(prev => ({ ...prev, searchQuery: item.query, searchType: item.type }));
+        }
     };
 
     const renderDropView = () => (
@@ -86,15 +147,22 @@ export default function SearchBarComponent({ formData, setFormData, handleSearch
                     labelStyle='text-center'
                 />
             </View>
+            
             <View>
                 <Text className="text-sm font-semibold text-primary-400 mb-1 mt-4 text-center dark:text-dark-400">Recent Searches</Text>
-                <View className="rounded-lg border border-gray-100">
-                    {recentSearches.map((item, index) => (
-                        <TouchableOpacity key={index} onPress={() => handleHistoryClick(item)} className="p-2 border-b border-gray-100 rounded-lg">
-                            <Text className="text-base text-warm-gray">{item.query} ({item.type})</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                {recentSearches.length > 0 ? (
+                    <View className="rounded-lg border border-gray-100">
+                        {recentSearches.map((item, index) => (
+                            <TouchableOpacity key={index} onPress={() => handleHistoryClick(item)} className="p-2 border-b border-gray-100 rounded-lg">
+                                <Text className="text-base text-warm-gray">{item.query} ({item.type})</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                ) : (
+                    <View className="p-3 rounded-lg border border-gray-100">
+                        <Text className="text-sm text-gray-500 text-center">No recent searches yet</Text>
+                    </View>
+                )}
             </View>
 
             <View>

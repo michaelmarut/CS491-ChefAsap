@@ -59,6 +59,7 @@ def search_nearby_chefs():
                 c.email,
                 c.phone,
                 c.gender,
+                c.meal_timings,
                 
                 -- Distance calculation (Haversine formula)
                 (3959 * acos(cos(radians(%s)) * cos(radians(ca.latitude)) * 
@@ -108,15 +109,15 @@ def search_nearby_chefs():
         '''
         
         # Add chef name filter to WHERE clause (before GROUP BY)
-        # searchQuery will search both chef names AND cuisine types
+        # searchQuery will search both chef names AND cuisine types (case-insensitive)
         if chef_name:
-            query += ''' AND (c.first_name LIKE %s 
-                            OR c.last_name LIKE %s 
-                            OR c.first_name || ' ' || c.last_name LIKE %s
+            query += ''' AND (c.first_name ILIKE %s 
+                            OR c.last_name ILIKE %s 
+                            OR c.first_name || ' ' || c.last_name ILIKE %s
                             OR EXISTS (
                                 SELECT 1 FROM chef_cuisines cc2
                                 JOIN cuisine_types ct2 ON cc2.cuisine_id = ct2.id
-                                WHERE cc2.chef_id = c.id AND ct2.name LIKE %s
+                                WHERE cc2.chef_id = c.id AND ct2.name ILIKE %s
                             ))'''
             search_pattern = f'%{chef_name}%'
             params.extend([search_pattern, search_pattern, search_pattern, search_pattern])
@@ -139,8 +140,8 @@ def search_nearby_chefs():
         
         # Add additional HAVING conditions
         if cuisine:
-            # PostgreSQL: Use POSITION or LIKE for substring search in aggregated cuisines
-            query += ' AND cuisines LIKE %s'
+            # PostgreSQL: Use ILIKE for case-insensitive substring search in aggregated cuisines
+            query += ' AND cuisines ILIKE %s'
             params.append(f'%{cuisine}%')
 
         if min_rating is not None and min_rating > 0:
@@ -190,6 +191,7 @@ def search_nearby_chefs():
                 'email': chef['email'],
                 'phone': chef['phone'],
                 'gender': chef['gender'],
+                'meal_timings': chef['meal_timings'] if chef['meal_timings'] else [],
                 
                 # Distance information
                 'distance_miles': round(float(chef['distance_miles']), 1) if chef['distance_miles'] else None,
@@ -223,6 +225,52 @@ def search_nearby_chefs():
             }
             results.append(chef_data)
 
+        # Save search to recent searches history (if customer_id is provided)
+        # Only save if there's an actual search query
+        customer_id = request.args.get('customer_id', type=int)
+        if customer_id and chef_name:  # Only save if there's a search query
+            try:
+                save_cursor = get_cursor(conn)
+                
+                # First, delete old searches to keep only the most recent 20 per customer
+                save_cursor.execute('''
+                    DELETE FROM customer_recent_searches
+                    WHERE customer_id = %s
+                    AND id NOT IN (
+                        SELECT id FROM customer_recent_searches
+                        WHERE customer_id = %s
+                        ORDER BY searched_at DESC
+                        LIMIT 20
+                    )
+                ''', (customer_id, customer_id))
+                
+                # Then insert the new search
+                save_cursor.execute('''
+                    INSERT INTO customer_recent_searches 
+                    (customer_id, search_query, cuisine, gender, meal_timing, min_rating, 
+                     max_price, radius, latitude, longitude, results_count)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (
+                    customer_id,
+                    chef_name,  # We already checked it's not empty
+                    cuisine if cuisine else None,
+                    gender if gender else None,
+                    timing if timing else None,
+                    min_rating,
+                    max_price,
+                    radius,
+                    customer_lat,
+                    customer_lon,
+                    len(results)
+                ))
+                conn.commit()
+                save_cursor.close()
+                print(f'Saved search to customer_recent_searches for customer {customer_id}: "{chef_name}"')
+            except Exception as save_error:
+                print(f'Warning: Failed to save search history: {save_error}')
+                # Don't fail the request if saving history fails
+                conn.rollback()
+
         response_data = {
             'success': True,
             'chefs': results,
@@ -255,6 +303,242 @@ def search_nearby_chefs():
             'success': False,
             'error': str(e),
             'message': 'Failed to search nearby chefs'
+        }), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+@search_bp.route('/recent/<int:customer_id>', methods=['GET'])
+def get_recent_searches(customer_id):
+    """
+    Get customer's recent unique search queries (no duplicates)
+    Returns the 3 most recent unique searches ordered by time (newest first)
+    """
+    conn = None
+    cursor = None
+    try:
+        limit = request.args.get('limit', 3, type=int)
+        
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+
+        # Use subquery to get only the most recent search for each unique query
+        # Then order by searched_at DESC to show newest first
+        cursor.execute('''
+            SELECT 
+                id,
+                search_query,
+                cuisine,
+                gender,
+                meal_timing,
+                min_rating,
+                max_price,
+                radius,
+                latitude,
+                longitude,
+                location_name,
+                results_count,
+                searched_at
+            FROM (
+                SELECT DISTINCT ON (search_query) 
+                    id,
+                    search_query,
+                    cuisine,
+                    gender,
+                    meal_timing,
+                    min_rating,
+                    max_price,
+                    radius,
+                    latitude,
+                    longitude,
+                    location_name,
+                    results_count,
+                    searched_at
+                FROM customer_recent_searches
+                WHERE customer_id = %s 
+                    AND search_query IS NOT NULL 
+                    AND search_query != ''
+                ORDER BY search_query, searched_at DESC
+            ) AS unique_searches
+            ORDER BY searched_at DESC
+            LIMIT %s
+        ''', (customer_id, limit))
+        
+        searches = cursor.fetchall()
+        
+        results = []
+        for search in searches:
+            search_data = {
+                'id': search['id'],
+                'search_query': search['search_query'],
+                'cuisine': search['cuisine'],
+                'gender': search['gender'],
+                'meal_timing': search['meal_timing'],
+                'min_rating': float(search['min_rating']) if search['min_rating'] else None,
+                'max_price': float(search['max_price']) if search['max_price'] else None,
+                'radius': float(search['radius']) if search['radius'] else None,
+                'latitude': float(search['latitude']) if search['latitude'] else None,
+                'longitude': float(search['longitude']) if search['longitude'] else None,
+                'location_name': search['location_name'],
+                'results_count': search['results_count'],
+                'searched_at': search['searched_at'].isoformat() if search['searched_at'] else None
+            }
+            results.append(search_data)
+
+        return jsonify({
+            'success': True,
+            'recent_searches': results,
+            'total': len(results)
+        }), 200
+
+    except Exception as e:
+        print(f'Error in get_recent_searches: {str(e)}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+@search_bp.route('/viewed-chefs/<int:customer_id>', methods=['POST'])
+def save_viewed_chef(customer_id):
+    """
+    Save or update a chef view record for a customer
+    """
+    conn = None
+    cursor = None
+    try:
+        data = request.get_json()
+        chef_id = data.get('chef_id')
+        
+        if not chef_id:
+            return jsonify({
+                'success': False,
+                'error': 'chef_id is required'
+            }), 400
+
+        conn = get_db_connection()
+        cursor = get_cursor(conn)
+
+        # Insert or update the view record
+        cursor.execute('''
+            INSERT INTO customer_viewed_chefs (customer_id, chef_id, viewed_at, view_count)
+            VALUES (%s, %s, CURRENT_TIMESTAMP, 1)
+            ON CONFLICT (customer_id, chef_id) 
+            DO UPDATE SET 
+                viewed_at = CURRENT_TIMESTAMP,
+                view_count = customer_viewed_chefs.view_count + 1
+        ''', (customer_id, chef_id))
+        
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Chef view recorded'
+        }), 200
+
+    except Exception as e:
+        print(f'Error in save_viewed_chef: {str(e)}')
+        if conn:
+            conn.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+@search_bp.route('/viewed-chefs/<int:customer_id>', methods=['GET'])
+def get_viewed_chefs(customer_id):
+    """
+    Get recently viewed chefs for a customer
+    """
+    conn = None
+    cursor = None
+    try:
+        limit = request.args.get('limit', 5, type=int)
+        
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+
+        cursor.execute('''
+            SELECT 
+                c.id as chef_id,
+                c.first_name,
+                c.last_name,
+                c.email,
+                c.phone,
+                c.gender,
+                c.meal_timings,
+                
+                -- Get cuisines
+                STRING_AGG(DISTINCT ct.name, ', ' ORDER BY ct.name) as cuisines,
+                
+                -- Get rating
+                crs.average_rating,
+                crs.total_reviews,
+                
+                -- View info
+                cvc.viewed_at,
+                cvc.view_count
+                
+            FROM customer_viewed_chefs cvc
+            INNER JOIN chefs c ON cvc.chef_id = c.id
+            LEFT JOIN chef_cuisines cc ON c.id = cc.chef_id
+            LEFT JOIN cuisine_types ct ON cc.cuisine_id = ct.id
+            LEFT JOIN chef_rating_summary crs ON c.id = crs.chef_id
+            WHERE cvc.customer_id = %s
+            GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone, c.gender, c.meal_timings,
+                     crs.average_rating, crs.total_reviews, cvc.viewed_at, cvc.view_count
+            ORDER BY cvc.viewed_at DESC
+            LIMIT %s
+        ''', (customer_id, limit))
+        
+        chefs = cursor.fetchall()
+        
+        results = []
+        for chef in chefs:
+            chef_data = {
+                'chef_id': chef['chef_id'],
+                'first_name': chef['first_name'],
+                'last_name': chef['last_name'],
+                'full_name': f"{chef['first_name']} {chef['last_name']}",
+                'email': chef['email'],
+                'phone': chef['phone'],
+                'gender': chef['gender'],
+                'meal_timings': chef['meal_timings'] if chef['meal_timings'] else [],
+                'cuisines': chef['cuisines'].split(', ') if chef['cuisines'] else [],
+                'rating': {
+                    'average_rating': round(float(chef['average_rating']), 2) if chef['average_rating'] else None,
+                    'total_reviews': chef['total_reviews'] or 0
+                },
+                'viewed_at': chef['viewed_at'].isoformat() if chef['viewed_at'] else None,
+                'view_count': chef['view_count']
+            }
+            results.append(chef_data)
+
+        return jsonify({
+            'success': True,
+            'viewed_chefs': results,
+            'total': len(results)
+        }), 200
+
+    except Exception as e:
+        print(f'Error in get_viewed_chefs: {str(e)}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500
     finally:
         if cursor:

@@ -4,6 +4,9 @@ import * as Location from 'expo-location';
 import Octicons from '@expo/vector-icons/Octicons';
 import Button from './Button';
 import Input from './Input';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const LOCATION_STORAGE_KEY = 'last-used-location';
 
 export default function LocationInput({
     onLocationSelect, // callback (lat, lon, addressString) => void.
@@ -14,9 +17,20 @@ export default function LocationInput({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [selection, setSelection] = useState({ start: 0, end: 0 });
+    const [lastUsedLocation, setLastUsedLocation] = useState(null);
 
     useEffect(() => {
-        getCurrentLocation();
+        const loadLocation = async () => {
+            const storedLocation = await AsyncStorage.getItem(LOCATION_STORAGE_KEY);
+            if (storedLocation) {
+                setLastUsedLocation(storedLocation);
+                setAddressInput(storedLocation);
+                geocodeAddress(storedLocation);
+            } else {
+                getCurrentLocation();
+            }
+        };
+        loadLocation();
     }, []);
 
     useEffect(() => {
@@ -24,6 +38,11 @@ export default function LocationInput({
             setAddressInput(formData.locationAddress);
         }
     }, [formData.locationAddress]);
+
+    const updateSavedLocation = async (newLocation) => {
+        setLastUsedLocation(newLocation);
+        await AsyncStorage.setItem(LOCATION_STORAGE_KEY, newLocation);
+    };
 
     const getCurrentLocation = async () => {
         setLoading(true);
@@ -55,18 +74,22 @@ export default function LocationInput({
             onLocationSelect(latitude, longitude, addressString);
             setSelection({ start: 0, end: 0 });
 
+            geocodeAddress(addressString);
+
+
         } catch (err) {
             console.error("GPS Error:", err);
             setError("Could not get current location.");
             Alert.alert('GPS Error', "Failed to retrieve your current location.");
         } finally {
             setLoading(false);
-            geocodeAddress();
         }
     };
 
-    const geocodeAddress = async () => {
-        if (addressInput.trim() === '') {
+    const geocodeAddress = async (addressToGeocode) => {
+        const address = typeof addressToGeocode === 'string' ? addressToGeocode : addressInput;
+        //console.log("Geocoding address:", address);
+        if (address.trim() === '') {
             setError("Please enter a valid address.");
             return;
         }
@@ -75,7 +98,7 @@ export default function LocationInput({
         setError(null);
 
         try {
-            let geocodeResult = await Location.geocodeAsync(addressInput);
+            let geocodeResult = await Location.geocodeAsync(address);
 
             if (geocodeResult.length === 0) {
                 setError("Address not found. Please be more specific.");
@@ -84,8 +107,13 @@ export default function LocationInput({
             }
 
             const { latitude, longitude } = geocodeResult[0];
-            onLocationSelect(latitude, longitude, addressInput);
-            Alert.alert('Location Saved', `Location saved for coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+            onLocationSelect(latitude, longitude, address);
+            updateSavedLocation(address);
+
+            setAddressInput(address);
+            setSelection({ start: 0, end: 0 });
+            
+            //Alert.alert('Location Saved', `Location saved for coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
 
         } catch (err) {
             console.error("Geocoding Error:", err);

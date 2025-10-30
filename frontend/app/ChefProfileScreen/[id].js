@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { ScrollView, Text, Alert, View } from "react-native";
+import { ScrollView, Text, Alert, View, TouchableOpacity, TextInput } from "react-native";
 import { Octicons } from '@expo/vector-icons';
 
 import getEnvVars from "../../config";
@@ -11,6 +11,7 @@ import Button from "../components/Button";
 import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import RatingsDisplay from '../components/RatingsDisplay';
+import TagsBox from '../components/TagsBox';
 
 const featuredDishComponent = (item) => (
     <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
@@ -34,33 +35,34 @@ const featuredDishComponent = (item) => (
                 {item.cuisine_type}
             </Text>
         )}
+        {item.price && (
+            <Text className="text-primary-400 text-lg font-bold pt-2 w-[200px] text-center dark:text-dark-400">
+                ${item.price.toFixed(2)}
+            </Text>
+        )}
+        {item.prep_time && (
+            <Text className="text-primary-400 text-xs pt-1 w-[200px] text-center dark:text-dark-400">
+                Prep time: {item.prep_time} min
+            </Text>
+        )}
     </View>
 );
-
-const tempImageComponent = (
-    <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
-        <View className="bg-white h-[200px] w-[200px] justify-center">
-            <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE GOES HERE</Text>
-        </View>
-        <Text className="text-primary-400 text-md pt-2 w-[200px] text-center text-justified dark:text-dark-400">
-            Caption goes here.
-        </Text>
-    </View>
-);
-
-const timing = ["Lunch", "Dinner"];
-const cuisine = ["Gluten-Free", "Italian", "Vegetarian", "Vietnamese", "Desserts", "BBQ"];
 
 export default function ChefProfileScreen() {
     const { id } = useLocalSearchParams();
 
-    const { token, userId, profileId } = useAuth();
+    const { token, userId, profileId, userType } = useAuth();
     const { apiUrl } = getEnvVars();
 
     const [chefData, setChefData] = useState(null);
     const [featuredItems, setFeaturedItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [editingAbout, setEditingAbout] = useState(false);
+    const [aboutText, setAboutText] = useState('');
+    const [savingAbout, setSavingAbout] = useState(false);
+    const [chefCuisines, setChefCuisines] = useState([]);
+    const [mealTimings, setMealTimings] = useState([]);
 
     useEffect(() => {
         if (!id) return;
@@ -90,6 +92,9 @@ export default function ChefProfileScreen() {
 
                 if (profileResponse.ok) {
                     setChefData(profileData.profile);
+                    setAboutText(profileData.profile.description || '');
+                    setChefCuisines(profileData.profile.cuisines || []);
+                    setMealTimings(profileData.profile.meal_timings || ['Breakfast', 'Lunch', 'Dinner']);
                 } else {
                     setError(profileData.error || 'Failed to load profile.');
                     Alert.alert('Error', profileData.error || 'Failed to load profile.');
@@ -109,10 +114,27 @@ export default function ChefProfileScreen() {
 
                 if (featuredResponse.ok) {
                     setFeaturedItems(featuredData.featured_items || []);
-                    console.log('Featured items loaded:', featuredData.featured_items?.length || 0);
                 } else {
-                    console.log('Featured fetch error:', featuredData.error);
                     setFeaturedItems([]);
+                }
+
+                // Save chef view record (only for customers)
+                if (userType === 'customer' && profileId) {
+                    try {
+                        const viewUrl = `${apiUrl}/search/viewed-chefs/${profileId}`;
+                        await fetch(viewUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ chef_id: chefId }),
+                        });
+                        console.log(`Saved view record for chef ${chefId}`);
+                    } catch (viewError) {
+                        console.error('Failed to save view record:', viewError);
+                        // Don't show error to user, just log it
+                    }
                 }
 
             } catch (err) {
@@ -127,11 +149,53 @@ export default function ChefProfileScreen() {
 
     }, [id, apiUrl, token]);
 
+    const handleSaveAbout = async () => {
+        if (aboutText.length > 500) {
+            Alert.alert('Error', 'Description cannot exceed 500 characters');
+            return;
+        }
+
+        setSavingAbout(true);
+        try {
+            const response = await fetch(`${apiUrl}/profile/chef/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ description: aboutText }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Alert.alert('Success', 'About section updated successfully');
+                setChefData({ ...chefData, description: aboutText });
+                setEditingAbout(false);
+            } else {
+                Alert.alert('Error', result.error || 'Failed to update');
+            }
+        } catch (error) {
+            console.error('Failed to save about:', error);
+            Alert.alert('Error', 'Network error. Please try again.');
+        } finally {
+            setSavingAbout(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setAboutText(chefData?.description || '');
+        setEditingAbout(false);
+    };
+
     if (loading) {
         return (
-            <View className="flex-1 bg-base-100 dark:bg-base-dark-100 pb-16 items-center justify-center">
-                <LoadingIcon message='Loading Chef Profile...' />
-            </View>
+            <>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
+                    <LoadingIcon message="Loading Chef Profile..." />
+                </View>
+            </>
         );
     }
 
@@ -139,7 +203,7 @@ export default function ChefProfileScreen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
-                {/*<Text>{JSON.stringify(chefData)}</Text>*/}
+                {/*console.log(JSON.stringify(chefData))*/}
                 <Card
                     title={`${chefData?.first_name} ${chefData?.last_name}`}
                     customHeader='justify-center'
@@ -166,11 +230,34 @@ export default function ChefProfileScreen() {
                 </Card>
 
                 <Card>
-                    <Text className="text-lg text-primary-400 text-center font-semibold mb-2 dark:text-dark-400">Serves: {timing.join(', ')}</Text>
-                    <View className="flex-row flex-wrap justify-center items-center w-full gap-1">
-                        {cuisine.map((c) => (
-                            <Text key={c} className="text-md text-primary-400 bg-primary-100 rounded-3xl p-1 dark:text-dark-400 dark:bg-dark-100">{c}</Text>
-                        ))}
+                    <Text className="text-lg text-primary-400 text-center font-semibold mb-3 dark:text-dark-400">
+                        Chef Details
+                    </Text>
+
+                    {/* Meal Timings */}
+                    {mealTimings.length > 0 && (
+                        <View className="mb-3">
+                            <Text className="text-md text-primary-400 font-semibold mb-2 dark:text-dark-400">
+                                Serves:
+                            </Text>
+                            <Text className="text-md text-primary-400 font-semibold mb-2 dark:text-dark-400">
+                                {mealTimings?.join(', ')}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Cuisines */}
+                    <View>
+                        <Text className="text-md text-primary-400 font-semibold mb-2 dark:text-dark-400">
+                            Cuisine Specialties:
+                        </Text>
+                        {chefCuisines.length > 0 ? (
+                            <TagsBox words={chefCuisines} />
+                        ) : (
+                            <Text className="text-md text-center text-gray-500 dark:text-gray-400">
+                                No cuisine specialties listed
+                            </Text>
+                        )}
                     </View>
                 </Card>
 
@@ -179,9 +266,55 @@ export default function ChefProfileScreen() {
                     customHeader='justify-center'
                     customHeaderText='text-xl'
                 >
-                    <Text className="text-lg text-center text-primary-400 text-pretty dark:text-dark-400">
-                        Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibu
-                    </Text>
+                    {/* Show edit button only if chef is viewing their own profile */}
+                    {userType === 'chef' && profileId === parseInt(id, 10) && !editingAbout && (
+                        <TouchableOpacity
+                            onPress={() => setEditingAbout(true)}
+                            className="absolute top-4 right-4 bg-lime-600 rounded-full p-2"
+                        >
+                            <Octicons name="pencil" size={18} color="white" />
+                        </TouchableOpacity>
+                    )}
+
+                    {editingAbout ? (
+                        <View>
+                            <TextInput
+                                className="border border-primary-200 dark:border-dark-200 rounded-lg p-3 text-primary-400 dark:text-dark-400 bg-white dark:bg-gray-800 min-h-[150px]"
+                                multiline
+                                numberOfLines={6}
+                                value={aboutText}
+                                onChangeText={setAboutText}
+                                placeholder="Tell customers about yourself and your cooking..."
+                                placeholderTextColor="#9CA3AF"
+                                maxLength={500}
+                                textAlignVertical="top"
+                            />
+                            <Text className="text-sm text-right text-gray-500 mt-1 dark:text-gray-400">
+                                {aboutText.length}/500
+                            </Text>
+                            <View className="flex-row justify-end gap-2 mt-3">
+                                <TouchableOpacity
+                                    onPress={handleCancelEdit}
+                                    className="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-full"
+                                >
+                                    <Text className="text-gray-700 dark:text-gray-200 font-semibold">Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={handleSaveAbout}
+                                    disabled={savingAbout}
+                                    className="bg-lime-600 px-4 py-2 rounded-full"
+                                >
+                                    <Text className="text-white font-semibold">
+                                        {savingAbout ? 'Saving...' : 'Save'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    ) : (
+                        <Text className="text-lg text-center text-primary-400 text-pretty dark:text-dark-400">
+                            {chefData?.description || 'No description available'}
+                        </Text>
+                    )}
                 </Card>
 
                 <Card
@@ -192,7 +325,11 @@ export default function ChefProfileScreen() {
                     scrollDirection='horizontal'
                     customCard="py-1"
                 >
-                    {featuredItems.length > 0 ? (
+                    {loading ? (
+                        <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
+                            Loading featured dishes...
+                        </Text>
+                    ) : featuredItems.length > 0 ? (
                         featuredItems.map(item => featuredDishComponent(item))
                     ) : (
                         <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
@@ -211,7 +348,7 @@ export default function ChefProfileScreen() {
                 <Button
                     title="← Return"
                     style="secondary"
-                    href="/(tabs)/SearchScreen"
+                    href={userType === 'customer' ? "/(tabs)/SearchScreen" : "/(tabs)/Profile"}
                     customClasses="min-w-[60%]"
                 />
                 <View className="h-24" />
