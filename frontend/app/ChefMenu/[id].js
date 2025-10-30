@@ -15,36 +15,27 @@ import RatingsDisplay from '../components/RatingsDisplay';
 
 const menuItemCard = ({ item, onAddToOrder }) => (
     <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mb-4 w-full" key={item?.id}>
-        <View className="flex-row">
+        <Text className="text-lg font-medium mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
+            {item?.dish_name || 'Dish Name'}
+        </Text>
+        <View className="flex-row border-b border-primary-400 dark:border-dark-400 pb-2">
             <View className="flex w-1/2 justify-between pr-2">
-                <Text className="text-lg font-medium pt-2 mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
-                    {item?.dish_name || 'Dish Name'}
-                </Text>
-                {item?.price && (
-                    <Text className="text-primary-400 text-xl font-bold pt-2 mb-2 text-center dark:text-dark-400">
-                        ${item.price.toFixed(2)}
-                    </Text>
-                )}
-                <Text className="text-primary-400 text-md pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                <TagsBox words={[].concat(item?.cuisine_type, item?.dietary_info)} style='light' />
+                <Text className="text-primary-400 text-md pt-1 mb-1 text-center text-justified dark:text-dark-400">
                     {item?.description || 'No description available'}
                 </Text>
                 {item?.servings && (
-                    <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
+                    <Text className="text-primary-400 text-xs pt-1 text-center text-justified dark:text-dark-400">
                         Servings: {item.servings}
                     </Text>
                 )}
-                {item?.prep_time && (
-                    <Text className="text-primary-400 text-sm pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                        ⏱️ Prep: {item.prep_time} min
-                    </Text>
-                )}
                 {item?.spice_level && (
-                    <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                        🌶️ Spice: {item.spice_level}
+                    <Text className="text-primary-400 text-xs mb-1 text-center text-justified dark:text-dark-400">
+                        Spice Level: {item.spice_level}
                     </Text>
                 )}
             </View>
-            <View className="flex w-1/2">
+            <View className="flex w-1/2 justify-center">
                 {item?.photo_url ? (
                     <View className="bg-white h-[150px] justify-center">
                         <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE: {item.photo_url}</Text>
@@ -56,17 +47,19 @@ const menuItemCard = ({ item, onAddToOrder }) => (
                 )}
             </View>
         </View>
-        
-        {item?.cuisine_type && (
-            <Text className="text-primary-400 text-sm pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                {item.cuisine_type}
+
+        <View className="flex-row justify-between items-center p-2">
+        {item?.prep_time && (
+            <Text className="text-primary-400 text-nd font-medium text-center text-justified dark:text-dark-400">
+                Prep time: {item.prep_time} min
             </Text>
         )}
-        {item?.dietary_info && (
-            <Text className="text-primary-400 text-xs pt-2 mb-2 text-center text-justified dark:text-dark-400">
-                {item.dietary_info}
+        {item?.price && (
+            <Text className="text-primary-400 text-xl font-medium text-center dark:text-dark-400 pr-2">
+                ${item.price.toFixed(2)}
             </Text>
         )}
+        </View>
         <Button
             title={item?.is_available ? "Add to order" : "Not available"}
             onPress={() => onAddToOrder && onAddToOrder(item)}
@@ -91,6 +84,8 @@ export default function ChefMenu() {
     const [chefData, setChefData] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
     const [featuredItems, setFeaturedItems] = useState([]);
+    const [chefCuisines, setChefCuisines] = useState([]);
+    const [mealTimings, setMealTimings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -122,6 +117,9 @@ export default function ChefMenu() {
 
                 if (profileResponse.ok) {
                     setChefData(profileData.profile);
+                    setChefCuisines(profileData.profile.cuisines || []);
+                    setMealTimings(profileData.profile.meal_timings || ['Breakfast', 'Lunch', 'Dinner']);
+
                 } else {
                     setError(profileData.error || 'Failed to load profile.');
                     Alert.alert('Error', profileData.error || 'Failed to load profile.');
@@ -192,10 +190,6 @@ export default function ChefMenu() {
         );
     };
 
-    const renderGridItem = ({ item }) => (
-        tempMenuComponent({ item })
-    );
-
     if (loading) {
         return (
             <>
@@ -221,9 +215,9 @@ export default function ChefMenu() {
 
                     <View className="flex-row w-full justify-between bg-base-100 dark:bg-base-dark-100 border-t-2 border-primary-300 dark:border-dark-300">
                         <View className="flex justify-center items-center w-1/2 bg-primary-100 pt-2 pl-4 pr-4 dark:bg-dark-100">
-                            <TagsBox words={cuisine} />
-                            <Text className="text-md text-primary-400 pt-2 dark:text-dark-400">Available:</Text>
-                            <Text className="text-md text-primary-400 pb-2 dark:text-dark-400">{timing?.join(', ')}</Text>
+                            <TagsBox words={chefCuisines} />
+                            <Text className="text-md text-primary-400 pt-2 dark:text-dark-400">Serves:</Text>
+                            <Text className="text-md text-primary-400 pb-2 dark:text-dark-400 text-center">{mealTimings?.join(', ')}</Text>
                         </View>
                         <View className="flex justify-center items-center w-1/2 p-4 rounded-br-3xl">
                             <ProfilePicture photoUrl={chefData?.photo_url} firstName={chefData?.first_name} lastName={chefData?.last_name} size={28} />
@@ -270,6 +264,13 @@ export default function ChefMenu() {
                     </Card>
                 )}
 
+                <Button
+                    title="View Order"
+                    style="primary"
+                    customClasses="min-w-[60%]"
+                    onPress={() => alert("Checkout Placeholder")}
+                    disabled={userType === 'chef'}
+                />
                 <Button
                     title="← Return"
                     style="secondary"

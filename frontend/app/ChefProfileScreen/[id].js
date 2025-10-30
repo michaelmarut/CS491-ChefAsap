@@ -11,6 +11,7 @@ import Button from "../components/Button";
 import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import RatingsDisplay from '../components/RatingsDisplay';
+import TagsBox from '../components/TagsBox';
 
 const featuredDishComponent = (item) => (
     <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
@@ -232,20 +233,16 @@ export default function ChefProfileScreen() {
                     <Text className="text-lg text-primary-400 text-center font-semibold mb-3 dark:text-dark-400">
                         Chef Details
                     </Text>
-                    
+
                     {/* Meal Timings */}
                     {mealTimings.length > 0 && (
                         <View className="mb-3">
                             <Text className="text-md text-primary-400 font-semibold mb-2 dark:text-dark-400">
                                 Serves:
                             </Text>
-                            <View className="flex-row flex-wrap justify-center items-center w-full gap-2">
-                                {mealTimings.map((timing) => (
-                                    <Text key={timing} className="text-md text-primary-400 bg-lime-100 rounded-3xl px-3 py-1 dark:text-dark-400 dark:bg-lime-900">
-                                        {timing}
-                                    </Text>
-                                ))}
-                            </View>
+                            <Text className="text-md text-primary-400 font-semibold mb-2 dark:text-dark-400">
+                                {mealTimings?.join(', ')}
+                            </Text>
                         </View>
                     )}
 
@@ -255,13 +252,7 @@ export default function ChefProfileScreen() {
                             Cuisine Specialties:
                         </Text>
                         {chefCuisines.length > 0 ? (
-                            <View className="flex-row flex-wrap justify-center items-center w-full gap-1">
-                                {chefCuisines.map((c) => (
-                                    <Text key={c} className="text-md text-primary-400 bg-primary-100 rounded-3xl px-3 py-1 dark:text-dark-400 dark:bg-dark-100">
-                                        {c}
-                                    </Text>
-                                ))}
-                            </View>
+                            <TagsBox words={chefCuisines} />
                         ) : (
                             <Text className="text-md text-center text-gray-500 dark:text-gray-400">
                                 No cuisine specialties listed
@@ -357,7 +348,7 @@ export default function ChefProfileScreen() {
                 <Button
                     title="← Return"
                     style="secondary"
-                    href= {userType === 'customer' ? "/(tabs)/SearchScreen" : "/(tabs)/Profile"}
+                    href={userType === 'customer' ? "/(tabs)/SearchScreen" : "/(tabs)/Profile"}
                     customClasses="min-w-[60%]"
                 />
                 <View className="h-24" />

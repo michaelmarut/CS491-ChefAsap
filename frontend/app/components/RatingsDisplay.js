@@ -5,6 +5,7 @@ import { Octicons } from '@expo/vector-icons';
 export default function RatingsDisplay({
     rating
 }) {
+    rating = Math.round(rating);
     return (
         <View className="flex-row justify-center items-center pt-2">
             {Array.from({ length: rating }, (a, i) => i).map((num, index) =>

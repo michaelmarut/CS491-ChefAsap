@@ -10,10 +10,10 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import ThemeButton from "../components/ThemeButton";
 import RatingsDisplay from "../components/RatingsDisplay";
-import { Octicons } from '@expo/vector-icons';
+import TagsBox from "../components/TagsBox";
+import Input from "../components/Input";
 
-const timing = ["Lunch", "Dinner"];
-const cuisine = ["Gluten-Free", "Italian", "Vegetarian", "Vietnamese", "Desserts", "BBQ"];
+import { Octicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
     const { logout, token, userType, userId, profileId } = useAuth();
@@ -171,8 +171,8 @@ export default function ProfileScreen() {
 
             if (timingsResponse.ok) {
                 Alert.alert('Success', 'Chef details updated successfully');
-                setProfileData({ 
-                    ...profileData, 
+                setProfileData({
+                    ...profileData,
                     cuisines: selectedCuisines,
                     meal_timings: selectedMealTimings
                 });
@@ -263,7 +263,6 @@ export default function ProfileScreen() {
                 <Text className="text-lg text-wrap text-center text-primary-400 dark:text-dark-400">{userType?.charAt(0).toUpperCase() + userType?.slice(1)}</Text>
                 {userType === 'chef' && (
                     <>
-                        
                         <RatingsDisplay rating={profileData?.avg_rating} />
                         <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
                             {profileData?.total_reviews} Total Reviews
@@ -299,12 +298,12 @@ export default function ProfileScreen() {
                         customHeaderText='text-xl'
                     >
                         {!editingDetails && (
-                            <TouchableOpacity
+                            <Button
                                 onPress={() => setEditingDetails(true)}
-                                className="absolute -top-[70px] -right-2 z-10 bg-lime-600 p-3 rounded-full"
-                            >
-                                <Octicons name="pencil" size={20} color="white" />
-                            </TouchableOpacity>
+                                icon="pencil"
+                                style="accent"
+                                customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                            />
                         )}
 
                         {editingDetails ? (
@@ -317,17 +316,15 @@ export default function ProfileScreen() {
                                         <TouchableOpacity
                                             key={timing}
                                             onPress={() => toggleMealTiming(timing)}
-                                            className={`px-4 py-2 rounded-full ${
-                                                selectedMealTimings.includes(timing)
-                                                    ? 'bg-lime-600'
-                                                    : 'bg-gray-300 dark:bg-gray-600'
-                                            }`}
+                                            className={`px-4 py-2 rounded-full ${selectedMealTimings.includes(timing)
+                                                ? 'bg-lime-600'
+                                                : 'bg-gray-300 dark:bg-gray-600'
+                                                }`}
                                         >
-                                            <Text className={`${
-                                                selectedMealTimings.includes(timing)
-                                                    ? 'text-white'
-                                                    : 'text-gray-700 dark:text-gray-200'
-                                            }`}>
+                                            <Text className={`${selectedMealTimings.includes(timing)
+                                                ? 'text-white'
+                                                : 'text-gray-700 dark:text-gray-200'
+                                                }`}>
                                                 {timing}
                                             </Text>
                                         </TouchableOpacity>
@@ -346,41 +343,34 @@ export default function ProfileScreen() {
                                             <TouchableOpacity
                                                 key={cuisine.id}
                                                 onPress={() => toggleCuisine(cuisine.name)}
-                                                className={`px-3 py-1.5 rounded-full ${
-                                                    selectedCuisines.includes(cuisine.name)
-                                                        ? 'bg-lime-600'
-                                                        : 'bg-gray-200 dark:bg-gray-700'
-                                                }`}
+                                                className={`px-3 py-1.5 rounded-full ${selectedCuisines.includes(cuisine.name)
+                                                    ? 'bg-lime-600'
+                                                    : 'bg-gray-200 dark:bg-gray-700'
+                                                    }`}
                                             >
-                                                <Text className={`text-sm ${
-                                                    selectedCuisines.includes(cuisine.name)
-                                                        ? 'text-white font-semibold'
-                                                        : 'text-gray-700 dark:text-gray-300'
-                                                }`}>
+                                                <Text className={`text-sm ${selectedCuisines.includes(cuisine.name)
+                                                    ? 'text-white font-semibold'
+                                                    : 'text-gray-700 dark:text-gray-300'
+                                                    }`}>
                                                     {cuisine.name}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
                                 </ScrollView>
-
-                                <View className="flex-row justify-end gap-2 mt-3">
-                                    <TouchableOpacity
-                                        onPress={handleCancelDetailsEdit}
-                                        className="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-full"
-                                    >
-                                        <Text className="text-gray-700 dark:text-gray-200 font-semibold">Cancel</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={handleSaveDetails}
-                                        disabled={savingDetails}
-                                        className="bg-lime-600 px-4 py-2 rounded-full"
-                                    >
-                                        <Text className="text-white font-semibold">
-                                            {savingDetails ? 'Saving...' : 'Save'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
+                                <Button
+                                    onPress={handleCancelDetailsEdit}
+                                    icon="x"
+                                    style="accent"
+                                    customClasses="absolute -top-[70px] right-10 z-10 p-3 rounded-full pl-3"
+                                />
+                                <Button
+                                    onPress={handleSaveDetails}
+                                    icon={savingDetails ? 'sync' : 'check'}
+                                    style="accent"
+                                    customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                                    disabled={savingDetails}
+                                />
                             </View>
                         ) : (
                             <>
@@ -389,9 +379,7 @@ export default function ProfileScreen() {
                                 </Text>
                                 <View className="flex-row flex-wrap justify-center items-center w-full gap-1">
                                     {profileData?.cuisines && profileData.cuisines.length > 0 ? (
-                                        profileData.cuisines.map((c) => (
-                                            <Text key={c} className="text-md text-primary-400 bg-primary-100 rounded-3xl p-1 dark:text-dark-400 dark:bg-dark-100">{c}</Text>
-                                        ))
+                                        <TagsBox words={profileData?.cuisines} />
                                     ) : (
                                         <Text className="text-primary-400 dark:text-dark-400">No cuisines set</Text>
                                     )}
@@ -406,47 +394,41 @@ export default function ProfileScreen() {
                         customHeaderText='text-xl'
                     >
                         {!editingAbout && (
-                            <TouchableOpacity
+                            <Button
                                 onPress={() => setEditingAbout(true)}
-                                className="absolute -top-[70px] -right-2 z-10 bg-lime-600 p-3 rounded-full"
-                            >
-                                <Octicons name="pencil" size={20} color="white" />
-                            </TouchableOpacity>
+                                icon="pencil"
+                                style="accent"
+                                customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                            />
                         )}
 
                         {editingAbout ? (
                             <View>
-                                <TextInput
-                                    className="border border-primary-200 dark:border-dark-200 rounded-lg p-3 text-primary-400 dark:text-dark-400 bg-white dark:bg-gray-800 min-h-[150px]"
-                                    multiline
-                                    numberOfLines={6}
+
+                                <Input
                                     value={aboutText}
                                     onChangeText={setAboutText}
                                     placeholder="Tell customers about yourself and your cooking..."
-                                    placeholderTextColor="#9CA3AF"
+                                    isTextArea={true}
                                     maxLength={500}
-                                    textAlignVertical="top"
+                                    multiline={true}
                                 />
                                 <Text className="text-sm text-right text-gray-500 mt-1 dark:text-gray-400">
                                     {aboutText.length}/500
                                 </Text>
-                                <View className="flex-row justify-end gap-2 mt-3">
-                                    <TouchableOpacity
-                                        onPress={handleCancelEdit}
-                                        className="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-full"
-                                    >
-                                        <Text className="text-gray-700 dark:text-gray-200 font-semibold">Cancel</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={handleSaveAbout}
-                                        disabled={savingAbout}
-                                        className="bg-lime-600 px-4 py-2 rounded-full"
-                                    >
-                                        <Text className="text-white font-semibold">
-                                            {savingAbout ? 'Saving...' : 'Save'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
+                                <Button
+                                    onPress={handleCancelEdit}
+                                    icon="x"
+                                    style="accent"
+                                    customClasses="absolute -top-[70px] right-10 z-10 p-3 rounded-full pl-3"
+                                />
+                                <Button
+                                    onPress={handleSaveAbout}
+                                    icon={savingAbout ? 'sync' : 'check'}
+                                    style="accent"
+                                    customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                                    disabled={savingAbout}
+                                />
                             </View>
                         ) : (
                             <Text className="text-lg text-center text-primary-400 text-pretty dark:text-dark-400">

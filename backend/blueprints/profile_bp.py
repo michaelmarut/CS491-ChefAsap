@@ -100,7 +100,7 @@ def get_chef_profile(chef_id):
         
         # Process rating data
         total_ratings = ratings_data['total_reviews'] if ratings_data else 0
-        avg_rating = round(float(ratings_data['average_rating']), 0) if ratings_data else 0
+        avg_rating = round(float(ratings_data['average_rating']), 2) if ratings_data else 0
         
         rating_info = {
             'avg_rating': avg_rating,
@@ -282,7 +282,7 @@ def get_chef_public_profile(chef_id):
         
         # Process rating data
         total_ratings = ratings_data['total_reviews'] if ratings_data else 0
-        avg_rating = round(float(ratings_data['average_rating']), 0) if ratings_data else 0
+        avg_rating = round(float(ratings_data['average_rating']), 2) if ratings_data else 0
         
         rating_info = {
             'avg_rating': avg_rating,

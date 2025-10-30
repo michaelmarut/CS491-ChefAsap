@@ -219,7 +219,7 @@ def search_nearby_chefs():
                 
                 # Rating information
                 'rating': {
-                    'average_rating': round(float(chef['average_rating']), 0) if chef['average_rating'] else None,
+                    'average_rating': round(float(chef['average_rating']), 2) if chef['average_rating'] else None,
                     'total_reviews': chef['total_reviews'] or 0
                 }
             }
@@ -520,7 +520,7 @@ def get_viewed_chefs(customer_id):
                 'meal_timings': chef['meal_timings'] if chef['meal_timings'] else [],
                 'cuisines': chef['cuisines'].split(', ') if chef['cuisines'] else [],
                 'rating': {
-                    'average_rating': round(float(chef['average_rating']), 1) if chef['average_rating'] else None,
+                    'average_rating': round(float(chef['average_rating']), 2) if chef['average_rating'] else None,
                     'total_reviews': chef['total_reviews'] or 0
                 },
                 'viewed_at': chef['viewed_at'].isoformat() if chef['viewed_at'] else None,

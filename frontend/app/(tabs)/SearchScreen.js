@@ -58,6 +58,28 @@ export default function SearchScreen() {
     const [recentSearches, setRecentSearches] = useState([]);
     const [recentChefs, setRecentChefs] = useState([]);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [autoLoadCompleted, setAutoLoadCompleted] = useState(false);
+
+
+    // Auto-load nearby chefs when location is available
+    useEffect(() => {
+        if (formData.latitude && formData.longitude && token) {
+            fetchSearchResults();
+            setAutoLoadCompleted(true);
+        }
+    }, [formData.latitude, formData.longitude, token]);
+
+    // Fetch recent searches when component loads
+    useEffect(() => {
+        if (token && profileId) {
+            fetchRecentSearches();
+            fetchRecentChefs();
+        }
+    }, [token, profileId]);
+
+    const handleSearch = () => {
+        fetchSearchResults();
+    };
 
     // Fetch recent searches for the customer (search keywords)
     const fetchRecentSearches = async () => {
@@ -187,25 +209,6 @@ export default function SearchScreen() {
         } finally {
             setLoading(false);
         }
-    };
-
-    // Auto-load nearby chefs when location is available
-    useEffect(() => {
-        if (formData.latitude && formData.longitude && token) {
-            fetchSearchResults();
-        }
-    }, [formData.latitude, formData.longitude, token]);
-
-    // Fetch recent searches when component loads
-    useEffect(() => {
-        if (token && profileId) {
-            fetchRecentSearches();
-            fetchRecentChefs();
-        }
-    }, [token, profileId]);
-
-    const handleSearch = () => {
-        fetchSearchResults();
     };
 
     // Render recently viewed chef card

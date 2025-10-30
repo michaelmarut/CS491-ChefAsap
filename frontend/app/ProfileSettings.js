@@ -342,6 +342,7 @@ export default function ProfileSettings() {
                   label="Allergy Notes"
                   placeholder="Allergy Notes"
                   isTextArea={true}
+                  multiline={true}
                 />
               ) : (
                 <Input
@@ -351,6 +352,7 @@ export default function ProfileSettings() {
                   placeholder="Tell customers about yourself and your cooking..."
                   isTextArea={true}
                   maxLength={500}
+                  multiline={true}
                 />
               )}
               <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">Member Since</Text>
