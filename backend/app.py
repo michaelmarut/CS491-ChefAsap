@@ -12,6 +12,7 @@ from blueprints.search_bp import search_bp
 from blueprints.geocoding_bp import geocoding_bp
 from blueprints.search_location_bp import search_location_bp
 from blueprints.menu_bp import menu_bp
+from blueprints.calendar_bp import calendar_bp
 from blueprints.order_bp import order_bp
 import socket
 import os
@@ -49,6 +50,8 @@ app.register_blueprint(search_location_bp, url_prefix='/api')
 
 app.register_blueprint(menu_bp)
 
+app.register_blueprint(calendar_bp, url_prefix='/calendar')
+
 app.register_blueprint(order_bp, url_prefix='/api/orders')
 
 @app.route('/')
@@ -66,6 +69,10 @@ def index():
 def serve_static(filename):
     """Serve static files"""
     return send_from_directory('static', filename)
+
+@app.route('/__routes__')
+def __routes__():
+    return "<pre>" + "\n".join(sorted(f"{','.join(sorted(r.methods))} {r.rule}" for r in app.url_map.iter_rules())) + "</pre>"
 
 if __name__ == '__main__':
     hostname = socket.gethostname()
