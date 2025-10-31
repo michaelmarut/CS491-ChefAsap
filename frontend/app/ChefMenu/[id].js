@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { ScrollView, Text, Alert, View, FlatList, Modal, TouchableOpacity, Platform } from "react-native";
+import { ScrollView, Text, Alert, View, FlatList, Modal, TouchableOpacity, Platform, Image } from "react-native";
 import { Octicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 
@@ -14,7 +14,7 @@ import Card from "../components/Card";
 import TagsBox from '../components/TagsBox';
 import RatingsDisplay from '../components/RatingsDisplay';
 
-const menuItemCard = ({ item, onAddToOrder }) => (
+const menuItemCard = ({ item, onAddToOrder, apiUrl }) => (
     <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mb-4 w-full" key={item?.id}>
         <Text className="text-lg font-medium mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
             {item?.dish_name || 'Dish Name'}
@@ -38,11 +38,13 @@ const menuItemCard = ({ item, onAddToOrder }) => (
             </View>
             <View className="flex w-1/2 justify-center">
                 {item?.photo_url ? (
-                    <View className="bg-white h-[150px] justify-center">
-                        <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE: {item.photo_url}</Text>
-                    </View>
+                    <Image 
+                        source={{ uri: `${apiUrl}${item.photo_url}` }}
+                        className="h-[150px] w-full rounded-lg"
+                        resizeMode="cover"
+                    />
                 ) : (
-                    <View className="bg-white h-[150px] justify-center">
+                    <View className="bg-white h-[150px] justify-center rounded-lg">
                         <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
                     </View>
                 )}
@@ -81,6 +83,7 @@ export default function ChefMenu() {
     const [chefData, setChefData] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
     const [featuredItems, setFeaturedItems] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [chefCuisines, setChefCuisines] = useState([]);
     const [mealTimings, setMealTimings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -171,6 +174,26 @@ export default function ChefMenu() {
                     setFeaturedItems([]);
                 }
 
+                // Fetch categories
+                const categoriesUrl = `${apiUrl}/api/menu/chef/${chefId}/categories`;
+                const categoriesResponse = await fetch(categoriesUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const categoriesData = await categoriesResponse.json();
+
+                if (categoriesResponse.ok) {
+                    setCategories(categoriesData.categories || []);
+                    console.log('Categories loaded:', categoriesData.categories?.length || 0);
+                } else {
+                    console.log('Categories fetch error:', categoriesData.error);
+                    setCategories([]);
+                }
+
             } catch (err) {
                 setError('Network error. Could not connect to API.');
                 console.error('Fetch error:', err);
@@ -182,6 +205,36 @@ export default function ChefMenu() {
         fetchData();
 
     }, [id, apiUrl, token]);
+
+    // Group items by category
+    const itemsByCategory = useMemo(() => {
+        const grouped = {};
+        
+        // Add all categories
+        categories.forEach(cat => {
+            grouped[cat.id] = {
+                name: cat.category_name,
+                items: []
+            };
+        });
+        
+        // Add uncategorized group
+        grouped['uncategorized'] = {
+            name: 'Other Dishes',
+            items: []
+        };
+        
+        // Group menu items
+        menuItems.forEach(item => {
+            if (item.category_id && grouped[item.category_id]) {
+                grouped[item.category_id].items.push(item);
+            } else {
+                grouped['uncategorized'].items.push(item);
+            }
+        });
+        
+        return grouped;
+    }, [menuItems, categories]);
 
     // Handle adding item to order
     const handleAddToOrder = (item) => {
@@ -366,7 +419,7 @@ export default function ChefMenu() {
                     startExpanded={true}
                 >
                     {featuredItems.length > 0 ? (
-                        featuredItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder }))
+                        featuredItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl }))
                     ) : (
                         <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
                             No featured dishes available
@@ -374,17 +427,39 @@ export default function ChefMenu() {
                     )}
                 </Card>
 
-                {menuItems.length > 0 ? (
+                {/* Display categories */}
+                {categories.map(category => {
+                    const categoryItems = itemsByCategory[category.id]?.items || [];
+                    if (categoryItems.length === 0) return null;
+                    
+                    return (
+                        <Card
+                            key={category.id}
+                            title={category.category_name}
+                            customHeader='justify-center'
+                            customHeaderText='text-xl'
+                            isCollapsible={true}
+                            startExpanded={false}
+                        >
+                            {categoryItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl }))}
+                        </Card>
+                    );
+                })}
+
+                {/* Display uncategorized items */}
+                {itemsByCategory['uncategorized']?.items?.length > 0 && (
                     <Card
-                        title="All Menu Items"
+                        title="Other Dishes"
                         customHeader='justify-center'
                         customHeaderText='text-xl'
                         isCollapsible={true}
-                        startExpanded={true}
+                        startExpanded={false}
                     >
-                        {menuItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder }))}
+                        {itemsByCategory['uncategorized'].items.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl }))}
                     </Card>
-                ) : (
+                )}
+
+                {menuItems.length === 0 && (
                     <Card
                         title="Menu"
                         isCollapsible={true}

@@ -3,6 +3,8 @@ Blueprint for chef menu management
 """
 from flask import Blueprint, request, jsonify
 import psycopg2
+import os
+from werkzeug.utils import secure_filename
 from database.config import db_config
 
 menu_bp = Blueprint('menu', __name__, url_prefix='/api/menu')
@@ -22,7 +24,7 @@ def get_chef_menu(chef_id):
                 SELECT id, chef_id, dish_name, description, photo_url,
                        servings, cuisine_type, dietary_info,
                        spice_level, is_available, is_featured, display_order, created_at,
-                       price, prep_time
+                       price, prep_time, category_id
                 FROM chef_menu_items
                 WHERE chef_id = %s
                 ORDER BY display_order, dish_name
@@ -32,7 +34,7 @@ def get_chef_menu(chef_id):
                 SELECT id, chef_id, dish_name, description, photo_url,
                        servings, cuisine_type, dietary_info,
                        spice_level, is_available, is_featured, display_order, created_at,
-                       price, prep_time
+                       price, prep_time, category_id
                 FROM chef_menu_items
                 WHERE chef_id = %s AND is_available = TRUE
                 ORDER BY display_order, dish_name
@@ -56,8 +58,9 @@ def get_chef_menu(chef_id):
                 'is_featured': row[10],
                 'display_order': row[11],
                 'created_at': row[12].isoformat() if row[12] else None,
-                'price': float(row[13]) if row[13] else None,
-                'prep_time': row[14]
+                'price': float(row[13]) if row[13] is not None else None,
+                'prep_time': row[14],
+                'category_id': row[15] if len(row) > 15 else None
             })
         
         cursor.close()
@@ -150,8 +153,8 @@ def add_menu_item(chef_id):
             INSERT INTO chef_menu_items 
             (chef_id, dish_name, description, photo_url,
              servings, cuisine_type, dietary_info, spice_level, display_order,
-             price, prep_time)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             price, prep_time, category_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
             chef_id,
@@ -164,7 +167,8 @@ def add_menu_item(chef_id):
             data.get('spice_level'),
             data.get('display_order', 0),
             data.get('price'),
-            data.get('prep_time')
+            data.get('prep_time'),
+            data.get('category_id')
         ))
         
         new_id = cursor.fetchone()[0]
@@ -377,3 +381,261 @@ def set_featured_dishes(chef_id):
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ==================== Menu Categories Management ====================
+
+@menu_bp.route('/chef/<int:chef_id>/categories', methods=['GET'])
+def get_menu_categories(chef_id):
+    """Get all menu categories for a chef"""
+    try:
+        conn = psycopg2.connect(**db_config)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, chef_id, category_name, display_order, created_at
+            FROM menu_categories
+            WHERE chef_id = %s
+            ORDER BY display_order, category_name
+        """, (chef_id,))
+        
+        rows = cursor.fetchall()
+        categories = []
+        for row in rows:
+            categories.append({
+                'id': row[0],
+                'chef_id': row[1],
+                'category_name': row[2],
+                'display_order': row[3],
+                'created_at': row[4].isoformat() if row[4] else None
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'categories': categories
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@menu_bp.route('/chef/<int:chef_id>/categories', methods=['POST'])
+def create_menu_category(chef_id):
+    """Create a new menu category"""
+    try:
+        data = request.get_json()
+        category_name = data.get('category_name', '').strip()
+        
+        if not category_name:
+            return jsonify({
+                'success': False,
+                'error': 'Category name is required'
+            }), 400
+        
+        conn = psycopg2.connect(**db_config)
+        cursor = conn.cursor()
+        
+        # Check if category already exists
+        cursor.execute("""
+            SELECT id FROM menu_categories
+            WHERE chef_id = %s AND LOWER(category_name) = LOWER(%s)
+        """, (chef_id, category_name))
+        
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Category with this name already exists'
+            }), 400
+        
+        # Get max display_order
+        cursor.execute("""
+            SELECT COALESCE(MAX(display_order), 0) FROM menu_categories
+            WHERE chef_id = %s
+        """, (chef_id,))
+        max_order = cursor.fetchone()[0]
+        
+        # Insert new category
+        cursor.execute("""
+            INSERT INTO menu_categories (chef_id, category_name, display_order)
+            VALUES (%s, %s, %s)
+            RETURNING id, category_name, display_order, created_at
+        """, (chef_id, category_name, max_order + 1))
+        
+        row = cursor.fetchone()
+        new_category = {
+            'id': row[0],
+            'chef_id': chef_id,
+            'category_name': row[1],
+            'display_order': row[2],
+            'created_at': row[3].isoformat() if row[3] else None
+        }
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Category created successfully',
+            'category': new_category
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@menu_bp.route('/categories/<int:category_id>', methods=['PUT'])
+def update_menu_category(category_id):
+    """Update a menu category name"""
+    try:
+        data = request.get_json()
+        category_name = data.get('category_name', '').strip()
+        
+        if not category_name:
+            return jsonify({
+                'success': False,
+                'error': 'Category name is required'
+            }), 400
+        
+        conn = psycopg2.connect(**db_config)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE menu_categories
+            SET category_name = %s
+            WHERE id = %s
+            RETURNING id, chef_id, category_name, display_order
+        """, (category_name, category_id))
+        
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Category not found'
+            }), 404
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Category updated successfully'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@menu_bp.route('/categories/<int:category_id>', methods=['DELETE'])
+def delete_menu_category(category_id):
+    """Delete a menu category (sets items to NULL category)"""
+    try:
+        conn = psycopg2.connect(**db_config)
+        cursor = conn.cursor()
+        
+        # Set category_id to NULL for all items in this category
+        cursor.execute("""
+            UPDATE chef_menu_items
+            SET category_id = NULL
+            WHERE category_id = %s
+        """, (category_id,))
+        
+        # Delete the category
+        cursor.execute("""
+            DELETE FROM menu_categories WHERE id = %s
+            RETURNING id
+        """, (category_id,))
+        
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Category not found'
+            }), 404
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Category deleted successfully'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@menu_bp.route('/item/<int:item_id>/category', methods=['PUT'])
+def update_item_category(item_id):
+    """Update the category of a menu item"""
+    try:
+        data = request.get_json()
+        category_id = data.get('category_id')  # Can be None to uncategorize
+        
+        conn = psycopg2.connect(**db_config)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE chef_menu_items
+            SET category_id = %s
+            WHERE id = %s
+            RETURNING id
+        """, (category_id, item_id))
+        
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Menu item not found'
+            }), 404
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Item category updated successfully'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@menu_bp.route('/upload-photo', methods=['POST'])
+def upload_menu_item_photo():
+    """Upload photo for menu item"""
+    try:
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No photo uploaded'}), 400
+        
+        photo = request.files['photo']
+        if photo.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        
+        # Ensure directory exists
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        photo_dir = os.path.join(base_dir, 'static', 'menu_photos')
+        os.makedirs(photo_dir, exist_ok=True)
+        
+        # Generate unique filename
+        import time
+        timestamp = int(time.time())
+        extension = photo.filename.rsplit('.', 1)[-1]
+        filename = secure_filename(f"menu_{timestamp}.{extension}")
+        filepath = os.path.join(photo_dir, filename)
+        
+        # Save photo
+        photo.save(filepath)
+        
+        photo_url = f"/static/menu_photos/{filename}"
+        
+        return jsonify({'photo_url': photo_url}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

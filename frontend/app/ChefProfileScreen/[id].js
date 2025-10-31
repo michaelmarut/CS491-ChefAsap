@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { ScrollView, Text, Alert, View, TouchableOpacity, TextInput } from "react-native";
+import { ScrollView, Text, Alert, View, TouchableOpacity, TextInput, Image } from "react-native";
 import { Octicons } from '@expo/vector-icons';
 
 import getEnvVars from "../../config";
@@ -13,14 +13,16 @@ import Card from "../components/Card";
 import RatingsDisplay from '../components/RatingsDisplay';
 import TagsBox from '../components/TagsBox';
 
-const featuredDishComponent = (item) => (
+const featuredDishComponent = (item, apiUrl) => (
     <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
         {item.photo_url ? (
-            <View className="bg-white h-[200px] w-[200px] justify-center">
-                <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE: {item.photo_url}</Text>
-            </View>
+            <Image 
+                source={{ uri: `${apiUrl}${item.photo_url}` }}
+                className="h-[200px] w-[200px] rounded-lg"
+                resizeMode="cover"
+            />
         ) : (
-            <View className="bg-white h-[200px] w-[200px] justify-center">
+            <View className="bg-white h-[200px] w-[200px] justify-center rounded-lg">
                 <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
             </View>
         )}
@@ -330,7 +332,7 @@ export default function ChefProfileScreen() {
                             Loading featured dishes...
                         </Text>
                     ) : featuredItems.length > 0 ? (
-                        featuredItems.map(item => featuredDishComponent(item))
+                        featuredItems.map(item => featuredDishComponent(item, apiUrl))
                     ) : (
                         <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
                             No featured dishes available

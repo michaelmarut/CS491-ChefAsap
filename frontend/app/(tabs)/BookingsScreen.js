@@ -17,7 +17,7 @@ const DEV_MOCK_BOOKINGS = true;
 // Helpers
 const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
 const formatTime = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-const formatHeader = (d) => d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+const formatHeader = (d) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
 function parseLocalDateTime(dateStr, timeStr) {
   try {
@@ -343,7 +343,7 @@ export default function BookingsScreen() {
             </Text>
             {selected && (
               <Text style={{ color: '#374151' }}>
-                {selected.startDate.toLocaleString()} - {selected.endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {selected.startDate.toLocaleString('en-US')} - {selected.endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </Text>
             )}
             {!!selected?.customer_id && (
