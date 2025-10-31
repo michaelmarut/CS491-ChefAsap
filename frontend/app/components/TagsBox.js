@@ -8,6 +8,11 @@ const STYLES = {
 };
 
 export default function TagsBox({ words, style = 'base' }) {
+    // Safety check: ensure words is an array
+    if (!words || !Array.isArray(words) || words.length === 0) {
+        return null;
+    }
+
     const renderWordItem = (word, index) => (
         <>
             {word !== null &&

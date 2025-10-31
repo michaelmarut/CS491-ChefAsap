@@ -443,6 +443,12 @@ export default function ProfileScreen() {
                         href={`/ChefMenuScreen`}
                     />
                     <Button
+                        title="View Orders"
+                        style="primary"
+                        customClasses="min-w-[60%]"
+                        href={`/ChefOrdersScreen`}
+                    />
+                    <Button
                         title="Customer View"
                         style="secondary"
                         customClasses="min-w-[60%]"

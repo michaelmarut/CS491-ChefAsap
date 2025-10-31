@@ -105,12 +105,18 @@ export default function SearchScreen() {
         }
     };
 
-    // Fetch recently viewed chefs (chefs the customer has browsed)
+    // Fetch recently booked chefs (based on completed bookings)
     const fetchRecentChefs = async () => {
-        if (!profileId) return;
+        console.log('[SearchScreen] fetchRecentChefs called, profileId:', profileId);
+        if (!profileId) {
+            console.log('[SearchScreen] No profileId, skipping fetch');
+            return;
+        }
 
         try {
             const url = `${apiUrl}/search/viewed-chefs/${profileId}?limit=5`;
+            console.log('[SearchScreen] Fetching recent chefs from:', url);
+            
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -120,12 +126,16 @@ export default function SearchScreen() {
             });
 
             const data = await response.json();
+            console.log('[SearchScreen] Recent chefs response:', data);
 
             if (response.ok && data.success) {
+                console.log('[SearchScreen] Setting recent chefs:', data.viewed_chefs?.length || 0, 'chefs');
                 setRecentChefs(data.viewed_chefs || []);
+            } else {
+                console.log('[SearchScreen] Response not ok or not success:', response.ok, data.success);
             }
         } catch (err) {
-            console.error('Failed to fetch recent chefs:', err);
+            console.error('[SearchScreen] Failed to fetch recent chefs:', err);
         }
     };
 
@@ -211,7 +221,22 @@ export default function SearchScreen() {
         }
     };
 
-    // Render recently viewed chef card
+    // Auto-load nearby chefs when location is available
+    useEffect(() => {
+        if (formData.latitude && formData.longitude && token) {
+            fetchSearchResults();
+        }
+    }, [formData.latitude, formData.longitude, token]);
+
+    // Fetch recent searches when component loads
+    useEffect(() => {
+        if (token && profileId) {
+            fetchRecentSearches();
+            fetchRecentChefs();
+        }
+    }, [token, profileId]);
+
+    // Render recently booked chef card
     const renderRecentChef = (chef) => (
         <Link key={chef.chef_id} href={`/ChefProfileScreen/${chef.chef_id}`} asChild>
             <TouchableOpacity className="flex bg-primary-100 shadow-sm shadow-primary-300 mr-4 rounded-xl border-2 border-primary-400 dark:bg-dark-100 dark:shadow-dark-300 dark:border-dark-400">
