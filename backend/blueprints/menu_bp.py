@@ -4,6 +4,9 @@ Blueprint for chef menu management
 from flask import Blueprint, request, jsonify
 import psycopg2
 from database.config import db_config
+from database.db_helper import get_db_connection
+import os
+from werkzeug.utils import secure_filename
 
 menu_bp = Blueprint('menu', __name__, url_prefix='/api/menu')
 
@@ -377,3 +380,36 @@ def set_featured_dishes(chef_id):
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@menu_bp.route('/item/<int:item_id>/photo', methods=['POST'])
+def upload_item_photo(item_id):
+    """Upload and update menu item photo"""
+    try:
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No photo uploaded'}), 400
+        photo = request.files['photo']
+        if photo.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Ensure directory exists (use absolute path)
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        photo_dir = os.path.join(base_dir, 'static', 'item_photos')
+        os.makedirs(photo_dir, exist_ok=True)
+
+        filename = secure_filename(f"item_{item_id}.{photo.filename.rsplit('.', 1)[-1]}")
+        filepath = os.path.join(photo_dir, filename)
+        photo.save(filepath)
+
+        photo_url = f"/static/item_photos/{filename}"
+
+        # Update photo_url in database
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('UPDATE chef_menu_items SET photo_url = %s WHERE id = %s', (photo_url, item_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({'photo_url': photo_url}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { ScrollView, Text, Alert, View, TouchableOpacity, TextInput } from "react-native";
+import { ScrollView, Text, Alert, View, TouchableOpacity, TextInput, Image } from "react-native";
 import { Octicons } from '@expo/vector-icons';
 
 import getEnvVars from "../../config";
@@ -12,41 +12,6 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import RatingsDisplay from '../components/RatingsDisplay';
 import TagsBox from '../components/TagsBox';
-
-const featuredDishComponent = (item) => (
-    <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
-        {item.photo_url ? (
-            <View className="bg-white h-[200px] w-[200px] justify-center">
-                <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE: {item.photo_url}</Text>
-            </View>
-        ) : (
-            <View className="bg-white h-[200px] w-[200px] justify-center">
-                <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
-            </View>
-        )}
-        <Text className="text-primary-400 text-md font-semibold pt-2 w-[200px] text-center dark:text-dark-400">
-            {item.dish_name}
-        </Text>
-        <Text className="text-primary-400 text-sm pt-1 w-[200px] text-center text-justified dark:text-dark-400">
-            {item.description || 'No description'}
-        </Text>
-        {item.cuisine_type && (
-            <Text className="text-primary-400 text-xs pt-1 w-[200px] text-center dark:text-dark-400">
-                {item.cuisine_type}
-            </Text>
-        )}
-        {item.price && (
-            <Text className="text-primary-400 text-lg font-bold pt-2 w-[200px] text-center dark:text-dark-400">
-                ${item.price.toFixed(2)}
-            </Text>
-        )}
-        {item.prep_time && (
-            <Text className="text-primary-400 text-xs pt-1 w-[200px] text-center dark:text-dark-400">
-                Prep time: {item.prep_time} min
-            </Text>
-        )}
-    </View>
-);
 
 export default function ChefProfileScreen() {
     const { id } = useLocalSearchParams();
@@ -187,6 +152,42 @@ export default function ChefProfileScreen() {
         setAboutText(chefData?.description || '');
         setEditingAbout(false);
     };
+
+    const featuredDishComponent = (item) => (
+        <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
+            {item?.photo_url ? (
+                <Image
+                    source={{ uri: `${apiUrl}${item?.photo_url}` }}
+                    className={"h-[150px] w-[150px] rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 border border-primary-400 dark:border-dark-400"}
+                />
+            ) : (
+                <View className="bg-white h-[150px] justify-center rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 border border-primary-400 dark:border-dark-400">
+                    <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
+                </View>
+            )}
+            <Text className="text-primary-400 text-md font-semibold pt-2 w-[200px] text-center dark:text-dark-400">
+                {item.dish_name}
+            </Text>
+            <Text className="text-primary-400 text-sm pt-1 w-[200px] text-center text-justified dark:text-dark-400">
+                {item.description || 'No description'}
+            </Text>
+            {item.cuisine_type && (
+                <Text className="text-primary-400 text-xs pt-1 w-[200px] text-center dark:text-dark-400">
+                    {item.cuisine_type}
+                </Text>
+            )}
+            {item.price && (
+                <Text className="text-primary-400 text-lg font-bold pt-2 w-[200px] text-center dark:text-dark-400">
+                    ${item.price.toFixed(2)}
+                </Text>
+            )}
+            {item.prep_time && (
+                <Text className="text-primary-400 text-xs pt-1 w-[200px] text-center dark:text-dark-400">
+                    Prep time: {item.prep_time} min
+                </Text>
+            )}
+        </View>
+    );
 
     if (loading) {
         return (

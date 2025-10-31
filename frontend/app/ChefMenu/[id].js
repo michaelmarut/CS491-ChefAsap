@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { ScrollView, Text, Alert, View, FlatList, Modal, TouchableOpacity, Platform } from "react-native";
+import { ScrollView, Text, Alert, View, Modal, Image } from "react-native";
 import { Octicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 
@@ -13,63 +13,6 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import TagsBox from '../components/TagsBox';
 import RatingsDisplay from '../components/RatingsDisplay';
-
-const menuItemCard = ({ item, onAddToOrder }) => (
-    <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mb-4 w-full" key={item?.id}>
-        <Text className="text-lg font-medium mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
-            {item?.dish_name || 'Dish Name'}
-        </Text>
-        <View className="flex-row border-b border-primary-400 dark:border-dark-400 pb-2">
-            <View className="flex w-1/2 justify-between pr-2">
-                <TagsBox words={[].concat(item?.cuisine_type, item?.dietary_info)} style='light' />
-                <Text className="text-primary-400 text-md pt-1 mb-1 text-center text-justified dark:text-dark-400">
-                    {item?.description || 'No description available'}
-                </Text>
-                {item?.servings && (
-                    <Text className="text-primary-400 text-xs pt-1 text-center text-justified dark:text-dark-400">
-                        Servings: {item.servings}
-                    </Text>
-                )}
-                {item?.spice_level && (
-                    <Text className="text-primary-400 text-xs mb-1 text-center text-justified dark:text-dark-400">
-                        Spice Level: {item.spice_level}
-                    </Text>
-                )}
-            </View>
-            <View className="flex w-1/2 justify-center">
-                {item?.photo_url ? (
-                    <View className="bg-white h-[150px] justify-center">
-                        <Text className="text-lg text-center text-primary-400 dark:text-dark-400">IMAGE: {item.photo_url}</Text>
-                    </View>
-                ) : (
-                    <View className="bg-white h-[150px] justify-center">
-                        <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
-                    </View>
-                )}
-            </View>
-        </View>
-
-        <View className="flex-row justify-between items-center p-2">
-        {item?.prep_time && (
-            <Text className="text-primary-400 text-nd font-medium text-center text-justified dark:text-dark-400">
-                Prep time: {item.prep_time} min
-            </Text>
-        )}
-        {item?.price && (
-            <Text className="text-primary-400 text-xl font-medium text-center dark:text-dark-400 pr-2">
-                ${item.price.toFixed(2)}
-            </Text>
-        )}
-        </View>
-        <Button
-            title={item?.is_available ? "Add to order" : "Not available"}
-            onPress={() => onAddToOrder && onAddToOrder(item)}
-            customClasses='rounded-xl'
-            customTextClasses='text-sm'
-            disabled={!item?.is_available}
-        />
-    </View>
-);
 
 export default function ChefMenu() {
     const { id } = useLocalSearchParams();
@@ -310,6 +253,64 @@ export default function ChefMenu() {
         if (hour >= 11 && hour < 16) return 'lunch';
         return 'dinner';
     };
+
+    const menuItemCard = ({ item, onAddToOrder }) => (
+        <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mb-4 w-full" key={item?.id}>
+            <Text className="text-lg font-medium mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
+                {item?.dish_name || 'Dish Name'}
+            </Text>
+            <View className="flex-row border-b border-primary-400 dark:border-dark-400 pb-2">
+                <View className="flex w-1/2 justify-between pr-2">
+                    <TagsBox words={[].concat(item?.cuisine_type, item?.dietary_info)} theme='light' />
+                    <Text className="text-primary-400 text-md pt-1 mb-1 text-center text-justified dark:text-dark-400">
+                        {item?.description || 'No description available'}
+                    </Text>
+                    {item?.servings && (
+                        <Text className="text-primary-400 text-xs pt-1 text-center text-justified dark:text-dark-400">
+                            Servings: {item.servings}
+                        </Text>
+                    )}
+                    {item?.spice_level && (
+                        <Text className="text-primary-400 text-xs mb-1 text-center text-justified dark:text-dark-400">
+                            Spice Level: {item.spice_level}
+                        </Text>
+                    )}
+                </View>
+                <View className="flex w-1/2 justify-center">
+                    {item?.photo_url ? (
+                        <Image
+                            source={{ uri: `${apiUrl}${item?.photo_url}` }}
+                            className={"h-[150px] w-[150px] rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 border border-primary-400 dark:border-dark-400"}
+                        />
+                    ) : (
+                        <View className="bg-white h-[150px] justify-center rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 border border-primary-400 dark:border-dark-400">
+                            <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
+                        </View>
+                    )}
+                </View>
+            </View>
+
+            <View className="flex-row justify-between items-center p-2">
+                {item?.prep_time && (
+                    <Text className="text-primary-400 text-nd font-medium text-center text-justified dark:text-dark-400">
+                        Prep time: {item.prep_time} min
+                    </Text>
+                )}
+                {item?.price && (
+                    <Text className="text-primary-400 text-xl font-medium text-center dark:text-dark-400 pr-2">
+                        ${item.price.toFixed(2)}
+                    </Text>
+                )}
+            </View>
+            <Button
+                title={item?.is_available ? "Add to order" : "Not available"}
+                onPress={() => onAddToOrder && onAddToOrder(item)}
+                customClasses='rounded-xl'
+                customTextClasses='text-sm'
+                disabled={!item?.is_available}
+            />
+        </View>
+    );
 
     if (loading) {
         return (
