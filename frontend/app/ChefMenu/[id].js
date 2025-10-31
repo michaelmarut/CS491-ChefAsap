@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { ScrollView, Text, Alert, View, FlatList, Modal, TouchableOpacity, Platform, Image } from "react-native";
+import { ScrollView, Text, Alert, View, Modal, Image } from "react-native";
 import { Octicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 
@@ -21,7 +21,7 @@ const menuItemCard = ({ item, onAddToOrder, apiUrl }) => (
         </Text>
         <View className="flex-row border-b border-primary-400 dark:border-dark-400 pb-2">
             <View className="flex w-1/2 justify-between pr-2">
-                <TagsBox words={[].concat(item?.cuisine_type, item?.dietary_info)} style='light' />
+                <TagsBox words={[].concat(item?.cuisine_type, item?.dietary_info)} theme='light' />
                 <Text className="text-primary-400 text-md pt-1 mb-1 text-center text-justified dark:text-dark-400">
                     {item?.description || 'No description available'}
                 </Text>
@@ -40,11 +40,11 @@ const menuItemCard = ({ item, onAddToOrder, apiUrl }) => (
                 {item?.photo_url ? (
                     <Image 
                         source={{ uri: `${apiUrl}${item.photo_url}` }}
-                        className="h-[150px] w-full rounded-lg"
+                        className="h-[150px] w-[150px] rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 border border-primary-400 dark:border-dark-400"
                         resizeMode="cover"
                     />
                 ) : (
-                    <View className="bg-white h-[150px] justify-center rounded-lg">
+                    <View className="bg-white h-[150px] justify-center rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 border border-primary-400 dark:border-dark-400">
                         <Text className="text-lg text-center text-primary-400 dark:text-dark-400">NO IMAGE</Text>
                     </View>
                 )}

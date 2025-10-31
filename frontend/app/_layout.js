@@ -18,7 +18,14 @@ function RootStack() {
     const { isAuthenticated, isLoading } = useAuth();
 
     if (isLoading) {
-        return <LoadingIcon />;
+        return (
+            <>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
+                    <LoadingIcon />
+                </View>
+            </>
+        );
     }
 
     return (

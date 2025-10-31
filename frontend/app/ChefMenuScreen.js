@@ -826,7 +826,7 @@ export default function ChefMenu() {
                 />
 
                 <Button
-                    title="â† Return"
+                    title="â†?Return"
                     style="secondary"
                     href={`/(tabs)/Profile`}
                     customClasses="min-w-[60%]"
@@ -1096,7 +1096,7 @@ export default function ChefMenu() {
                                     </Text>
                                     {selectedMenuItem?.category_id === category.id && (
                                         <Text style={{ fontSize: 12, color: '#059669', marginTop: 4 }}>
-                                            âœ“ Currently in this category
+                                            âœ?Currently in this category
                                         </Text>
                                     )}
                                 </TouchableOpacity>

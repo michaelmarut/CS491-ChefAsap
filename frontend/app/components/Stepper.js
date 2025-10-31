@@ -10,6 +10,7 @@ export default function Stepper({
     max = 100, // stepper max
     step = 1, // stepper increment
     labelStyle = '', // optional label styles
+    size = 12, // optional size prop
 }) {
     const numericValue = Number(value);
 
@@ -32,10 +33,10 @@ export default function Stepper({
                         icon="dash"
                         onPress={handleDecrement}
                         disabled={numericValue <= min}
-                        customClasses='rounded-lg w-12 h-12 m-1'
+                        customClasses={`rounded-lg m-1 h-${size} w-${size}`}
                     />
                 </View>
-                <View className="w-12 h-12 flex items-center justify-center border-2 border-primary-300 rounded-lg bg-primary-100 shadow-sm shadow-primary-500 dark:border-dark-300 dark:bg-dark-100">
+                <View className={`flex items-center justify-center border-2 border-primary-300 rounded-lg bg-primary-100 shadow-sm shadow-primary-500 dark:border-dark-300 dark:bg-dark-100 h-${size} w-${size}`}>
                     <Text className="text-xl font-bold text-primary-500">{numericValue}</Text>
                 </View>
                 <View>
@@ -43,7 +44,7 @@ export default function Stepper({
                         icon="plus"
                         onPress={handleIncrement}
                         disabled={numericValue >= max}
-                        customClasses='rounded-lg w-12 h-12 m-1'
+                        customClasses={`rounded-lg m-1 h-${size} w-${size}`}
                     />
                 </View>
             </View>

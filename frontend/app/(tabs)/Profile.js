@@ -379,7 +379,7 @@ export default function ProfileScreen() {
                                 </Text>
                                 <View className="flex-row flex-wrap justify-center items-center w-full gap-1">
                                     {profileData?.cuisines && profileData.cuisines.length > 0 ? (
-                                        <TagsBox words={profileData?.cuisines} />
+                                        <TagsBox words={profileData?.cuisines} theme='light'/>
                                     ) : (
                                         <Text className="text-primary-400 dark:text-dark-400">No cuisines set</Text>
                                     )}
@@ -438,7 +438,7 @@ export default function ProfileScreen() {
                     </Card>
                     <Button
                         title="Manage Menu"
-                        style="primary"
+                        style="secondary"
                         customClasses="min-w-[60%]"
                         href={`/ChefMenuScreen`}
                     />
