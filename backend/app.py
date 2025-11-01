@@ -14,6 +14,7 @@ from blueprints.search_location_bp import search_location_bp
 from blueprints.menu_bp import menu_bp
 from blueprints.calendar_bp import calendar_bp
 from blueprints.order_bp import order_bp
+from blueprints.rating_bp import rating_bp
 import socket
 import os
 
@@ -53,6 +54,8 @@ app.register_blueprint(menu_bp)
 app.register_blueprint(calendar_bp, url_prefix='/calendar')
 
 app.register_blueprint(order_bp, url_prefix='/api/orders')
+
+app.register_blueprint(rating_bp, url_prefix='/rating')
 
 @app.route('/')
 def index():

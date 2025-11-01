@@ -1,57 +1,95 @@
 from flask import Blueprint, request, jsonify
-import mysql.connector
 from database.config import db_config
+from database.db_helper import get_db_connection, get_cursor
 
-rating_bp = Blueprint('ratings', __name__)
+rating_bp = Blueprint('rating', __name__)
 
-@rating_bp.route('/ratings', methods=['POST'])
-def add_chef_rating():
+@rating_bp.route('/chef/<int:chef_id>', methods=['POST'])
+def add_chef_rating(chef_id):
+    """Add a rating/review for a chef"""
     data = request.get_json()
-    chef_id = data.get('chef_id')
     customer_id = data.get('customer_id')
-    #currently ratings will be done on chef profile so booking_id may be needed later on
-    #booking_id = data.get('booking_id')
+    booking_id = data.get('booking_id')
     rating = data.get('rating')
-    comment = data.get('comment', '')
+    review = data.get('review', '')
 
-    if not all([chef_id, customer_id, rating]):
+    if not all([customer_id, rating]):
         return jsonify({'error': 'Missing required fields'}), 400
     
+    # For now, round to nearest integer since DB only supports INTEGER
+    rating = round(rating)
+    
+    if not (1 <= rating <= 5):
+        return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+    
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute('''
-            INSERT INTO chef_rating(chef_id, customer_id, rating, comment)
-            VALUES (%s, %s, %s, %s)''', (chef_id, customer_id, rating, comment))
+            INSERT INTO chef_ratings (chef_id, customer_id, booking_id, rating, review_text)
+            VALUES (%s, %s, %s, %s, %s)
+        ''', (chef_id, customer_id, booking_id, rating, review))
         
-        finally:
-            cursor.close()
-            conn.close()
-            return jsonify({'message': 'Rating successfully posted'}), 201
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'message': 'Rating successfully posted'}), 201
     
-@rating_bp.route('/ratings', methods=['GET'])
-
-def get_chef_ratings():
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@rating_bp.route('/chef/<int:chef_id>', methods=['GET'])
+def get_chef_ratings(chef_id):
+    """Get all ratings and reviews for a chef"""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
 
+        # Get average rating and total count
         cursor.execute('''
-            SELECT COUNT(*) as total_ratings, SUM(r.rating) as avg_rating FROM chef_rating r
-            where chef_id = %s''', (chef_id))
-        ratings_data = cursor.fetchall()
+            SELECT COUNT(*) as total_ratings, AVG(rating) as avg_rating 
+            FROM chef_ratings
+            WHERE chef_id = %s
+        ''', (chef_id,))
+        ratings_data = cursor.fetchone()
 
+        # Get all reviews with customer names
         cursor.execute('''
-            SELECT r.customer_id, r.rating, r.comment, r.created_at FROM chef_rating r
-            where chef_id = %s
-            ORDER_BY created_at DESC''', (chef_id))
-        comments = curser.fetchall()
+            SELECT 
+                r.id,
+                r.customer_id, 
+                r.rating, 
+                r.review_text as comment, 
+                r.created_at,
+                c.first_name || ' ' || c.last_name as customer_name
+            FROM chef_ratings r
+            JOIN customers c ON r.customer_id = c.id
+            WHERE r.chef_id = %s
+            ORDER BY r.created_at DESC
+        ''', (chef_id,))
+        reviews = cursor.fetchall()
 
+        # Format reviews
+        formatted_reviews = []
+        for review in reviews:
+            formatted_review = dict(review)
+            if formatted_review.get('created_at'):
+                formatted_review['created_at'] = formatted_review['created_at'].isoformat()
+            formatted_reviews.append(formatted_review)
+
+        cursor.close()
+        conn.close()
+
+        avg_rating = float(ratings_data['avg_rating']) if ratings_data['avg_rating'] else 0.0
 
         return jsonify({
-            'chef': chef_id,
-            'rating' : ratings_data['avg_rating'] / ratings_data['total_ratings'],
+            'chef_id': chef_id,
+            'avg_rating': round(avg_rating, 2),
             'total_reviews': ratings_data['total_ratings'],
-            'reviews': comments
+            'reviews': formatted_reviews
         }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

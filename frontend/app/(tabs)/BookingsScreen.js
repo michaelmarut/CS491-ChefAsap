@@ -326,12 +326,26 @@ export default function BookingsScreen() {
       </ScrollView>
 
       {/* Footer actions */}
-      <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#e5e7eb' }}>
+      <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#e5e7eb', gap: 8 }}>
         <Button
           title={loading ? 'Refreshing…' : 'Refresh'}
           style="primary"
           onPress={loadBookings}
         />
+        {userType === 'customer' && (
+          <Button
+            title="View My Bookings"
+            style="secondary"
+            href="/CustomerBookingsScreen"
+          />
+        )}
+        {userType === 'chef' && (
+          <Button
+            title="View My Orders"
+            style="secondary"
+            href="/ChefOrdersScreen"
+          />
+        )}
       </View>
 
       {/* Event Modal */}

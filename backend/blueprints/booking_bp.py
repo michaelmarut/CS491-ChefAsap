@@ -242,6 +242,7 @@ def get_customer_dashboard(customer_id):
         base_query = '''
             SELECT 
                 b.id as booking_id,
+                b.chef_id,
                 b.booking_date,
                 b.booking_time,
                 b.cuisine_type,
@@ -256,11 +257,16 @@ def get_customer_dashboard(customer_id):
                 c.email as chef_email,
                 c.phone as chef_phone,
                 c.photo_url as chef_photo,
-                csa.city as chef_city,
-                csa.state as chef_state
+                ca.address_line1 as chef_address_line1,
+                ca.address_line2 as chef_address_line2,
+                ca.city as chef_city,
+                ca.state as chef_state,
+                ca.zip_code as chef_zip_code,
+                CASE WHEN cr.id IS NOT NULL THEN TRUE ELSE FALSE END as has_reviewed
             FROM bookings b
             LEFT JOIN chefs c ON b.chef_id = c.id
-            LEFT JOIN chef_service_areas csa ON c.id = csa.chef_id
+            LEFT JOIN chef_addresses ca ON c.id = ca.chef_id AND ca.is_default = TRUE
+            LEFT JOIN chef_ratings cr ON b.id = cr.booking_id AND cr.customer_id = b.customer_id
             WHERE b.customer_id = %s
         '''
         
