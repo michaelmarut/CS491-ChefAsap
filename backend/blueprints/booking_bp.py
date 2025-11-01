@@ -4,6 +4,7 @@ from database.config import db_config
 from database.db_helper import get_db_connection, get_cursor, handle_db_error
 import math
 from services.geocoding_service import geocoding_service, get_coordinates_for_zip
+from datetime import date as _date
 
 # Create the blueprint
 booking_bp = Blueprint('booking', __name__)
@@ -759,3 +760,143 @@ def update_booking_status(booking_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@booking_bp.get("/customer/<int:customer_id>/calendar")
+def calendar_for_customer(customer_id: int):
+    start = request.args.get("start")
+    end = request.args.get("end")
+    try:
+        start_d = _date.fromisoformat(start) if start else None
+        end_d = _date.fromisoformat(end) if end else None
+        if not start_d or not end_d:
+            return jsonify({"success": False, "error": "start and end (YYYY-MM-DD) are required"}), 400
+    except Exception:
+        return jsonify({"success": False, "error": "Invalid date format"}), 400
+
+    conn = get_db_connection()
+    cur = get_cursor(conn, dictionary=True)
+    try:
+        # Best-effort prep time: match a chef_menu_items row for the chef and cuisine_type.
+        # If there are multiple, pick the highest prep_time; fallback to 60 when none match.
+        cur.execute(
+            """
+            SELECT
+              b.id AS booking_id,
+              b.customer_id,
+              b.chef_id,
+              b.booking_date,
+              b.booking_time,
+              b.status,
+              b.special_notes,
+              b.cuisine_type,
+              b.meal_type,
+              COALESCE(cmi_match.prep_time, 60) AS duration_minutes
+            FROM bookings b
+            LEFT JOIN LATERAL (
+              SELECT cmi.prep_time
+              FROM chef_menu_items cmi
+              WHERE cmi.chef_id = b.chef_id
+                AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
+              ORDER BY cmi.prep_time DESC
+              LIMIT 1
+            ) AS cmi_match ON TRUE
+            WHERE b.customer_id = %s
+              AND b.booking_date BETWEEN %s AND %s
+            ORDER BY b.booking_date, b.booking_time
+            """,
+            (customer_id, start_d, end_d),
+        )
+        rows = cur.fetchall()
+
+        def shape(r):
+            bd = str(r.get("booking_date")) if r.get("booking_date") is not None else None
+            bt_raw = r.get("booking_time")
+            bt = (bt_raw.strftime("%H:%M") if hasattr(bt_raw, "strftime") else (str(bt_raw)[:5] if bt_raw else None))
+            return {
+                "booking_id": r.get("booking_id"),
+                "customer_id": r.get("customer_id"),
+                "chef_id": r.get("chef_id"),
+                "booking_date": bd,
+                "booking_time": bt,
+                "status": r.get("status") or "scheduled",
+                "special_notes": r.get("special_notes") or "",
+                "cuisine_type": r.get("cuisine_type"),
+                "meal_type": r.get("meal_type"),
+                "duration_minutes": int(r.get("duration_minutes") or 60),
+            }
+
+        return jsonify({"success": True, "data": [shape(r) for r in rows]})
+    finally:
+        try:
+            cur.close()
+        finally:
+            conn.close()
+
+@booking_bp.get("/chef/<int:chef_id>/calendar")
+def calendar_for_chef(chef_id: int):
+    start = request.args.get("start")
+    end = request.args.get("end")
+    try:
+        start_d = _date.fromisoformat(start) if start else None
+        end_d = _date.fromisoformat(end) if end else None
+        if not start_d or not end_d:
+            return jsonify({"success": False, "error": "start and end (YYYY-MM-DD) are required"}), 400
+    except Exception:
+        return jsonify({"success": False, "error": "Invalid date format"}), 400
+
+    conn = get_db_connection()
+    cur = get_cursor(conn, dictionary=True)
+    try:
+        cur.execute(
+            """
+            SELECT
+              b.id AS booking_id,
+              b.customer_id,
+              b.chef_id,
+              b.booking_date,
+              b.booking_time,
+              b.status,
+              b.special_notes,
+              b.cuisine_type,
+              b.meal_type,
+              COALESCE(cmi_match.prep_time, 60) AS duration_minutes
+            FROM bookings b
+            LEFT JOIN LATERAL (
+              SELECT cmi.prep_time
+              FROM chef_menu_items cmi
+              WHERE cmi.chef_id = b.chef_id
+                AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
+              ORDER BY cmi.prep_time DESC
+              LIMIT 1
+            ) AS cmi_match ON TRUE
+            WHERE b.chef_id = %s
+              AND b.booking_date BETWEEN %s AND %s
+            ORDER BY b.booking_date, b.booking_time
+            """,
+            (chef_id, start_d, end_d),
+        )
+        rows = cur.fetchall()
+
+        def shape(r):
+            bd = str(r.get("booking_date")) if r.get("booking_date") is not None else None
+            bt_raw = r.get("booking_time")
+            bt = (bt_raw.strftime("%H:%M") if hasattr(bt_raw, "strftime") else (str(bt_raw)[:5] if bt_raw else None))
+            return {
+                "booking_id": r.get("booking_id"),
+                "customer_id": r.get("customer_id"),
+                "chef_id": r.get("chef_id"),
+                "booking_date": bd,
+                "booking_time": bt,
+                "status": r.get("status") or "scheduled",
+                "special_notes": r.get("special_notes") or "",
+                "cuisine_type": r.get("cuisine_type"),
+                "meal_type": r.get("meal_type"),
+                "duration_minutes": int(r.get("duration_minutes") or 60),
+            }
+
+        return jsonify({"success": True, "data": [shape(r) for r in rows]})
+    finally:
+        try:
+            cur.close()
+        finally:
+            conn.close()
