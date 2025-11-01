@@ -1,23 +1,36 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Pressable } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import getEnvVars from '../../config';
 import Button from '../components/Button';
-import CalendarIcsUploadButton from '../components/CalendarIcsUploadButton';
-import CalendarConnectButton from '../components/CalendarConnectButton';
 
 const START_HOUR = 6;   // 6 AM
 const END_HOUR = 22;    // 10 PM
 const STEP_MIN = 30;    // minutes per slot
 const SLOT_HEIGHT = 40; // px per slot
+const PX_PER_MIN = SLOT_HEIGHT / STEP_MIN; // pixels per minute
 
-// set to false for production
+// sizing for wide day columns + fixed time column
+const TIME_COL_WIDTH = 68;
+const DAY_COLUMN_WIDTH = 100;
+const HEADER_HEIGHT = 50;
+const FOOTER_PADDING = 12;
+const DATE_HEADER_TEXT_STYLE = { color: '#111827', fontSize: 13, fontWeight: '600' };
+
+// Dev mock data flag
 const DEV_MOCK_BOOKINGS = true;
 
 // Helpers
 const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
 const formatTime = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const formatHeader = (d) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+function formatHourLabel(d) {
+  const h = d.getHours();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12} ${ampm}`;
+}
 
 function parseLocalDateTime(dateStr, timeStr) {
   try {
@@ -84,10 +97,6 @@ function buildMockEvents(baseDate) {
   ];
 }
 
-function overlaps(slotStart, slotEnd, evStart, evEnd) {
-  return evStart < slotEnd && evEnd > slotStart;
-}
-
 export default function BookingsScreen() {
   const { apiUrl } = getEnvVars();
   const { token, userType, profileId } = useAuth();
@@ -96,17 +105,10 @@ export default function BookingsScreen() {
 
   const [baseDate, setBaseDate] = useState(new Date());
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(null);
   const [notes, setNotes] = useState('');
 
   const weekDays = useMemo(() => buildWeekDays(baseDate), [baseDate]);
-  const weekRange = useMemo(() => {
-    const start = new Date(weekDays[0]);
-    const end = new Date(weekDays[6]);
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  }, [weekDays]);
 
   const listEndpoint = useMemo(() => {
     if (!token || !userType || !profileId) return null;
@@ -123,14 +125,13 @@ export default function BookingsScreen() {
       return;
     }
 
-    if (!token || !userType || !profileId) return; // wait until AuthContext is ready
+    if (!token || !userType || !profileId) return;
     if (!listEndpoint) {
       if (userType === 'chef') {
         Alert.alert('Info', 'Chef bookings endpoint not available yet.');
       }
       return;
     }
-    setLoading(true);
     try {
       const res = await fetch(listEndpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -164,8 +165,6 @@ export default function BookingsScreen() {
     } catch {
       Alert.alert('Error', 'Network error. Could not load bookings.');
       setEvents([]);
-    } finally {
-      setLoading(false);
     }
   }, [DEV_MOCK_BOOKINGS, baseDate, listEndpoint, token, userType, profileId]);
 
@@ -200,12 +199,14 @@ export default function BookingsScreen() {
 
   const eventsByDay = useMemo(() => {
     const map = Array.from({ length: 7 }).map(() => []);
+    const monday = getWeekStart(baseDate); // compute once
     events.forEach((e) => {
       const d = new Date(e.startDate);
-      const monday = getWeekStart(baseDate);
-      const idx = Math.floor((getWeekStart(d).getTime() === monday.getTime())
-        ? (d.getDay() + 6) % 7
-        : (Math.round((d - monday) / (24 * 3600 * 1000))));
+      const idx = Math.floor(
+        getWeekStart(d).getTime() === monday.getTime()
+          ? (d.getDay() + 6) % 7
+          : Math.round((d - monday) / (24 * 3600 * 1000))
+      );
       if (idx >= 0 && idx < 7) {
         map[idx].push(e);
       }
@@ -213,162 +214,369 @@ export default function BookingsScreen() {
     return map;
   }, [events, baseDate]);
 
+  // Add refs for syncing horizontal scroll
+  const headerHScrollRef = useRef(null);
+  const gridHScrollRef = useRef(null);
+  const syncSourceRef = useRef(null); // 'header' | 'grid' | null
+
   return (
     <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      {/* External calendar actions */}
-      <View style={{ paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#f8fafc', borderBottomWidth: 1, borderColor: '#e2e8f0' }}>
-        <Text style={{ fontWeight: '600', fontSize: 14, marginBottom: 6, color: '#111827' }}>External Calendar</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-          <View style={{ marginRight: 8, marginBottom: 6 }}>
-            <CalendarConnectButton compact onSynced={() => { /* optionally reload bookings */ }} />
-          </View>
-          <View style={{ marginRight: 8, marginBottom: 6 }}>
-            <CalendarIcsUploadButton compact />
-          </View>
-        </View>
-      </View>
-
       {/* Week controls */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderColor: '#e5e7eb' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, paddingTop: 12, borderBottomWidth: 1, borderColor: '#e5e7eb' }}>
         <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
           Week of {formatHeader(weekDays[0])}
         </Text>
         <View style={{ flexDirection: 'row' }}>
           <TouchableOpacity
             onPress={onPrevWeek}
-            style={{ paddingVertical: 4, paddingHorizontal: 8, borderWidth: 1, borderColor: '#d1d5db', backgroundColor: 'transparent', borderRadius: 6, marginRight: 6 }}
+            style={{ paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#d1d5db', backgroundColor: 'transparent', borderRadius: 8, marginRight: 6 }}
           >
-            <Text style={{ fontSize: 13, color: '#111827' }}>Prev</Text>
+            <Text style={{ fontSize: 14, color: '#111827' }}>Prev</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={onToday}
-            style={{ paddingVertical: 4, paddingHorizontal: 8, backgroundColor: '#d1fae5', borderRadius: 6, marginRight: 6, borderWidth: 1, borderColor: '#86efac' }}
+            style={{ paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#d1fae5', borderRadius: 8, marginRight: 6, borderWidth: 1, borderColor: '#86efac' }}
           >
-            <Text style={{ fontSize: 13, color: '#065f46', fontWeight: '600' }}>Today</Text>
+            <Text style={{ fontSize: 14, color: '#065f46', fontWeight: '600' }}>Today</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={onNextWeek}
-            style={{ paddingVertical: 4, paddingHorizontal: 8, borderWidth: 1, borderColor: '#d1d5db', backgroundColor: 'transparent', borderRadius: 6 }}
+            style={{ paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#d1d5db', backgroundColor: 'transparent', borderRadius: 8 }}
           >
-            <Text style={{ fontSize: 13, color: '#111827' }}>Next</Text>
+            <Text style={{ fontSize: 14, color: '#111827' }}>Next</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Headers row */}
-      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#e5e7eb' }}>
-        <View style={{ width: 56, paddingVertical: 8 }} />
-        {weekDays.map((d, i) => (
-          <View key={i} style={{ flex: 1, paddingVertical: 8, alignItems: 'center' }}>
-            <Text style={{ fontWeight: '600', color: '#374151' }}>{formatHeader(d)}</Text>
+      {/* Fixed day header that scrolls horizontally with the grid */}
+      <View style={{ flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e5e7eb' }}>
+        {/* Left spacer so header aligns with the grid (time column) */}
+        <View style={{ width: TIME_COL_WIDTH, height: HEADER_HEIGHT, borderRightWidth: 1, borderColor: '#e5e7eb' }} />
+        <ScrollView
+          ref={headerHScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          scrollEnabled={true}             // allow dragging header
+          bounces={false}
+          overScrollMode="never"
+          scrollEventThrottle={16}
+          onScroll={(e) => {
+            const x = e.nativeEvent.contentOffset.x;
+            if (syncSourceRef.current === 'grid') return;
+            syncSourceRef.current = 'header';
+            gridHScrollRef.current?.scrollTo({ x, animated: false });
+          }}
+          onScrollEndDrag={() => { syncSourceRef.current = null; }}
+          onMomentumScrollEnd={() => { syncSourceRef.current = null; }}
+        >
+          <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
+            <View style={{ height: HEADER_HEIGHT, flexDirection: 'row', backgroundColor: '#fff' }}>
+              {weekDays.map((d, i) => (
+                <View
+                  key={i}
+                  style={{
+                    width: DAY_COLUMN_WIDTH,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderLeftWidth: i === 0 ? 0 : 1,
+                    borderColor: '#e5e7eb',
+                  }}
+                >
+                  <Text style={DATE_HEADER_TEXT_STYLE}>{formatHeader(d)}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        ))}
+        </ScrollView>
       </View>
 
-      {/* Grid */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      {/* One vertical scroller for both time and grid; right side is the only horizontal scroller */}
+      <ScrollView
+        nestedScrollEnabled
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator
+        contentContainerStyle={{ paddingBottom: FOOTER_PADDING }}
+      >
         <View style={{ flexDirection: 'row' }}>
-          {/* Time labels */}
-          <View style={{ width: 56 }}>
-            {buildTimeSlotsForDay(weekDays[0]).map((slot, idx) => (
-              <View key={idx} style={{ height: SLOT_HEIGHT, justifyContent: 'flex-start', alignItems: 'center' }}>
-                {slot.start.getMinutes() === 0 ? (
-                  <Text style={{ color: '#6b7280', fontSize: 12 }}>{pad(slot.start.getHours())}:00</Text>
-                ) : null}
-              </View>
-            ))}
-          </View>
+          {/* LEFT: fixed time column (not horizontally scrollable) */}
+          <View style={{ width: TIME_COL_WIDTH, borderRightWidth: 1, borderColor: '#e5e7eb' }}>
+            {/* Time grid background + hour labels aligned to hour lines */}
+            {(() => {
+              const timeSlots = buildTimeSlotsForDay(weekDays[0]);
+              const gridHeight = timeSlots.length * SLOT_HEIGHT;
 
-          {/* Day columns */}
-          <View style={{ flex: 1, flexDirection: 'row' }}>
-            {weekDays.map((day, dayIdx) => {
-              const daySlots = buildTimeSlotsForDay(day);
-              const dayEvents = eventsByDay[dayIdx] || [];
               return (
-                <View key={dayIdx} style={{ flex: 1, borderLeftWidth: dayIdx === 0 ? 0 : 1, borderColor: '#e5e7eb' }}>
-                  {daySlots.map((slot, sIdx) => {
-                    const evt = dayEvents.find((e) => overlaps(slot.start, slot.end, e.startDate, e.endDate));
+                <View style={{ position: 'relative', backgroundColor: '#fff' }}>
+                  {/* Background: ONLY hour lines */}
+                  {timeSlots.map((slot, idx) => {
                     const isHour = slot.start.getMinutes() === 0;
                     return (
-                      <TouchableOpacity
-                        key={sIdx}
-                        activeOpacity={evt ? 0.7 : 1}
-                        onPress={() => evt && openEvent(evt)}
+                      <View
+                        key={idx}
                         style={{
                           height: SLOT_HEIGHT,
-                          borderBottomWidth: 1,
-                          borderColor: '#f3f4f6',
-                          backgroundColor: evt
-                            ? (evt.status === 'cancelled' ? '#e5e7eb' : '#d9f99d')
-                            : (isHour ? '#ffffff' : '#fafafa'),
-                          paddingHorizontal: 6,
-                          justifyContent: 'center',
+                          backgroundColor: '#fff',
+                          borderTopWidth: isHour ? 2 : 0,
+                          borderTopColor: '#e5e7eb',
                         }}
-                      >
-                        {evt && (
-                          <View>
-                            <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', color: '#14532d' }}>
-                              {evt.title}
-                            </Text>
-                            <Text numberOfLines={1} style={{ fontSize: 11, color: '#065f46' }}>
-                              {formatTime(evt.startDate)} - {formatTime(evt.endDate)}
-                            </Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
+                      />
                     );
                   })}
+
+                  {/* Hour labels overlay on the hour lines */}
+                  <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: gridHeight, pointerEvents: 'none' }}>
+                    {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => {
+                      const hour = START_HOUR + i;
+                      if (hour > END_HOUR) return null;
+                      const labelDate = new Date(weekDays[0]);
+                      labelDate.setHours(hour, 0, 0, 0);
+                      const top = i * 60 * PX_PER_MIN;
+                      return (
+                        <Text
+                          key={hour}
+                          style={{
+                            position: 'absolute',
+                            top: Math.max(top - 8, 0),
+                            right: 8,
+                            color: '#111827',
+                            fontSize: 13,
+                            fontWeight: '600',
+                            textAlign: 'right',
+                          }}
+                        >
+                          {formatHourLabel(labelDate)}
+                        </Text>
+                      );
+                    })}
+                  </View>
                 </View>
               );
-            })}
+            })()}
           </View>
+
+          {/* RIGHT: grid inside a horizontal scroller; sync its x with the fixed header above */}
+          <ScrollView
+            ref={gridHScrollRef}
+            horizontal
+            showsHorizontalScrollIndicator
+            bounces={false}
+            overScrollMode="never"
+            scrollEventThrottle={16}
+            onScroll={(e) => {
+              const x = e.nativeEvent.contentOffset.x;
+              if (syncSourceRef.current === 'header') return;
+              syncSourceRef.current = 'grid';
+              headerHScrollRef.current?.scrollTo({ x, animated: false });
+            }}
+            onScrollEndDrag={() => { syncSourceRef.current = null; }}
+            onMomentumScrollEnd={() => { syncSourceRef.current = null; }}
+          >
+            <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
+              {/* (Removed) Header row here; it's now fixed above */}
+
+              {/* Grid: background + events overlay */}
+              <View style={{ flexDirection: 'row' }}>
+                {weekDays.map((day, dayIdx) => {
+                  const daySlots = buildTimeSlotsForDay(day);
+                  const dayEvents = eventsByDay[dayIdx] || [];
+
+                  // Bounds for clipping events to visible day window
+                  const dayStart = new Date(day);
+                  dayStart.setHours(START_HOUR, 0, 0, 0);
+                  const dayEnd = new Date(day);
+                  dayEnd.setHours(END_HOUR, 0, 0, 0);
+
+                  const gridHeight = daySlots.length * SLOT_HEIGHT;
+
+                  return (
+                    <View
+                      key={dayIdx}
+                      style={{
+                        width: DAY_COLUMN_WIDTH,
+                        borderLeftWidth: dayIdx === 0 ? 0 : 1,
+                        borderColor: '#e5e7eb',
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Background grid (hour line on top, thin half-hour line) */}
+                      {daySlots.map((slot, sIdx) => {
+                        const isHour = slot.start.getMinutes() === 0;
+                        return (
+                          <View
+                            key={sIdx}
+                            style={{
+                              height: SLOT_HEIGHT,
+                              borderTopWidth: isHour ? 2 : 0,
+                              borderTopColor: '#e5e7eb',
+                              borderBottomWidth: 1,
+                              borderBottomColor: '#f3f4f6',
+                              backgroundColor: isHour ? '#ffffff' : '#fafafa',
+                            }}
+                          />
+                        );
+                      })}
+
+                      {/* Events overlay: single block spans multi-slots */}
+                      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: gridHeight }} pointerEvents="box-none">
+                        {dayEvents.map((evt) => {
+                          const start = new Date(evt.startDate);
+                          const end = new Date(evt.endDate);
+                          const clippedStart = start < dayStart ? dayStart : start;
+                          const clippedEnd = end > dayEnd ? dayEnd : end;
+
+                          // Skip if outside visible window
+                          if (clippedEnd <= clippedStart) return null;
+
+                          // Position and size in the grid
+                          const minutesFromDayStart = (clippedStart - dayStart) / 60000;
+                          const durationMin = (clippedEnd - clippedStart) / 60000;
+                          const top = minutesFromDayStart * PX_PER_MIN;
+                          const height = Math.max(durationMin * PX_PER_MIN - 4, 24); // keep a minimum height
+
+                          // Simple status color mapping
+                          const status = evt.status || 'scheduled';
+                          const bg =
+                            status === 'cancelled' ? '#fee2e2' :
+                            status === 'completed' ? '#dcfce7' :
+                            '#dbeafe'; // scheduled/default
+                          const border =
+                            status === 'cancelled' ? '#ef4444' :
+                            status === 'completed' ? '#10b981' :
+                            '#3b82f6';
+
+                          return (
+                            <TouchableOpacity
+                              key={evt.id || `${start.getTime()}-${end.getTime()}`}
+                              onPress={() => openEvent(evt)}
+                              activeOpacity={0.8}
+                              style={{
+                                position: 'absolute',
+                                top,
+                                left: 4,
+                                right: 4,
+                                height,
+                                backgroundColor: bg,
+                                borderLeftWidth: 3,
+                                borderLeftColor: border,
+                                borderRadius: 8,
+                                paddingHorizontal: 8,
+                                paddingVertical: 6,
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <Text style={{ color: '#111827', fontSize: 12, fontWeight: '600' }}>
+                                {formatTime(clippedStart)}–{formatTime(clippedEnd)} {evt.title || 'Booking'}
+                              </Text>
+                              {!!evt.notes && (
+                                <Text numberOfLines={1} style={{ color: '#374151', fontSize: 12, marginTop: 2 }}>
+                                  {evt.notes}
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </ScrollView>
         </View>
       </ScrollView>
 
-      {/* Footer actions */}
-      <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#e5e7eb' }}>
-        <Button
-          title={loading ? 'Refreshing…' : 'Refresh'}
-          style="primary"
-          onPress={loadBookings}
-        />
-      </View>
+      {/* Event details modal */}
+      <Modal
+        visible={!!selected}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setSelected(null)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          }}
+        >
+          {/* Backdrop: tap anywhere outside the card to close */}
+          <Pressable
+            onPress={() => setSelected(null)}
+            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+          />
 
-      {/* Event Modal */}
-      <Modal visible={!!selected} transparent animationType="slide" onRequestClose={() => setSelected(null)}>
-        <View style={{ flex: 1, backgroundColor: '#00000055', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: 'white', padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
-            <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>
-              {selected ? selected.title : 'Booking'}
-            </Text>
-            {selected && (
-              <Text style={{ color: '#374151' }}>
-                {selected.startDate.toLocaleString('en-US')} - {selected.endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+          <View
+            style={{
+              width: '90%',
+              maxWidth: 400,
+              backgroundColor: '#ffffff',
+              borderRadius: 12,
+              overflow: 'hidden',
+              elevation: 4,
+            }}
+          >
+            {/* Header: close button + title */}
+            <View
+              style={{
+                padding: 16,
+                paddingBottom: 0,
+                borderBottomWidth: 1,
+                borderColor: '#e5e7eb',
+                position: 'relative',
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setSelected(null)}
+                style={{ position: 'absolute', top: 12, right: 12, padding: 8, zIndex: 2 }}
+                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Text style={{ fontSize: 18, color: '#111827' }}>✕</Text>
+              </TouchableOpacity>
+              <Text style={{ fontSize: 18, fontWeight: '600', color: '#111827' }}>
+                {selected?.title || 'Booking Details'}
               </Text>
-            )}
-            {!!selected?.customer_id && (
-              <Text style={{ marginTop: 6, color: '#4b5563' }}>Customer ID: {selected.customer_id}</Text>
-            )}
-            {!!selected?.chef_id && (
-              <Text style={{ color: '#4b5563' }}>Chef ID: {selected.chef_id}</Text>
-            )}
-            <TextInput
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Notes"
-              style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, marginTop: 12, minHeight: 80, textAlignVertical: 'top' }}
-              multiline
-            />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
-              <TouchableOpacity onPress={saveNotes} style={{ backgroundColor: '#65a30d', padding: 12, borderRadius: 8, minWidth: 100, alignItems: 'center' }}>
-                <Text style={{ color: 'white', fontWeight: 'bold' }}>Save</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={cancelBooking} style={{ backgroundColor: '#ef4444', padding: 12, borderRadius: 8, minWidth: 100, alignItems: 'center' }}>
-                <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setSelected(null)} style={{ padding: 12, minWidth: 80, alignItems: 'center' }}>
-                <Text>Close</Text>
-              </TouchableOpacity>
+            </View>
+
+            {/* Body: time, notes, buttons */}
+            <View style={{ padding: 16 }}>
+              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
+                {selected?.startDate ? `Starts at ${formatTime(new Date(selected.startDate))}` : ''}
+              </Text>
+              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
+                {selected?.endDate ? `Ends at ${formatTime(new Date(selected.endDate))}` : ''}
+              </Text>
+
+              <TextInput
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Special notes or requests"
+                style={{
+                  height: 40,
+                  borderColor: '#d1d5db',
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  marginBottom: 16,
+                  backgroundColor: '#fafafa',
+                }}
+              />
+
+              <Button
+                title="Save Notes"
+                onPress={saveNotes}
+                style={{ marginBottom: 12 }}
+                disabled
+              />
+              <Button
+                title="Cancel Booking"
+                onPress={cancelBooking}
+                color="#ef4444"
+                style={{ marginBottom: 12 }}
+                disabled
+              />
             </View>
           </View>
         </View>
