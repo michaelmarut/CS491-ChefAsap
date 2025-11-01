@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Picker } from '@react-native-picker/picker';
 import Octicons from '@expo/vector-icons/Octicons';
 
 import getEnvVars from "../../config";
@@ -50,14 +51,17 @@ export default function ChefMenuItem({
     isNewDraft = false,
     onCancelNew,
     cuisineTypes = [],
+    categories = [],
 }) {
     const { token } = useAuth();
     const { apiUrl } = getEnvVars();
 
     const [item, setItem] = useState(initialItem);
     const [editing, setEditing] = useState(isNewDraft);
+    const [categoryUpdated, setCategoryUpdated] = useState(false);
 
     const [uploading, setUploading] = useState(false);
+    const [availabilityLoading, setAvailabilityLoading] = useState(false);
     const [featureLoading, setFeatureLoading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -75,6 +79,7 @@ export default function ChefMenuItem({
         display_order: initialItem?.display_order || 0,
         price: initialItem?.price?.toString() || '0.00',
         prep_time: initialItem?.prep_time || 15,
+        category_id: initialItem?.category_id || null,
     });
 
     const cuisineOptions = convertToPickerOptions(
@@ -82,8 +87,16 @@ export default function ChefMenuItem({
         "Select Cuisine Type..."
     );
 
+    const categoryList = [
+        ...categories.map(c => ({
+            label: c.category_name,
+            value: c.id
+        })),
+        { label: 'Other', value: null }
+    ];
+
     const sendMenuItemRequest = async (method, body = null) => {
-        setLoading(true);
+        if (!availabilityLoading) setLoading(true);
         setError(null);
         try {
             const url = `${apiUrl}/api/menu/item/${item.id}`;
@@ -119,12 +132,16 @@ export default function ChefMenuItem({
         } catch (e) {
             setLoading(false);
             setError(e.message);
-            Alert.alert("Network Error", "Could not connect to the server.");
+            //Alert.alert("Network Error", "Could not connect to the server.");
             return false;
         }
     };
 
     const handleChange = (name, value) => {
+        if (name === 'category_id') {
+            if (value === form.category_id) return;
+            setCategoryUpdated(true);
+        }
         setForm(prevForm => ({
             ...prevForm,
             [name]: value
@@ -154,7 +171,7 @@ export default function ChefMenuItem({
                 return false;
             }
 
-            Alert.alert("Success", "New menu item added successfully!");
+            //Alert.alert("Success", "New menu item added successfully!");
             onItemUpdate(data.item_id, 'POST_SUCCESS');
 
             return true;
@@ -171,8 +188,8 @@ export default function ChefMenuItem({
             price: parseFloat(form.price).toFixed(2)
         };
 
-        if (!updatePayload.dish_name || !updatePayload.price) {
-            Alert.alert("Missing Fields", "Dish Name, Price, and Preptime are required.");
+        if (!updatePayload.dish_name) {
+            Alert.alert("Missing Field", "Dish Name is required.");
             return;
         }
 
@@ -190,16 +207,22 @@ export default function ChefMenuItem({
                 price: parseFloat(updatePayload.price)
             }));
             setEditing(false);
+            if (categoryUpdated && onItemUpdate) {
+                onItemUpdate(item.id, 'CATEGORY_UPDATE');
+                setCategoryUpdated(false);
+            }
         }
     };
 
     const handleToggleAvailability = async () => {
+        setAvailabilityLoading(true);
         const newAvailability = !item.is_available;
         const success = await sendMenuItemRequest('PUT', { is_available: newAvailability });
 
         if (success) {
             setItem(prev => ({ ...prev, is_available: newAvailability }));
         }
+        setAvailabilityLoading(false);
     };
 
     const handleToggleFeatured = async () => {
@@ -268,7 +291,7 @@ export default function ChefMenuItem({
         }
 
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [1, 1],
             quality: 1,
@@ -343,7 +366,7 @@ export default function ChefMenuItem({
                 </Text>
 
                 <Input
-                    label="Dish Name *"
+                    label="Dish Name*"
                     value={form.dish_name}
                     onChangeText={(text) => handleChange('dish_name', text)}
                 />
@@ -377,7 +400,7 @@ export default function ChefMenuItem({
                 />
 
                 <Input
-                    label="Price ($) *"
+                    label="Price ($)"
                     value={form.price}
                     onChangeText={(text) => handleChange('price', text)}
                     keyboardType="numeric"
@@ -421,7 +444,6 @@ export default function ChefMenuItem({
                         items={spiceOptions}
                     />
                 </View>
-
                 <View className="flex-row flex-wrap justify-between mb-2">
                     <CustomPicker
                         label="Dietary Info"
@@ -431,7 +453,13 @@ export default function ChefMenuItem({
                         items={dietaryOptions}
                     />
                 </View>
-
+                <CustomPicker
+                    label="Category"
+                    prompt="Select Category..."
+                    selectedValue={form.category_id}
+                    onValueChange={(val) => handleChange('category_id', val)}
+                    items={categoryList}
+                />
                 <Button
                     title={isNewDraft ? "Save Item" : "Save Changes"}
                     onPress={handleUpdateItem}
@@ -502,21 +530,32 @@ export default function ChefMenuItem({
                 customClasses="absolute top-1 right-2 z-10 p-3 rounded-full pl-3"
                 disabled={featureLoading}
             />
+            {/*<Button
+                onPress={null}
+                icon={'tag'}
+                style={'primary'}
+                customClasses="absolute top-1 left-2 z-10 p-3 rounded-full pl-3"
+                disabled={featureLoading}
+            />*/}
             <Button
                 title={item?.is_available ? "Make Unavailable" : "Make Available"}
                 onPress={handleToggleAvailability}
                 style='secondary'
+                customClasses="h-12 py-1"
+                customTextClasses='text-md'
+                disabled={availabilityLoading}
             />
             <View className="flex-row justify-center">
                 <Button
                     title={"Edit item"}
                     onPress={() => setEditing(true)}
-                    customClasses="w-[80%] mr-1"
+                    customClasses="w-[80%] mr-1 h-12 py-1"
+                    customTextClasses='text-md'
                 />
                 <Button
                     icon='trash'
                     onPress={handleDeleteItem}
-                    customClasses="rounded-full h-14 w-14"
+                    customClasses="rounded-full h-12 w-12"
                 />
             </View>
         </View>

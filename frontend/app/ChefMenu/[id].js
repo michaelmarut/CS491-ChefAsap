@@ -14,7 +14,7 @@ import Card from "../components/Card";
 import TagsBox from '../components/TagsBox';
 import RatingsDisplay from '../components/RatingsDisplay';
 
-const menuItemCard = ({ item, onAddToOrder, apiUrl }) => (
+const menuItemCard = ({ item, onAddToOrder, apiUrl, userType }) => (
     <View className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mb-4 w-full" key={item?.id}>
         <Text className="text-lg font-medium mb-2 text-center text-justified text-primary-400 dark:text-dark-400 w-full border-b border-primary-400 dark:border-dark-400">
             {item?.dish_name || 'Dish Name'}
@@ -68,7 +68,7 @@ const menuItemCard = ({ item, onAddToOrder, apiUrl }) => (
             onPress={() => onAddToOrder && onAddToOrder(item)}
             customClasses='rounded-xl'
             customTextClasses='text-sm'
-            disabled={!item?.is_available}
+            disabled={userType === 'chef' || !item?.is_available}
         />
     </View>
 );
@@ -419,7 +419,7 @@ export default function ChefMenu() {
                     startExpanded={true}
                 >
                     {featuredItems.length > 0 ? (
-                        featuredItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl }))
+                        featuredItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl, userType }))
                     ) : (
                         <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
                             No featured dishes available
@@ -441,7 +441,7 @@ export default function ChefMenu() {
                             isCollapsible={true}
                             startExpanded={false}
                         >
-                            {categoryItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl }))}
+                            {categoryItems.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl, userType }))}
                         </Card>
                     );
                 })}
@@ -455,7 +455,7 @@ export default function ChefMenu() {
                         isCollapsible={true}
                         startExpanded={false}
                     >
-                        {itemsByCategory['uncategorized'].items.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl }))}
+                        {itemsByCategory['uncategorized'].items.map(item => menuItemCard({ item, onAddToOrder: handleAddToOrder, apiUrl, userType }))}
                     </Card>
                 )}
 
