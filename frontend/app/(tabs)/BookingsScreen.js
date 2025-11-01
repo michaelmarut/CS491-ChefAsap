@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Pressable } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import getEnvVars from '../../config';
 import Button from '../components/Button';
@@ -18,7 +18,7 @@ const FOOTER_PADDING = 12;
 const DATE_HEADER_TEXT_STYLE = { color: '#111827', fontSize: 13, fontWeight: '600' };
 
 // Dev mock data flag
-const DEV_MOCK_BOOKINGS = true;
+const DEV_MOCK_BOOKINGS = false;
 
 // Helpers
 const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
@@ -97,80 +97,153 @@ function buildMockEvents(baseDate) {
   ];
 }
 
+const formatYmd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+// Visibility rules
+const normalizeStatus = (s) => String(s || '').toLowerCase();
+const CHEF_ALLOWED = new Set(['accepted', 'completed', 'confirm', 'confirmed']); // accepted/completed only
+const CUSTOMER_ALLOWED = new Set(['pending', 'accepted', 'completed']);          // hide cancelled/declined
+
 export default function BookingsScreen() {
   const { apiUrl } = getEnvVars();
   const { token, userType, profileId } = useAuth();
 
   const BOOKING_API_PREFIX = `${apiUrl}/booking`;
+  const ORDER_API_PREFIX = `${apiUrl}/api/orders`;
 
   const [baseDate, setBaseDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [notes, setNotes] = useState('');
 
+  // Build visible week and range endpoint
   const weekDays = useMemo(() => buildWeekDays(baseDate), [baseDate]);
 
-  const listEndpoint = useMemo(() => {
-    if (!token || !userType || !profileId) return null;
-    if (userType === 'customer') {
-      return `${BOOKING_API_PREFIX}/customer/${profileId}/dashboard`;
-    }
-    return null;
-  }, [BOOKING_API_PREFIX, token, userType, profileId]);
+  // Customer: bookings calendar (date range)
+  const bookingRangeEndpoint = useMemo(() => {
+    if (!token || !profileId || userType !== 'customer') return null;
+    const start = formatYmd(weekDays[0]);
+    const end = formatYmd(weekDays[6]);
+    return `${BOOKING_API_PREFIX}/customer/${profileId}/calendar?start=${start}&end=${end}`;
+  }, [BOOKING_API_PREFIX, token, userType, profileId, weekDays]);
 
-  const loadBookings = useCallback(async () => {
-    // mock data for testing UI
-    if (DEV_MOCK_BOOKINGS) {
-      setEvents(buildMockEvents(baseDate));
-      return;
-    }
+  // Chef: bookings calendar (date range) to supplement orders
+  const chefBookingRangeEndpoint = useMemo(() => {
+    if (!token || !profileId || userType !== 'chef') return null;
+    const start = formatYmd(weekDays[0]);
+    const end = formatYmd(weekDays[6]);
+    return `${BOOKING_API_PREFIX}/chef/${profileId}/calendar?start=${start}&end=${end}`;
+  }, [BOOKING_API_PREFIX, token, userType, profileId, weekDays]);
 
-    if (!token || !userType || !profileId) return;
-    if (!listEndpoint) {
-      if (userType === 'chef') {
-        Alert.alert('Info', 'Chef bookings endpoint not available yet.');
-      }
-      return;
-    }
-    try {
-      const res = await fetch(listEndpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json().catch(() => ({}));
-
-      // booking_bp dashboard shape: { success, data: { previous_bookings, todays_bookings, upcoming_bookings }, counts }
-      const prev = data?.data?.previous_bookings ?? [];
-      const today = data?.data?.todays_bookings ?? [];
-      const upcoming = data?.data?.upcoming_bookings ?? [];
-      const raw = [...prev, ...today, ...upcoming];
-
-      const evts = raw.map((b) => {
-        const start = parseLocalDateTime(b.booking_date, b.booking_time);
-        const end = new Date(start.getTime() + 60 * 60 * 1000); // assume 1-hour duration
-        return {
-          id: b.booking_id ?? b.id ?? Math.random().toString(36).slice(2),
-          startDate: start,
-          endDate: end,
-          notes: b.special_notes ?? b.notes ?? '',
-          status: b.status ?? 'scheduled',
-          chef_id: b.chef_id,
-          customer_id: b.customer_id,
-          title: b.cuisine_type
-            ? `${b.cuisine_type} ${b.meal_type ? `(${b.meal_type})` : ''}`.trim()
-            : 'Booking',
-        };
-      });
-
-      setEvents(evts);
-    } catch {
-      Alert.alert('Error', 'Network error. Could not load bookings.');
-      setEvents([]);
-    }
-  }, [DEV_MOCK_BOOKINGS, baseDate, listEndpoint, token, userType, profileId]);
+  // Chef: orders list (filter client-side to the visible week)
+  const chefOrdersEndpoint = useMemo(() => {
+    if (!token || !profileId || userType !== 'chef') return null;
+    return `${ORDER_API_PREFIX}/chef/${profileId}`;
+  }, [ORDER_API_PREFIX, token, userType, profileId]);
 
   useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
+    let cancelled = false;
+    (async () => {
+      if (DEV_MOCK_BOOKINGS) {
+        if (!cancelled) setEvents(buildMockEvents(baseDate));
+        return;
+      }
+      if (!token || !profileId) return;
+
+      try {
+        const weekStart = new Date(weekDays[0]); weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekDays[6]); weekEnd.setHours(23, 59, 59, 999);
+
+        // Chef: pull orders AND bookings for the visible week, then merge
+        if (userType === 'chef') {
+          const [ordersRes, chefBookingsRes] = await Promise.all([
+            chefOrdersEndpoint
+              ? fetch(chefOrdersEndpoint, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).catch(() => ({}))
+              : Promise.resolve({}),
+            chefBookingRangeEndpoint
+              ? fetch(chefBookingRangeEndpoint, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).catch(() => ({}))
+              : Promise.resolve({}),
+          ]);
+
+          const ordersRaw = Array.isArray(ordersRes) ? ordersRes : (ordersRes?.orders ?? []);
+          const orderEvents = ordersRaw
+            .map((o) => {
+              if (!o?.delivery_datetime) return null;
+              const start = new Date(o.delivery_datetime);
+              if (isNaN(start.getTime())) return null;
+              const dur = Number.isFinite(o?.estimated_prep_time) ? o.estimated_prep_time : 60;
+              const end = new Date(start.getTime() + dur * 60000);
+              const status = normalizeStatus(o.status || 'pending');
+              return {
+                id: `order-${o.order_id ?? o.id}`,
+                startDate: start,
+                endDate: end,
+                notes: o.special_instructions ?? '',
+                status,
+                chef_id: profileId,
+                customer_id: o.customer_id,
+                title: o.item_count ? `Order (${o.item_count} items)` : 'Order',
+              };
+            })
+            .filter(Boolean)
+            .filter((e) => e.startDate >= weekStart && e.startDate <= weekEnd)
+            .filter((e) => CHEF_ALLOWED.has(e.status)); // show only accepted/completed
+
+          const chefBookingsRaw = Array.isArray(chefBookingsRes) ? chefBookingsRes : (chefBookingsRes?.data ?? []);
+          const bookingEvents = chefBookingsRaw
+            .map((b) => {
+              const start = parseLocalDateTime(b.booking_date, b.booking_time);
+              const dur = Number.isFinite(b?.duration_minutes) ? b.duration_minutes : 60;
+              const end = new Date(start.getTime() + dur * 60000);
+              const status = normalizeStatus(b.status || 'scheduled');
+              return {
+                id: `booking-${b.booking_id ?? b.id}`,
+                startDate: start,
+                endDate: end,
+                notes: b.special_notes ?? '',
+                status,
+                chef_id: b.chef_id,
+                customer_id: b.customer_id,
+                title: b.cuisine_type ? `${b.cuisine_type}${b.meal_type ? ` (${b.meal_type})` : ''}` : 'Booking',
+              };
+            })
+            .filter((e) => CHEF_ALLOWED.has(e.status)); // show only accepted/completed
+
+          const merged = [...orderEvents, ...bookingEvents];
+          if (!cancelled) setEvents(merged);
+          return;
+        }
+
+        // Customer: bookings calendar for range (hide cancelled/declined)
+        if (userType === 'customer' && bookingRangeEndpoint) {
+          const res = await fetch(bookingRangeEndpoint, { headers: { Authorization: `Bearer ${token}` } });
+          const payload = await res.json().catch(() => ({}));
+          const raw = Array.isArray(payload) ? payload : (payload?.data ?? []);
+          const mapped = raw
+            .map((b) => {
+              const start = parseLocalDateTime(b.booking_date, b.booking_time);
+              const dur = Number.isFinite(b?.duration_minutes) ? b.duration_minutes : 60;
+              const end = new Date(start.getTime() + dur * 60000);
+              const status = normalizeStatus(b.status || 'scheduled');
+              return {
+                id: b.booking_id ?? b.id,
+                startDate: start,
+                endDate: end,
+                notes: b.special_notes ?? '',
+                status,
+                chef_id: b.chef_id,
+                customer_id: b.customer_id,
+                title: b.cuisine_type ? `${b.cuisine_type}${b.meal_type ? ` (${b.meal_type})` : ''}` : 'Booking',
+              };
+            })
+            .filter((e) => CUSTOMER_ALLOWED.has(e.status)); // pending/accepted/completed only
+          if (!cancelled) setEvents(mapped);
+        }
+      } catch {
+        if (!cancelled) setEvents([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, profileId, userType, chefOrdersEndpoint, chefBookingRangeEndpoint, bookingRangeEndpoint, baseDate, weekDays]);
 
   const onPrevWeek = () => setBaseDate((d) => {
     const nd = new Date(d);
@@ -186,15 +259,6 @@ export default function BookingsScreen() {
 
   const openEvent = (evt) => {
     setSelected(evt);
-    setNotes(evt?.notes || '');
-  };
-
-  // Disabled until backend provides endpoints
-  const saveNotes = async () => {
-    Alert.alert('Not available', 'Update booking endpoint is not implemented on backend.');
-  };
-  const cancelBooking = async () => {
-    Alert.alert('Not available', 'Cancel booking endpoint is not implemented on backend.');
   };
 
   const eventsByDay = useMemo(() => {
@@ -536,47 +600,37 @@ export default function BookingsScreen() {
                 <Text style={{ fontSize: 18, color: '#111827' }}>✕</Text>
               </TouchableOpacity>
               <Text style={{ fontSize: 18, fontWeight: '600', color: '#111827' }}>
-                {selected?.title || 'Booking Details'}
+                {selected?.title || 'Booking'}
               </Text>
             </View>
 
-            {/* Body: time, notes, buttons */}
-            <View style={{ padding: 16 }}>
-              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 8 }}>
-                {selected?.startDate ? `Starts at ${formatTime(new Date(selected.startDate))}` : ''}
-              </Text>
-              <Text style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
-                {selected?.endDate ? `Ends at ${formatTime(new Date(selected.endDate))}` : ''}
-              </Text>
-
-              <TextInput
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="Special notes or requests"
-                style={{
-                  height: 40,
-                  borderColor: '#d1d5db',
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  marginBottom: 16,
-                  backgroundColor: '#fafafa',
-                }}
-              />
-
-              <Button
-                title="Save Notes"
-                onPress={saveNotes}
-                style={{ marginBottom: 12 }}
-                disabled
-              />
-              <Button
-                title="Cancel Booking"
-                onPress={cancelBooking}
-                color="#ef4444"
-                style={{ marginBottom: 12 }}
-                disabled
-              />
+            {/* Body: read-only details */}
+            <View style={{ padding: 16, gap: 8 }}>
+              {selected?.status && (
+                <Text style={{ fontSize: 13, color: '#374151' }}>
+                  Status: {String(selected.status).charAt(0).toUpperCase() + String(selected.status).slice(1)}
+                </Text>
+              )}
+              {selected?.startDate && (
+                <Text style={{ fontSize: 13, color: '#374151' }}>
+                  Date: {formatHeader(new Date(selected.startDate))}
+                </Text>
+              )}
+              {(selected?.startDate && selected?.endDate) && (
+                <Text style={{ fontSize: 13, color: '#374151' }}>
+                  Time: {formatTime(new Date(selected.startDate))} – {formatTime(new Date(selected.endDate))}
+                </Text>
+              )}
+              {(selected?.startDate && selected?.endDate) && (
+                <Text style={{ fontSize: 13, color: '#374151' }}>
+                  Duration: {Math.max(1, Math.round((new Date(selected.endDate) - new Date(selected.startDate)) / 60000))} min
+                </Text>
+              )}
+              {!!selected?.notes && (
+                <Text style={{ fontSize: 13, color: '#374151', marginTop: 8 }}>
+                  Notes: {selected.notes}
+                </Text>
+              )}
             </View>
           </View>
         </View>
