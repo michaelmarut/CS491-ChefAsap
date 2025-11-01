@@ -598,6 +598,63 @@ export default function BookingsScreen() {
                 accessibilityLabel="Close"
               >
                 <Text style={{ fontSize: 18, color: '#111827' }}>✕</Text>
+      {/* Footer actions */}
+      <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#e5e7eb', gap: 8 }}>
+        <Button
+          title={loading ? 'Refreshing…' : 'Refresh'}
+          style="primary"
+          onPress={loadBookings}
+        />
+        {userType === 'customer' && (
+          <Button
+            title="View My Bookings"
+            style="secondary"
+            href="/CustomerBookingsScreen"
+          />
+        )}
+        {userType === 'chef' && (
+          <Button
+            title="View My Orders"
+            style="secondary"
+            href="/ChefOrdersScreen"
+          />
+        )}
+      </View>
+
+      {/* Event Modal */}
+      <Modal visible={!!selected} transparent animationType="slide" onRequestClose={() => setSelected(null)}>
+        <View style={{ flex: 1, backgroundColor: '#00000055', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: 'white', padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>
+              {selected ? selected.title : 'Booking'}
+            </Text>
+            {selected && (
+              <Text style={{ color: '#374151' }}>
+                {selected.startDate.toLocaleString('en-US')} - {selected.endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            )}
+            {!!selected?.customer_id && (
+              <Text style={{ marginTop: 6, color: '#4b5563' }}>Customer ID: {selected.customer_id}</Text>
+            )}
+            {!!selected?.chef_id && (
+              <Text style={{ color: '#4b5563' }}>Chef ID: {selected.chef_id}</Text>
+            )}
+            <TextInput
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Notes"
+              style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, marginTop: 12, minHeight: 80, textAlignVertical: 'top' }}
+              multiline
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+              <TouchableOpacity onPress={saveNotes} style={{ backgroundColor: '#65a30d', padding: 12, borderRadius: 8, minWidth: 100, alignItems: 'center' }}>
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={cancelBooking} style={{ backgroundColor: '#ef4444', padding: 12, borderRadius: 8, minWidth: 100, alignItems: 'center' }}>
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setSelected(null)} style={{ padding: 12, minWidth: 80, alignItems: 'center' }}>
+                <Text>Close</Text>
               </TouchableOpacity>
               <Text style={{ fontSize: 18, fontWeight: '600', color: '#111827' }}>
                 {selected?.title || 'Booking'}

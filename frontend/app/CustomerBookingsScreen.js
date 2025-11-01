@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, View, Alert, TouchableOpacity, RefreshControl } from "react-native";
+import { ScrollView, Text, View, Alert, TouchableOpacity, RefreshControl, Modal, TextInput } from "react-native";
 import { Stack, useRouter } from 'expo-router';
 import { Octicons } from '@expo/vector-icons';
 
@@ -9,10 +9,8 @@ import { useAuth } from "./context/AuthContext";
 import LoadingIcon from "./components/LoadingIcon";
 import Button from "./components/Button";
 import Card from "./components/Card";
-import CalendarConnectButton from "./components/CalendarConnectButton";
-import CalendarIcsUploadButton from "./components/CalendarIcsUploadButton";
 
-export default function ChefOrdersScreen() {
+export default function CustomerBookingsScreen() {
     const { token, profileId, userType } = useAuth();
     const { apiUrl } = getEnvVars();
     const router = useRouter();
@@ -20,22 +18,22 @@ export default function ChefOrdersScreen() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [selectedStatus, setSelectedStatus] = useState('all');
+    const [reviewModal, setReviewModal] = useState({ visible: false, booking: null });
+    const [rating, setRating] = useState(0);
+    const [reviewText, setReviewText] = useState('');
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     const fetchBookings = async () => {
         try {
-            console.log('[ChefOrdersScreen] Starting fetchBookings...');
-            console.log('[ChefOrdersScreen] profileId:', profileId);
-            console.log('[ChefOrdersScreen] userType:', userType);
-            console.log('[ChefOrdersScreen] selectedStatus:', selectedStatus);
+            console.log('[CustomerBookingsScreen] Starting fetchBookings...');
+            console.log('[CustomerBookingsScreen] profileId:', profileId);
+            console.log('[CustomerBookingsScreen] userType:', userType);
             
             setLoading(true);
             
-            const url = selectedStatus === 'all' 
-                ? `${apiUrl}/booking/chef/${profileId}/bookings`
-                : `${apiUrl}/booking/chef/${profileId}/bookings?status=${selectedStatus}`;
+            const url = `${apiUrl}/booking/customer/${profileId}/dashboard`;
 
-            console.log('[ChefOrdersScreen] Fetching from URL:', url);
+            console.log('[CustomerBookingsScreen] Fetching from URL:', url);
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -45,63 +43,100 @@ export default function ChefOrdersScreen() {
                 },
             });
 
-            console.log('[ChefOrdersScreen] Response status:', response.status);
+            console.log('[CustomerBookingsScreen] Response status:', response.status);
             const data = await response.json();
-            console.log('[ChefOrdersScreen] Response data:', data);
+            console.log('[CustomerBookingsScreen] Response data:', data);
 
             if (response.ok) {
-                console.log('[ChefOrdersScreen] Setting bookings:', data.bookings?.length || 0, 'bookings');
-                setBookings(data.bookings || []);
+                // Combine all bookings from dashboard
+                const allBookings = [
+                    ...(data.data?.previous_bookings || []),
+                    ...(data.data?.todays_bookings || []),
+                    ...(data.data?.upcoming_bookings || [])
+                ];
+                console.log('[CustomerBookingsScreen] Setting bookings:', allBookings.length, 'bookings');
+                setBookings(allBookings);
             } else {
-                console.error('[ChefOrdersScreen] Error response:', data);
+                console.error('[CustomerBookingsScreen] Error response:', data);
                 Alert.alert('Error', data.error || 'Failed to load bookings');
             }
         } catch (error) {
-            console.error('[ChefOrdersScreen] Fetch error:', error);
+            console.error('[CustomerBookingsScreen] Fetch error:', error);
             Alert.alert('Error', 'Network error. Could not load bookings.');
         } finally {
-            console.log('[ChefOrdersScreen] Setting loading to false');
+            console.log('[CustomerBookingsScreen] Setting loading to false');
             setLoading(false);
             setRefreshing(false);
         }
     };
 
     useEffect(() => {
-        if (userType !== 'chef') {
-            Alert.alert('Access Denied', 'Only chefs can view this page');
+        if (userType !== 'customer') {
+            Alert.alert('Access Denied', 'Only customers can view this page');
             router.back();
             return;
         }
         fetchBookings();
-    }, [selectedStatus]);
+    }, []);
 
     const onRefresh = () => {
         setRefreshing(true);
         fetchBookings();
     };
 
-    const updateBookingStatus = async (bookingId, newStatus) => {
+    const openReviewModal = (booking) => {
+        setReviewModal({ visible: true, booking });
+        setRating(0);
+        setReviewText('');
+    };
+
+    const closeReviewModal = () => {
+        setReviewModal({ visible: false, booking: null });
+        setRating(0);
+        setReviewText('');
+    };
+
+    const submitReview = async () => {
+        if (rating === 0) {
+            Alert.alert('Error', 'Please select a rating');
+            return;
+        }
+
+        if (!reviewText.trim()) {
+            Alert.alert('Error', 'Please write a review');
+            return;
+        }
+
+        setSubmittingReview(true);
         try {
-            const response = await fetch(`${apiUrl}/booking/booking/${bookingId}/status`, {
-                method: 'PUT',
+            const response = await fetch(`${apiUrl}/rating/chef/${reviewModal.booking.chef_id}`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({ status: newStatus }),
+                body: JSON.stringify({
+                    customer_id: profileId,
+                    rating: rating,
+                    review: reviewText,
+                    booking_id: reviewModal.booking.booking_id
+                }),
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                Alert.alert('Success', `Booking ${newStatus}`);
+                Alert.alert('Success', 'Thank you for your review!');
+                closeReviewModal();
                 fetchBookings(); // Refresh the list
             } else {
-                Alert.alert('Error', data.error || 'Failed to update booking');
+                Alert.alert('Error', data.error || 'Failed to submit review');
             }
         } catch (error) {
-            console.error('Error updating booking:', error);
-            Alert.alert('Error', 'Network error. Could not update booking.');
+            console.error('Error submitting review:', error);
+            Alert.alert('Error', 'Network error. Could not submit review.');
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
@@ -115,14 +150,6 @@ export default function ChefOrdersScreen() {
             default: return 'bg-gray-400';
         }
     };
-
-    const statusButtons = [
-        { label: 'All', value: 'all' },
-        { label: 'Pending', value: 'pending' },
-        { label: 'Accepted', value: 'accepted' },
-        { label: 'Completed', value: 'completed' },
-        { label: 'Declined', value: 'declined' },
-    ];
 
     if (loading && !refreshing) {
         return (
@@ -153,82 +180,24 @@ export default function ChefOrdersScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Calendar Integration */}
-                <Card 
-                    title="Calendar Sync" 
-                    headerIcon="calendar"
-                    isCollapsible={true}
-                    startExpanded={false}
-                    customClasses="mb-4"
-                >
-                    <View className="space-y-3">
-                        <Text className="text-sm text-primary-400 dark:text-dark-400 mb-2">
-                            Connect your Google Calendar to sync bookings automatically
-                        </Text>
-                        <CalendarConnectButton 
-                            onSynced={(data) => {
-                                Alert.alert('Success', `Synced ${data.count || 0} events from Google Calendar`);
-                                fetchBookings(); // Refresh bookings after sync
-                            }}
-                        />
-                        <View className="border-t border-primary-200 dark:border-dark-200 my-3" />
-                        <Text className="text-sm text-primary-400 dark:text-dark-400 mb-2">
-                            Or import bookings from an .ics calendar file
-                        </Text>
-                        <CalendarIcsUploadButton 
-                            onUploaded={(count) => {
-                                Alert.alert('Success', `Imported ${count} events from .ics file`);
-                                fetchBookings(); // Refresh bookings after import
-                            }}
-                        />
-                    </View>
-                </Card>
-
-                {/* Status Filter */}
-                <ScrollView 
-                    horizontal 
-                    showsHorizontalScrollIndicator={false}
-                    className="mb-4"
-                >
-                    {statusButtons.map((btn) => (
-                        <TouchableOpacity
-                            key={btn.value}
-                            onPress={() => setSelectedStatus(btn.value)}
-                            className={`mr-2 px-4 py-2 rounded-full ${
-                                selectedStatus === btn.value 
-                                    ? 'bg-lime-600' 
-                                    : 'bg-gray-200 dark:bg-gray-700'
-                            }`}
-                        >
-                            <Text className={`${
-                                selectedStatus === btn.value 
-                                    ? 'text-white font-bold' 
-                                    : 'text-primary-400 dark:text-dark-400'
-                            }`}>
-                                {btn.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
                 {/* Bookings List */}
                 {bookings.length === 0 ? (
                     <Card title="No Bookings">
                         <Text className="text-center text-primary-400 dark:text-dark-400">
-                            No bookings found for this status.
+                            No bookings found. Start by searching for a chef!
                         </Text>
                     </Card>
                 ) : (
                     bookings.map((booking) => {
-                        // Format the title as "Customer Name - Date"
+                        // Format the title as "Chef Name - Date"
                         const bookingDate = new Date(booking.booking_date);
                         const formattedDate = bookingDate.toLocaleDateString('en-US', { 
                             month: 'short', 
                             day: 'numeric',
                             year: 'numeric'
                         });
-                        const displayTitle = booking.customer_name 
-                            ? `${booking.customer_name} - ${formattedDate}`
+                        const displayTitle = booking.chef_name 
+                            ? `${booking.chef_name} - ${formattedDate}`
                             : `Booking #${booking.booking_id}`;
 
                         return (
@@ -239,17 +208,17 @@ export default function ChefOrdersScreen() {
                             startExpanded={false}
                         >
                             <View className="space-y-2">
-                                {/* Customer Info */}
+                                {/* Chef Info */}
                                 <View className="bg-primary-50 dark:bg-dark-50 p-3 rounded-lg">
                                     <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
-                                        Customer: {booking.customer_name}
+                                        Chef: {booking.chef_name}
                                     </Text>
                                 </View>
 
                                 {/* Booking Details */}
                                 <View className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
                                     <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
-                                        Booking Date & Time:
+                                        Pick Up Time:
                                     </Text>
                                     <Text className="text-sm text-primary-400 dark:text-dark-400">
                                         {booking.booking_date} at {booking.booking_time}
@@ -303,10 +272,10 @@ export default function ChefOrdersScreen() {
                                     </View>
                                 )}
 
-                                {/* Pick Up Location (Chef's Address) */}
+                                {/* Chef Location */}
                                 <View className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
                                     <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
-                                        Pick Up Address:
+                                        Pick Up Location:
                                     </Text>
                                     {booking.chef_address_line1 ? (
                                         <View>
@@ -329,32 +298,23 @@ export default function ChefOrdersScreen() {
                                     )}
                                 </View>
 
-                                {/* Action Buttons */}
-                                {booking.status === 'pending' && (
-                                    <View className="flex-row space-x-2 mt-2">
-                                        <View className="flex-1 mr-2">
-                                            <Button
-                                                title="Accept"
-                                                style="primary"
-                                                onPress={() => updateBookingStatus(booking.booking_id, 'accepted')}
-                                            />
-                                        </View>
-                                        <View className="flex-1">
-                                            <Button
-                                                title="Decline"
-                                                style="secondary"
-                                                onPress={() => updateBookingStatus(booking.booking_id, 'declined')}
-                                            />
-                                        </View>
-                                    </View>
+                                {/* Leave Review Button for Completed Bookings */}
+                                {booking.status === 'completed' && !booking.has_reviewed && (
+                                    <Button
+                                        title="Leave a Review"
+                                        style="primary"
+                                        onPress={() => openReviewModal(booking)}
+                                        customClasses="mt-2"
+                                    />
                                 )}
 
-                                {booking.status === 'accepted' && (
-                                    <Button
-                                        title="Mark as Completed"
-                                        style="primary"
-                                        onPress={() => updateBookingStatus(booking.booking_id, 'completed')}
-                                    />
+                                {/* Already Reviewed Message */}
+                                {booking.status === 'completed' && booking.has_reviewed && (
+                                    <View className="bg-green-50 dark:bg-green-900 p-3 rounded-lg mt-2">
+                                        <Text className="text-sm text-center text-green-700 dark:text-green-300 font-semibold">
+                                            ✓ You have already reviewed this booking
+                                        </Text>
+                                    </View>
                                 )}
                             </View>
                         </Card>
@@ -371,6 +331,111 @@ export default function ChefOrdersScreen() {
 
                 <View className="h-24" />
             </ScrollView>
+
+            {/* Review Modal */}
+            <Modal 
+                visible={reviewModal.visible} 
+                transparent 
+                animationType="slide" 
+                onRequestClose={closeReviewModal}
+            >
+                <View style={{ flex: 1, backgroundColor: '#00000055', justifyContent: 'flex-end' }}>
+                    <View style={{ backgroundColor: 'white', padding: 20, borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '80%' }}>
+                        <Text style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 8, textAlign: 'center' }}>
+                            Leave a Review
+                        </Text>
+                        
+                        {reviewModal.booking && (
+                            <Text style={{ fontSize: 16, color: '#4b5563', textAlign: 'center', marginBottom: 16 }}>
+                                for {reviewModal.booking.chef_name}
+                            </Text>
+                        )}
+
+                        {/* Star Rating */}
+                        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                            <Text style={{ fontSize: 14, color: '#374151', marginBottom: 10 }}>
+                                Tap to rate:
+                            </Text>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <TouchableOpacity
+                                        key={star}
+                                        onPress={() => setRating(star)}
+                                        style={{ padding: 4 }}
+                                    >
+                                        <Octicons 
+                                            name={star <= rating ? "star-fill" : "star"} 
+                                            size={40} 
+                                            color={star <= rating ? "#eab308" : "#d1d5db"} 
+                                        />
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                            {rating > 0 && (
+                                <Text style={{ fontSize: 16, color: '#4d7c0f', marginTop: 8, fontWeight: '600' }}>
+                                    {rating} {rating === 1 ? 'star' : 'stars'}
+                                </Text>
+                            )}
+                        </View>
+
+                        {/* Review Text */}
+                        <Text style={{ fontSize: 14, color: '#374151', marginBottom: 8 }}>
+                            Write your review:
+                        </Text>
+                        <TextInput
+                            value={reviewText}
+                            onChangeText={setReviewText}
+                            placeholder="Share your experience with this chef..."
+                            style={{ 
+                                borderWidth: 1, 
+                                borderColor: '#e5e7eb', 
+                                borderRadius: 8, 
+                                padding: 12, 
+                                minHeight: 120, 
+                                textAlignVertical: 'top',
+                                fontSize: 14
+                            }}
+                            multiline
+                            maxLength={500}
+                        />
+                        <Text style={{ fontSize: 12, color: '#9ca3af', textAlign: 'right', marginTop: 4 }}>
+                            {reviewText.length}/500
+                        </Text>
+
+                        {/* Action Buttons */}
+                        <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+                            <TouchableOpacity 
+                                onPress={closeReviewModal} 
+                                style={{ 
+                                    flex: 1, 
+                                    padding: 14, 
+                                    borderRadius: 8, 
+                                    borderWidth: 1, 
+                                    borderColor: '#d1d5db',
+                                    alignItems: 'center' 
+                                }}
+                            >
+                                <Text style={{ fontSize: 16, color: '#4b5563', fontWeight: '600' }}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                onPress={submitReview} 
+                                disabled={submittingReview}
+                                style={{ 
+                                    flex: 1, 
+                                    padding: 14, 
+                                    borderRadius: 8, 
+                                    backgroundColor: submittingReview ? '#9ca3af' : '#65a30d',
+                                    alignItems: 'center' 
+                                }}
+                            >
+                                <Text style={{ fontSize: 16, color: 'white', fontWeight: 'bold' }}>
+                                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </>
     );
 }
