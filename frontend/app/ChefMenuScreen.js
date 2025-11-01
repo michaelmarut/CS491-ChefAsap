@@ -13,6 +13,7 @@ import ProfilePicture from "./components/ProfilePicture";
 import Card from "./components/Card";
 import TagsBox from './components/TagsBox';
 import RatingsDisplay from './components/RatingsDisplay';
+import ChefMenuItem from './components/ChefMenuItem';
 
 const featuredDishComponent = (item, onRemove, apiUrl) => (
     <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4 relative" >
@@ -175,6 +176,7 @@ export default function ChefMenu() {
     const [chefData, setChefData] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
     const [featuredItems, setFeaturedItems] = useState([]);
+    const [chefCuisines, setChefCuisines] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showAddFeaturedModal, setShowAddFeaturedModal] = useState(false);
@@ -227,6 +229,7 @@ export default function ChefMenu() {
 
                 if (profileResponse.ok) {
                     setChefData(profileData.profile);
+                    setChefCuisines(profileData.profile.cuisines || []);
                 } else {
                     setError(profileData.error || 'Failed to load profile.');
                     Alert.alert('Error', profileData.error || 'Failed to load profile.');
@@ -303,6 +306,28 @@ export default function ChefMenu() {
         fetchData();
 
     }, [profileId, apiUrl, token]);
+
+    // Handler for when ChefMenuItem updates an item
+    const handleItemUpdate = (updatedItem) => {
+        // Update in menuItems list
+        setMenuItems(prevItems => 
+            prevItems.map(item => item.id === updatedItem.id ? updatedItem : item)
+        );
+        
+        // Update in featuredItems if it's featured
+        if (updatedItem.is_featured) {
+            setFeaturedItems(prevItems => 
+                prevItems.some(item => item.id === updatedItem.id)
+                    ? prevItems.map(item => item.id === updatedItem.id ? updatedItem : item)
+                    : [...prevItems, updatedItem]
+            );
+        } else {
+            // Remove from featured if is_featured is false
+            setFeaturedItems(prevItems => 
+                prevItems.filter(item => item.id !== updatedItem.id)
+            );
+        }
+    };
 
     const handleAddFeatured = async (menuItemId) => {
         try {
@@ -777,14 +802,14 @@ export default function ChefMenu() {
                                 </View>
                                 
                                 {categoryItems.length > 0 ? (
-                                    categoryItems.map(item => menuItemCard({ 
-                                        item, 
-                                        apiUrl,
-                                        onAssignCategory: (item) => {
-                                            setSelectedMenuItem(item);
-                                            setShowAssignCategoryModal(true);
-                                        }
-                                    }))
+                                    categoryItems.map(item => (
+                                        <ChefMenuItem
+                                            key={item.id}
+                                            item={item}
+                                            onItemUpdate={handleItemUpdate}
+                                            cuisineTypes={chefCuisines}
+                                        />
+                                    ))
                                 ) : (
                                     <Text className="text-primary-400 text-center py-4 dark:text-dark-400">
                                         No items in this category yet
@@ -794,15 +819,15 @@ export default function ChefMenu() {
                         );
                     })}
 
-                    {/* Show uncategorized items in their own cards */}
-                    {itemsByCategory['uncategorized']?.items?.map(item => menuItemCard({ 
-                        item, 
-                        apiUrl,
-                        onAssignCategory: (item) => {
-                            setSelectedMenuItem(item);
-                            setShowAssignCategoryModal(true);
-                        }
-                    }))}
+                    {/* Show uncategorized items */}
+                    {itemsByCategory['uncategorized']?.items?.map(item => (
+                        <ChefMenuItem
+                            key={item.id}
+                            item={item}
+                            onItemUpdate={handleItemUpdate}
+                            cuisineTypes={chefCuisines}
+                        />
+                    ))}
 
                     {/* Add Menu Button at the bottom */}
                     <View style={{ alignItems: 'center', marginTop: 16 }}>
@@ -826,7 +851,7 @@ export default function ChefMenu() {
                 />
 
                 <Button
-                    title="â†?Return"
+                    title="ï¿½?Return"
                     style="secondary"
                     href={`/(tabs)/Profile`}
                     customClasses="min-w-[60%]"
@@ -1096,7 +1121,7 @@ export default function ChefMenu() {
                                     </Text>
                                     {selectedMenuItem?.category_id === category.id && (
                                         <Text style={{ fontSize: 12, color: '#059669', marginTop: 4 }}>
-                                            âœ?Currently in this category
+                                            ï¿½?Currently in this category
                                         </Text>
                                     )}
                                 </TouchableOpacity>
