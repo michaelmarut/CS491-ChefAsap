@@ -219,10 +219,22 @@ export default function ChefOrdersScreen() {
                         </Text>
                     </Card>
                 ) : (
-                    bookings.map((booking) => (
+                    bookings.map((booking) => {
+                        // Format the title as "Customer Name - Date"
+                        const bookingDate = new Date(booking.booking_date);
+                        const formattedDate = bookingDate.toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+                        const displayTitle = booking.customer_name 
+                            ? `${booking.customer_name} - ${formattedDate}`
+                            : `Booking #${booking.booking_id}`;
+
+                        return (
                         <Card
                             key={booking.booking_id}
-                            title={`Booking #${booking.booking_id}`}
+                            title={displayTitle}
                             isCollapsible={true}
                             startExpanded={false}
                         >
@@ -231,12 +243,6 @@ export default function ChefOrdersScreen() {
                                 <View className="bg-primary-50 dark:bg-dark-50 p-3 rounded-lg">
                                     <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
                                         Customer: {booking.customer_name}
-                                    </Text>
-                                    <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                        Phone: {booking.customer_phone}
-                                    </Text>
-                                    <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                        Email: {booking.customer_email}
                                     </Text>
                                 </View>
 
@@ -258,16 +264,10 @@ export default function ChefOrdersScreen() {
                                         <Text className="text-sm text-primary-400 dark:text-dark-400">
                                             Meal Type: {booking.meal_type}
                                         </Text>
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            Event: {booking.event_type}
-                                        </Text>
                                     </View>
                                     <View>
                                         <Text className="text-sm text-primary-400 dark:text-dark-400">
                                             People: {booking.number_of_people}
-                                        </Text>
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            Supply: {booking.produce_supply}
                                         </Text>
                                     </View>
                                 </View>
@@ -303,20 +303,31 @@ export default function ChefOrdersScreen() {
                                     </View>
                                 )}
 
-                                {/* Delivery Address */}
-                                {(booking.address_line1 || booking.city) && (
-                                    <View className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
-                                        <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
-                                            Delivery Address:
-                                        </Text>
+                                {/* Pick Up Location (Chef's Address) */}
+                                <View className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
+                                    <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
+                                        Pick Up Address:
+                                    </Text>
+                                    {booking.chef_address_line1 ? (
+                                        <View>
+                                            <Text className="text-sm text-primary-400 dark:text-dark-400">
+                                                {booking.chef_address_line1}
+                                            </Text>
+                                            {booking.chef_address_line2 && (
+                                                <Text className="text-sm text-primary-400 dark:text-dark-400">
+                                                    {booking.chef_address_line2}
+                                                </Text>
+                                            )}
+                                            <Text className="text-sm text-primary-400 dark:text-dark-400">
+                                                {booking.chef_city}, {booking.chef_state} {booking.chef_zip_code}
+                                            </Text>
+                                        </View>
+                                    ) : (
                                         <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            {booking.address_line1 && `${booking.address_line1}`}
-                                            {booking.address_line2 && `, ${booking.address_line2}`}
-                                            {(booking.address_line1 || booking.address_line2) && booking.city && ', '}
-                                            {booking.city}, {booking.state} {booking.zip_code}
+                                            Address not available - Please contact chef
                                         </Text>
-                                    </View>
-                                )}
+                                    )}
+                                </View>
 
                                 {/* Action Buttons */}
                                 {booking.status === 'pending' && (
@@ -347,7 +358,8 @@ export default function ChefOrdersScreen() {
                                 )}
                             </View>
                         </Card>
-                    ))
+                        );
+                    })
                 )}
 
                 <Button

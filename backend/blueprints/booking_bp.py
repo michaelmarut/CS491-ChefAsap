@@ -674,14 +674,15 @@ def get_chef_bookings(chef_id):
                 c.first_name || ' ' || c.last_name as customer_name,
                 c.email as customer_email,
                 c.phone as customer_phone,
-                ca.address_line1,
-                ca.address_line2,
-                ca.city,
-                ca.state,
-                ca.zip_code
+                ca.address_line1 as chef_address_line1,
+                ca.address_line2 as chef_address_line2,
+                ca.city as chef_city,
+                ca.state as chef_state,
+                ca.zip_code as chef_zip_code
             FROM bookings b
             JOIN customers c ON b.customer_id = c.id
-            LEFT JOIN customer_addresses ca ON c.id = ca.customer_id AND ca.is_default = true
+            JOIN chefs ch ON b.chef_id = ch.id
+            LEFT JOIN chef_addresses ca ON ch.id = ca.chef_id AND ca.is_default = TRUE
             WHERE b.chef_id = %s
         '''
         
