@@ -365,7 +365,7 @@ export default function ChefOrdersScreen() {
                 <Button
                     title="← Back to Profile"
                     style="secondary"
-                    href="/(tabs)/Profile"
+                    href="/(tabs)/BookingsScreen"
                     customClasses="min-w-[60%] mt-4"
                 />
 

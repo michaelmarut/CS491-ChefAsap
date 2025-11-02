@@ -436,18 +436,20 @@ export default function ProfileScreen() {
                             </Text>
                         )}
                     </Card>
+                    <View className="flex-row w-full justify-between" >
                     <Button
                         title="Manage Menu"
                         style="secondary"
-                        customClasses="min-w-[60%]"
+                        customClasses="w-[48%]"
                         href={`/ChefMenuScreen`}
                     />
                     <Button
                         title="Customer View"
                         style="secondary"
-                        customClasses="min-w-[60%]"
+                        customClasses="w-[48%]"
                         href={`/ChefProfileScreen/${profileId}`}
                     />
+                    </View>
                 </>
             )}
 

@@ -15,7 +15,7 @@ const TIME_COL_WIDTH = 68;
 const DAY_COLUMN_WIDTH = 100;
 const HEADER_HEIGHT = 50;
 const FOOTER_PADDING = 12;
-const DATE_HEADER_TEXT_STYLE = { color: '#111827', fontSize: 13, fontWeight: '600' };
+const DATE_HEADER_TEXT_STYLE = { fontSize: 13, fontWeight: '600' };
 
 // Dev mock data flag
 const DEV_MOCK_BOOKINGS = false;
@@ -298,8 +298,8 @@ export default function BookingsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
       {/* Week controls */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, paddingTop: 12, borderBottomWidth: 1, borderColor: '#e5e7eb' }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, paddingTop: 48, borderBottomWidth: 1, borderColor: '#e5e7eb' }} className="bg-base-100 dark:bg-dark-100">
+        <Text style={{ fontSize: 15, fontWeight: '600' }} className="text-olive-400 dark:text-dark-400">
           Week of {formatHeader(weekDays[0])}
         </Text>
         <View style={{ flexDirection: 'row' }}>
@@ -358,7 +358,7 @@ export default function BookingsScreen() {
                     borderColor: '#e5e7eb',
                   }}
                 >
-                  <Text style={DATE_HEADER_TEXT_STYLE}>{formatHeader(d)}</Text>
+                  <Text style={DATE_HEADER_TEXT_STYLE} className="text-olive-400 dark:text-dark-400">{formatHeader(d)} </Text>
                 </View>
               ))}
             </View>
@@ -400,7 +400,7 @@ export default function BookingsScreen() {
                   })}
 
                   {/* Hour labels overlay on the hour lines */}
-                  <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: gridHeight, pointerEvents: 'none' }}>
+                  <View style={{ position: 'absolute', top: 8, left: 0, right: 0, height: gridHeight, pointerEvents: 'none' }}>
                     {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => {
                       const hour = START_HOUR + i;
                       if (hour > END_HOUR) return null;
@@ -414,11 +414,11 @@ export default function BookingsScreen() {
                             position: 'absolute',
                             top: Math.max(top - 8, 0),
                             right: 8,
-                            color: '#111827',
                             fontSize: 13,
                             fontWeight: '600',
                             textAlign: 'right',
                           }}
+                          className="text-olive-400 dark:text-dark-400"
                         >
                           {formatHourLabel(labelDate)}
                         </Text>
@@ -559,10 +559,11 @@ export default function BookingsScreen() {
             </View>
           </ScrollView>
         </View>
+        <View className="h-8" />
       </ScrollView>
 
       {/* Footer actions */}
-      <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#e5e7eb', gap: 8 }}>
+      <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#e5e7eb', gap: 8 }} className="bg-base-100 dark:bg-dark-100">
         <Button
           title={loading ? 'Refreshing…' : 'Refresh'}
           style="primary"
@@ -587,7 +588,7 @@ export default function BookingsScreen() {
       {/* Event details modal (read-only) */}
       <Modal
         visible={!!selected}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         onRequestClose={() => setSelected(null)}
       >
