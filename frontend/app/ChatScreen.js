@@ -27,10 +27,12 @@ export default function ChatScreen() {
     if (userType === 'chef') {
         chefId = userId;
         customerId = otherUserId;
+        console.log('I am chef ', chefId, 'Talking to customer', customerId);
     }
     else {
         customerId = userId;
         chefId = otherUserId;
+        console.log('Talking to customer', customerId, 'I am chef ', chefId);
     }
 
     useEffect(() => {
@@ -52,9 +54,14 @@ export default function ChatScreen() {
 
     const fetchMessages = async () => {
         try {
-
+            console.log('=== FETCH MESSAGES DEBUG ===');
+            console.log('customerId:', customerId);
+            console.log('chefId:', chefId);
+            console.log('userId:', userId);
+            console.log('userType:', userType);
+            console.log('otherUserId:', otherUserId);
             const url = `${apiUrl}/api/chat/history?customer_id=${customerId}&chef_id=${chefId}`;
-            //console.log('Fetching chat from URL:', url);
+            console.log('Fetching chat from URL:', url);
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -63,7 +70,8 @@ export default function ChatScreen() {
                     'Authorization': `Bearer ${token}`, 
                 },
             });
-            
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
             if (!response.ok) {
                 throw new Error('Failed to fetch chat history.');
             }
