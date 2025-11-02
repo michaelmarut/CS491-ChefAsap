@@ -19,7 +19,8 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "package": "com.osid54.ChefAsap"
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +34,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "38736753-1748-4823-be61-e905938e4b80"
+      }
     }
   }
 }

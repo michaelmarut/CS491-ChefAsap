@@ -3,14 +3,22 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { View } from 'react-native';
 import LoadingIcon from './components/LoadingIcon';
 import ThemeProvider from './providers/ThemeProvider'; 
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+
+import 'react-native-reanimated';
+import { enableScreens } from 'react-native-screens';
+
+enableScreens(true);
 
 export default function RootLayout() {
     return (
-        <AuthProvider>
-            <ThemeProvider>
-                <RootStack />
-            </ThemeProvider>
-        </AuthProvider>
+        <SafeAreaProvider>
+            <AuthProvider>
+                <ThemeProvider>
+                    <RootStack />
+                </ThemeProvider>
+            </AuthProvider>
+        </SafeAreaProvider>
     );
 }
 
@@ -29,7 +37,7 @@ function RootStack() {
     }
 
     return (
-        <View style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}> 
             <Stack>
                 {!isAuthenticated ? (
                     <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -39,6 +47,6 @@ function RootStack() {
                 <Stack.Screen name="ChefProfileScreen/[id]" options={{ headerShown: false }} />
                 <Stack.Screen name="ChefMenu/[id]" options={{ headerShown: false }} />
             </Stack>
-        </View>
+        </SafeAreaView>
     );
 }

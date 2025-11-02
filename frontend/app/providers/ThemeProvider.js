@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useColorScheme } from 'nativewind';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StatusBar } from 'expo-status-bar';
 
 const THEME_STORAGE_KEY = 'user-color-theme';
 
@@ -40,6 +41,7 @@ export default function ThemeProvider({ children }) {
 
     return (
         <ThemeContext.Provider value={contextValue}>
+            <StatusBar style={colorScheme === 'dark' ? "dark" : "light"} backgroundColor={colorScheme === 'dark' ? "#65A30D" : "#4D7C0F"}/>
             {children}
         </ThemeContext.Provider>
     );
