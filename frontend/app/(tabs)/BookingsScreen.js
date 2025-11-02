@@ -24,7 +24,7 @@ const formatTime = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const formatHeader = (d) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 const formatYmd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-// Status visibility rules and safe fetch (if not already present)
+// Status visibility rules and safe fetch
 const normalizeStatus = (s) => String(s || '').toLowerCase();
 const CHEF_ALLOWED = new Set(['accepted', 'completed', 'confirm', 'confirmed']);
 const CUSTOMER_ALLOWED = new Set(['pending', 'accepted', 'completed']);
@@ -41,7 +41,7 @@ async function fetchJsonSafe(url, options) {
   }
 }
 
-// Calendar helpers (missing before)
+// Calendar helpers
 function getWeekStart(d) {
   const dt = new Date(d);
   dt.setHours(0, 0, 0, 0);
@@ -109,7 +109,7 @@ export default function BookingsScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Week days (requires buildWeekDays helper present in file)
+  // Week days
   const weekDays = useMemo(() => buildWeekDays(baseDate), [baseDate]);
 
   // Customers: use range endpoint that includes duration_minutes
@@ -120,7 +120,7 @@ export default function BookingsScreen() {
     return `${BOOKING_API_PREFIX}/customer/${profileId}/calendar?start=${start}&end=${end}`;
   }, [BOOKING_API_PREFIX, token, userType, profileId, weekDays]);
 
-  // Chefs: use orders (have estimated_prep_time)
+  // Chefs: use orders endpoint
   const chefOrdersEndpoint = useMemo(() => {
     if (!token || !profileId || userType !== 'chef') return null;
     return `${ORDER_API_PREFIX}/chef/${profileId}`;
@@ -336,7 +336,7 @@ export default function BookingsScreen() {
         contentContainerStyle={{ paddingBottom: FOOTER_PADDING }}
       >
         <View style={{ flexDirection: 'row' }}>
-          {/* LEFT: fixed time column (not horizontally scrollable) */}
+          {/* LEFT: fixed time column */}
           <View style={{ width: TIME_COL_WIDTH, borderRightWidth: 1, borderColor: '#e5e7eb' }}>
             {/* Time grid background + hour labels aligned to hour lines */}
             {(() => {
@@ -345,7 +345,7 @@ export default function BookingsScreen() {
 
               return (
                 <View style={{ position: 'relative', backgroundColor: '#fff' }}>
-                  {/* Background: ONLY hour lines */}
+                  {/* Background: hour lines */}
                   {timeSlots.map((slot, idx) => {
                     const isHour = slot.start.getMinutes() === 0;
                     return (
@@ -410,7 +410,6 @@ export default function BookingsScreen() {
             onMomentumScrollEnd={() => { syncSourceRef.current = null; }}
           >
             <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
-              {/* (Removed) Header row here; it's now fixed above */}
 
               {/* Grid: background + events overlay */}
               <View style={{ flexDirection: 'row' }}>
