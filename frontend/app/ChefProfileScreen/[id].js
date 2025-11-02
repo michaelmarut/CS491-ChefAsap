@@ -12,6 +12,7 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import RatingsDisplay from '../components/RatingsDisplay';
 import TagsBox from '../components/TagsBox';
+import { useRouter } from 'expo-router';
 
 const featuredDishComponent = (item, apiUrl) => (
     <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
@@ -65,6 +66,8 @@ export default function ChefProfileScreen() {
     const [savingAbout, setSavingAbout] = useState(false);
     const [chefCuisines, setChefCuisines] = useState([]);
     const [mealTimings, setMealTimings] = useState([]);
+    
+    const router = useRouter();
 
     useEffect(() => {
         if (!id) return;
@@ -189,6 +192,22 @@ export default function ChefProfileScreen() {
         setAboutText(chefData?.description || '');
         setEditingAbout(false);
     };
+
+    const handleChatPress = () => {
+        if (userType !== 'customer') {
+            Alert.alert('Error', 'Only customers can message chefs.');
+            return;
+        }
+
+        router.push({
+            pathname: '/ChatScreen',
+            params: {
+                otherUserId: id,
+                otherUserName: `${chefData?.first_name} ${chefData?.last_name}`,
+            }
+        });
+    };
+
 
     if (loading) {
         return (
@@ -346,7 +365,13 @@ export default function ChefProfileScreen() {
                     customClasses="min-w-[60%]"
                     href={`/ChefMenu/${id}`}
                 />
-
+                <Button
+                    title="Chat"
+                    style="primary"
+                    customClasses='min-w-[60%]'
+                    //href={`/ChatScreen?chef_id=${id}`}
+                    onPress={handleChatPress}
+                />
                 <Button
                     title="← Return"
                     style="secondary"
