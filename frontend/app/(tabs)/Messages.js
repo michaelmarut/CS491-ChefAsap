@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FlatList, View, Text, TouchableOpacity, 
         ActivityIndicator, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import getEnvVars from "../../config";
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../providers/ThemeProvider';
 import Octicons from '@expo/vector-icons/Octicons';
+
 
 export default function Messages() {
     
@@ -63,9 +64,15 @@ export default function Messages() {
         }
     };
 
-    useEffect(() => {
+    /*useEffect(() => {
         fetchConversations();
-    }, [userId, userType]); 
+    }, [userId, userType]); */
+    useFocusEffect(
+        useCallback(() => {
+            setLoading(true);
+            fetchConversations();
+        }, [userId, userType])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -78,7 +85,7 @@ export default function Messages() {
             pathname: '/ChatScreen',
             params: {
                 chatId: conversation.chat_id,
-                otherUserId: userType === 'chef' ? conversation.customer_id : conversation.chef_id,
+                otherUserId: userType === 'chef' ? conversation.customer_id : conversation.chef_user_id,
                 otherUserName: userType === 'chef' 
                     ? `${conversation.customer_first_name} ${conversation.customer_last_name}`
                     : `${conversation.chef_first_name} ${conversation.chef_last_name}`,
