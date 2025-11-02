@@ -38,7 +38,7 @@ export default function Messages() {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    //'Authorization': `Bearer ${token}`, should we add auth?
+                    'Authorization': `Bearer ${token}`,
                 },
             });
 
