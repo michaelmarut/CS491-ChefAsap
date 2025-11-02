@@ -237,7 +237,7 @@ export default function ProfileSettings() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView className="flex-1 bg-base-100 p-5 pt-12">
+      <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
         {/* Profile title */}
         {/* Profile Picture Display */}
         <Card title="Profile" headerIcon="gear" customClasses="w-full">
@@ -431,7 +431,7 @@ export default function ProfileSettings() {
             />
           </>
         )}
-        <View className="h-24" />
+        <View className="h-8" />
       </ScrollView>
     </>
   );

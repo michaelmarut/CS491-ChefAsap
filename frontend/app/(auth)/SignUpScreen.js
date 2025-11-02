@@ -214,217 +214,209 @@ export default function Signup() {
   };
 
   return (
-    <View className="flex-1 bg-base-100 dark:bg-base-dark-100 p-2 pb-0">
+    <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: 20,
-          paddingBottom: 30,
-        }}
-      >
-        <Text className="text-4xl font-bold text-center mt-8 text-primary-500">
-          Create An Account
-        </Text>
+      <Text className="text-4xl font-bold text-center text-primary-500">
+        Create An Account
+      </Text>
 
-        <Button
-          title="Already have an account?"
-          style="secondary"
-          base="link"
-          customTextClasses='mb-4'
-          href="/SignInScreen"
+      <Button
+        title="Already have an account?"
+        style="secondary"
+        base="link"
+        customTextClasses='mb-2'
+        href="/SignInScreen"
+      />
+
+      <Card title="Personal Information" headerIcon="person">
+        <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">Name</Text>
+        <View className="flex-row justify-between">
+          <Input
+            placeholder="First Name"
+            value={firstName}
+            onChangeText={(text) => setFirstName(filterNameCharacters(text))}
+            containerClasses="flex-1 mx-0.5 mb-2 mt-0"
+          />
+
+          <Input
+            placeholder="Last Name"
+            value={lastName}
+            onChangeText={(text) => setLastName(filterNameCharacters(text))}
+            containerClasses="flex-1 mx-0.5 mb-2 mt-0"
+          />
+        </View>
+
+        <Input
+          label="Email Address"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (text.length > 0 && !validateEmail(text)) {
+              setEmailError('Please enter a valid email address');
+            } else {
+              setEmailError('');
+            }
+          }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          error={emailError}
+          placeholder="your.email@example.com"
         />
 
-        <Card title="Personal Information" headerIcon="person">
-          <Text className="text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400">Name</Text>
-          <View className="flex-row justify-between">
-            <Input
-              placeholder="First Name"
-              value={firstName}
-              onChangeText={(text) => setFirstName(filterNameCharacters(text))}
-              containerClasses="flex-1 mx-0.5 mb-2 mt-0"
-            />
+        <Input label="Phone Number"
+          value={phone}
+          onChangeText={(text) => setPhone(filterDigits(text))}
+          keyboardType="phone-pad"
+          placeholder="(555) 123-4567"
+          maxLength={10}
+        />
+      </Card>
 
-            <Input
-              placeholder="Last Name"
-              value={lastName}
-              onChangeText={(text) => setLastName(filterNameCharacters(text))}
-              containerClasses="flex-1 mx-0.5 mb-2 mt-0"
-            />
-          </View>
+      <Card title="Create Password" headerIcon="lock">
+        <Input
+          label="Password"
+          placeholder="Enter a secure password"
+          value={password}
+          onChangeText={(text) => {
+            setPassword(text);
+            setPasswordRequirements(validatePassword(text));
+            if (confirmPassword && text !== confirmPassword) {
+              setPasswordMatchError('Passwords do not match');
+            } else {
+              setPasswordMatchError('');
+            }
+          }}
+          secureTextEntry
+        />
 
-          <Input
-            label="Email Address"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (text.length > 0 && !validateEmail(text)) {
-                setEmailError('Please enter a valid email address');
-              } else {
-                setEmailError('');
-              }
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            error={emailError}
-            placeholder="your.email@example.com"
-          />
+        <Input
+          label="Confirm Password"
+          placeholder="Re-enter your password"
+          value={confirmPassword}
+          onChangeText={(text) => {
+            setConfirmPassword(text);
+            if (password && text !== password) {
+              setPasswordMatchError('Passwords do not match');
+            } else {
+              setPasswordMatchError('');
+            }
+          }}
+          secureTextEntry
+          error={passwordMatchError}
+          containerClasses="mb-1"
+        />
 
-          <Input label="Phone Number"
-            value={phone}
-            onChangeText={(text) => setPhone(filterDigits(text))}
-            keyboardType="phone-pad"
-            placeholder="(555) 123-4567"
-            maxLength={10}
-          />
-        </Card>
-
-        <Card title="Create Password" headerIcon="lock">
-          <Input
-            label="Password"
-            placeholder="Enter a secure password"
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              setPasswordRequirements(validatePassword(text));
-              if (confirmPassword && text !== confirmPassword) {
-                setPasswordMatchError('Passwords do not match');
-              } else {
-                setPasswordMatchError('');
-              }
-            }}
-            secureTextEntry
-          />
-
-          <Input
-            label="Confirm Password"
-            placeholder="Re-enter your password"
-            value={confirmPassword}
-            onChangeText={(text) => {
-              setConfirmPassword(text);
-              if (password && text !== password) {
-                setPasswordMatchError('Passwords do not match');
-              } else {
-                setPasswordMatchError('');
-              }
-            }}
-            secureTextEntry
-            error={passwordMatchError}
-            containerClasses="mb-1"
-          />
-
-          <View className="mt-2 p-3 bg-primary-100 rounded-xl dark:bg-dark-100">
-            <Text className="text-sm font-semibold mb-1 text-primary-400 dark:text-dark-400">Password must have:</Text>
-            {passwordRequirements.map((req, index) => (
-              <Text
-                key={index}
-                className={`text-xs mb-0.5 ${req.met ? 'text-primary-400 dark:text-dark-400' : 'text-warm-gray'}`}
-              >
-                {req.met ? '✓' : '○'} {req.message}
-              </Text>
-            ))}
-          </View>
-        </Card>
-
-        <Card title="Your Address" headerIcon="location">
-          <Input
-            label="Street Address"
-            placeholder="123 Main Street"
-            value={address}
-            onChangeText={(text) => setAddress(filterAddressCharacters(text))}
-          />
-
-          <Input
-            label="Apartment, Suite, etc. (Optional)"
-            placeholder="Apt 4B, Suite 200, etc."
-            value={address2}
-            onChangeText={(text) => setAddress2(filterAddressCharacters(text))}
-          />
-
-          <Input
-            label="City"
-            placeholder="City"
-            value={city}
-            onChangeText={(text) => setCity(filterAlphabeticCharacters(text))}
-          />
-
-          <View className="flex-row justify-between">
-
-            <CustomPicker
-              label="State"
-              prompt="Select a State"
-              selectedValue={state}
-              onValueChange={(v) => setState(v)}
-              items={US_STATES}
-            />
-
-            <View className="flex-1 ml-3">
-              <Input
-                label="Zip Code"
-                placeholder="12345"
-                value={zip}
-                onChangeText={(text) => setZip(filterDigits(text))}
-                keyboardType="numeric"
-                maxLength={5}
-                customClasses="text-center"
-                containerClasses="mb-2"
-              />
-            </View>
-          </View>
-        </Card>
-
-        <Card title="I am a..." headerIcon="smiley">
-          <View className="flex-row justify-between mt-2">
-
-            <TouchableOpacity
-              className={`flex-1 py-4 px-2 rounded-2xl mx-0.5 items-center border ${userType === 'customer'
-                ? 'bg-primary-200 border-primary-400 dark:bg-dark-200 dark:border-dark-400'
-                : 'bg-primary-100 border-primary-200 dark:bg-dark-100 dark:border-dark-200'
-                }`}
-              onPress={() => setUserType('customer')}
+        <View className="mt-2 p-3 bg-primary-100 rounded-xl dark:bg-dark-100">
+          <Text className="text-sm font-semibold mb-1 text-primary-400 dark:text-dark-400">Password must have:</Text>
+          {passwordRequirements.map((req, index) => (
+            <Text
+              key={index}
+              className={`text-xs mb-0.5 ${req.met ? 'text-primary-400 dark:text-dark-400' : 'text-warm-gray'}`}
             >
-              <Text
-                className={`text-base font-bold text-center mb-1 ${userType === 'customer' ? 'text-primary-500' : 'text-primary-400 dark:text-dark-400'
-                  }`}
-              >
-                🍽️ Customer
-              </Text>
-              <Text className="text-xs text-center text-warm-gray">Looking for chefs</Text>
-            </TouchableOpacity>
+              {req.met ? '✓' : '○'} {req.message}
+            </Text>
+          ))}
+        </View>
+      </Card>
 
-            <TouchableOpacity
-              className={`flex-1 py-4 px-2 rounded-2xl mx-0.5 items-center border ${userType === 'chef'
-                ? 'bg-primary-200 border-primary-400 dark:bg-dark-200 dark:border-dark-400'
-                : 'bg-primary-100 border-primary-200 dark:bg-dark-100 dark:border-dark-200'
-                }`}
-              onPress={() => setUserType('chef')}
-            >
-              <Text
-                className={`text-base font-bold text-center mb-1 ${userType === 'chef' ? 'text-primary-500' : 'text-primary-400 dark:text-dark-400'
-                  }`}
-              >
-                👨‍🍳 Chef
-              </Text>
-              <Text className="text-xs text-center text-warm-gray">Offering services</Text>
-            </TouchableOpacity>
+      <Card title="Your Address" headerIcon="location">
+        <Input
+          label="Street Address"
+          placeholder="123 Main Street"
+          value={address}
+          onChangeText={(text) => setAddress(filterAddressCharacters(text))}
+        />
+
+        <Input
+          label="Apartment, Suite, etc. (Optional)"
+          placeholder="Apt 4B, Suite 200, etc."
+          value={address2}
+          onChangeText={(text) => setAddress2(filterAddressCharacters(text))}
+        />
+
+        <Input
+          label="City"
+          placeholder="City"
+          value={city}
+          onChangeText={(text) => setCity(filterAlphabeticCharacters(text))}
+        />
+
+        <View className="flex-row justify-between">
+
+          <CustomPicker
+            label="State"
+            prompt="Select a State"
+            selectedValue={state}
+            onValueChange={(v) => setState(v)}
+            items={US_STATES}
+          />
+
+          <View className="flex-1 ml-3">
+            <Input
+              label="Zip Code"
+              placeholder="12345"
+              value={zip}
+              onChangeText={(text) => setZip(filterDigits(text))}
+              keyboardType="numeric"
+              maxLength={5}
+              customClasses="text-center"
+              containerClasses="mb-2"
+            />
           </View>
-        </Card>
+        </View>
+      </Card>
 
-        <Button
-          title="Create Account"
-          style="primary"
-          onPress={handleSignup}
-        />
+      <Card title="I am a..." headerIcon="smiley">
+        <View className="flex-row justify-between mt-2">
 
-        <Button
-          title="← Back"
-          style="secondary"
-          href="/"
-        />
-        <View className="h-4" />
+          <TouchableOpacity
+            className={`flex-1 py-4 px-2 rounded-2xl mx-0.5 items-center border ${userType === 'customer'
+              ? 'bg-primary-200 border-primary-400 dark:bg-dark-200 dark:border-dark-400'
+              : 'bg-primary-100 border-primary-200 dark:bg-dark-100 dark:border-dark-200'
+              }`}
+            onPress={() => setUserType('customer')}
+          >
+            <Text
+              className={`text-base font-bold text-center mb-1 ${userType === 'customer' ? 'text-primary-500' : 'text-primary-400 dark:text-dark-400'
+                }`}
+            >
+              Customer
+            </Text>
+            <Text className="text-xs text-center text-warm-gray">Looking for chefs</Text>
+          </TouchableOpacity>
 
-      </ScrollView>
-    </View>
+          <TouchableOpacity
+            className={`flex-1 py-4 px-2 rounded-2xl mx-0.5 items-center border ${userType === 'chef'
+              ? 'bg-primary-200 border-primary-400 dark:bg-dark-200 dark:border-dark-400'
+              : 'bg-primary-100 border-primary-200 dark:bg-dark-100 dark:border-dark-200'
+              }`}
+            onPress={() => setUserType('chef')}
+          >
+            <Text
+              className={`text-base font-bold text-center mb-1 ${userType === 'chef' ? 'text-primary-500' : 'text-primary-400 dark:text-dark-400'
+                }`}
+            >
+              Chef
+            </Text>
+            <Text className="text-xs text-center text-warm-gray">Offering services</Text>
+          </TouchableOpacity>
+        </View>
+      </Card>
+
+      <Button
+        title="Create Account"
+        style="primary"
+        onPress={handleSignup}
+      />
+
+      <Button
+        title="← Back"
+        style="secondary"
+        href="/"
+      />
+
+      <View className="h-8" />
+
+    </ScrollView>
   );
 }

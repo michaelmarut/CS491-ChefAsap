@@ -13,18 +13,55 @@ def send_message():
     missing = [f for f in required if data.get(f) is None]
     if missing:
         return jsonify(error=f"Missing required field(s): {', '.join(missing)}"), 400
-
-    customer_id = data['customer_id']
-    chef_id = data['chef_id']
+    
+    customer_user_id = data['customer_id'] #from "users" table
+    chef_user_id = data['chef_id'] #from "chefs" table
     booking_id = data.get('booking_id')  # Optional
     sender_type = data['sender_type']  # 'customer' or 'chef'
     message = data['message']
-    sender_id = customer_id if sender_type == 'customer' else chef_id
+    sender_id = None
+
+    print(f"=== SEND MESSAGE ===")
+    print(f"Received user_ids: customer={customer_user_id}, chef={chef_user_id}, sender={sender_type}")
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        #finds customer_id based on user_id
+        cursor.execute("""
+            SELECT customer_id FROM users
+            WHERE id=%s
+        """, (customer_user_id,))
+
+        query = cursor.fetchone()
+
+        if query:
+            customer_id = query[0]
+        else:
+            return jsonify(error=f"Customer with user_id {customer_user_id} not found"), 404
+
+
+        #finds chef_id based on user_id
+        cursor.execute("""
+            SELECT chef_id FROM users
+            WHERE id=%s
+        """, (chef_user_id,))
         
+        query = cursor.fetchone()
+
+        if query:
+            chef_id = query[0]
+        else:
+            return jsonify(error=f"Chef with user_id {chef_user_id} not found"), 404
+        
+
+        #saves the correct id from chef/customer table
+        sender_id = customer_id if sender_type == 'customer' else chef_id
+
+        if not booking_id or booking_id == 0 or booking_id == 'null':
+            booking_id= None
+
         # First, find or create a chat session
         cursor.execute("""
             SELECT id FROM chats 
@@ -33,7 +70,9 @@ def send_message():
         """, (customer_id, chef_id, booking_id, booking_id))
         
         chat_result = cursor.fetchone()
-        
+
+        print('CHEFFF:',{chef_id})
+
         if chat_result:
             chat_id = chat_result[0]
         else:
@@ -72,8 +111,8 @@ def send_message():
 # Get Chat History For Customer-Chef Booking
 @chat_bp.route('/history', methods=['GET'])
 def get_chat_history():
-    customer_id = request.args.get('customer_id')
-    chef_id = request.args.get('chef_id')
+    customer_user_id = request.args.get('customer_id')
+    chef_user_id = request.args.get('chef_id')
     booking_id = request.args.get('booking_id')
 
     missing = [
@@ -82,10 +121,43 @@ def get_chat_history():
     ]
     if missing:
         return jsonify(error=f"Missing query param(s): {', '.join(missing)}"), 400
+    
+    conn = None
+    cursor = None
 
     try:
         conn = get_db_connection()
-        cursor = get_cursor(conn, dictionary=True)
+        cursor = conn.cursor()
+       
+        #finds customer_id based on user_id
+        cursor.execute("""
+            SELECT customer_id FROM users
+            WHERE id=%s
+        """, (customer_user_id,))
+        print("Customer id",customer_user_id)
+        query = cursor.fetchone()
+
+        if query:
+            customer_id = query[0]
+        else:
+            return jsonify(error="Missing customer id.")
+       
+
+        #finds chef_id based on user_id
+        cursor.execute("""
+            SELECT chef_id FROM users
+            WHERE id=%s
+        """, (chef_user_id,))
+        
+        query = cursor.fetchone()
+
+        if query:
+            chef_id = query[0]
+        else:
+            return jsonify(error="Chef not found"), 404
+        
+        cursor.close()
+        cursor = get_cursor(conn, dictionary= True)
         
         # Find the chat session
         cursor.execute("""
@@ -95,6 +167,7 @@ def get_chat_history():
         """, (customer_id, chef_id, booking_id, booking_id))
         
         chat_result = cursor.fetchone()
+        
         if not chat_result:
             return jsonify([]), 200  # No chat found, return empty array
         
@@ -222,22 +295,53 @@ def get_conversations():
     """
     Get recent conversations with the last message for each chef-customer pair
     """
+    print("=== CONVERSATIONS ENDPOINT CALLED ===")
+    print("Full URL:", request.url)
+    print("Query string:", request.query_string)
+    print("All args:", request.args)
+    
     chef_id = request.args.get('chef_id')
     customer_id = request.args.get('customer_id')
-    
+
+    print(f"Received: chef_id={chef_id}, customer_id={customer_id}")
     if bool(chef_id) == bool(customer_id):
         return jsonify(error="Provide exactly one of chef_id or customer_id"), 400
 
+    cursor = None
+    conn = None
+
     try:
         conn = get_db_connection()
-        cursor = get_cursor(conn, dictionary=True)
-
+        
         if chef_id:
+            print(f"Looking up chef with user_id={chef_id}")
+            #finds chef_id based on user_id
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT chef_id FROM users
+                WHERE id=%s
+            """, (chef_id,))
+            
+            query = cursor.fetchone()
+            print(f"Found actual_chef_id: {query}")
+
+            if query:
+                chef_id = query[0]
+            else:
+                cursor.close()
+                conn.close()
+                return jsonify(error="Chef not found"), 404
+            print(f"Found actual_chef_id: {chef_id}")
+            cursor.close()
+
             # Get conversations for a chef
+            cursor = get_cursor(conn, dictionary=True)                    
+            
             cursor.execute("""
                 SELECT 
                     c.id as chat_id,
                     c.customer_id,
+                    u.id as customer_id,
                     cu.first_name as customer_first_name,
                     cu.last_name as customer_last_name,
                     cu.email as customer_email,
@@ -259,15 +363,38 @@ def get_conversations():
                     ) as unread_count
                 FROM chats c
                 JOIN customers cu ON c.customer_id = cu.id
+                JOIN users u ON u.customer_id = cu.id
                 WHERE c.chef_id = %s AND c.status = 'active'
                 ORDER BY c.last_message_at DESC
             """, (chef_id,))
         else:
+            #finds customer_id based on user_id
+            print("=== CUSTOMER BRANCH ===")
+            print(f"Looking up customer with user_id={customer_id}")
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT customer_id FROM users
+                WHERE id=%s
+            """, (customer_id,))
+
+            query = cursor.fetchone()
+            print(f"Customer lookup resultqq: {query}")
+            if query:
+                customer_id = query[0]
+            else:
+                cursor.close()
+                conn.close()
+                return jsonify(error="Customer not found"), 404
+            print(f"Found actual_customer_id: {customer_id}")
+            cursor.close()
+
             # Get conversations for a customer
+            cursor = get_cursor(conn, dictionary=True)
             cursor.execute("""
                 SELECT 
                     c.id as chat_id,
                     c.chef_id,
+                    u.id as chef_user_id, 
                     ch.first_name as chef_first_name,
                     ch.last_name as chef_last_name,
                     ch.email as chef_email,
@@ -289,20 +416,26 @@ def get_conversations():
                     ) as unread_count
                 FROM chats c
                 JOIN chefs ch ON c.chef_id = ch.id
+                JOIN users u ON u.chef_id = ch.id
                 WHERE c.customer_id = %s AND c.status = 'active'
                 ORDER BY c.last_message_at DESC
             """, (customer_id,))
 
         conversations = cursor.fetchall()
+        print(f"Found {len(conversations)} conversations")
         return jsonify(conversations), 200
 
     except Exception as e:
         print("Error getting conversations:", e)
+        import traceback
+        traceback.print_exc()
         return jsonify(error="Internal server error"), 500
 
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 # Mark messages as read

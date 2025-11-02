@@ -300,7 +300,7 @@ export default function ChefMenu() {
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
-            <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
+            <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
                 {/*<Text>{JSON.stringify(chefData)}</Text>*/}
                 <Card
                     title="Menu"
@@ -398,7 +398,7 @@ export default function ChefMenu() {
                     href={`/(tabs)/Profile`}
                     customClasses="min-w-[60%]"
                 />
-                <View className="h-24" />
+                <View className="h-8" />
 
             </ScrollView>
         </>
