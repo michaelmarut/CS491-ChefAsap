@@ -4,11 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import getEnvVars from '../../config';
 import Button from '../components/Button';
 
-const START_HOUR = 6;   // 6 AM
-const END_HOUR = 22;    // 10 PM
-const STEP_MIN = 30;    // minutes per slot
-const SLOT_HEIGHT = 40; // px per slot
-const PX_PER_MIN = SLOT_HEIGHT / STEP_MIN; // pixels per minute
+const START_HOUR = 6;
+const END_HOUR = 22;
+const STEP_MIN = 30;
+const SLOT_HEIGHT = 40;
+const PX_PER_MIN = SLOT_HEIGHT / STEP_MIN;
 
 // sizing for wide day columns + fixed time column
 const TIME_COL_WIDTH = 68;
@@ -16,14 +16,65 @@ const DAY_COLUMN_WIDTH = 100;
 const HEADER_HEIGHT = 50;
 const FOOTER_PADDING = 12;
 const DATE_HEADER_TEXT_STYLE = { fontSize: 13, fontWeight: '600' };
-
-// Dev mock data flag
 const DEV_MOCK_BOOKINGS = false;
 
 // Helpers
 const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
 const formatTime = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const formatHeader = (d) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+const formatYmd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+// Status visibility rules and safe fetch (if not already present)
+const normalizeStatus = (s) => String(s || '').toLowerCase();
+const CHEF_ALLOWED = new Set(['accepted', 'completed', 'confirm', 'confirmed']);
+const CUSTOMER_ALLOWED = new Set(['pending', 'accepted', 'completed']);
+
+async function fetchJsonSafe(url, options) {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) return null;
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// Calendar helpers (missing before)
+function getWeekStart(d) {
+  const dt = new Date(d);
+  dt.setHours(0, 0, 0, 0);
+  // Make Monday the first day of week
+  const day = dt.getDay(); // 0=Sun..6=Sat
+  const diff = (day === 0 ? -6 : 1 - day); // move to Monday
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0, 0, 0, 0);
+  return dt;
+}
+
+function buildWeekDays(baseDate) {
+  const start = getWeekStart(baseDate);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+}
+
+function buildTimeSlotsForDay(day) {
+  const slots = [];
+  const start = new Date(day);
+  start.setHours(START_HOUR, 0, 0, 0);
+  const end = new Date(day);
+  end.setHours(END_HOUR, 0, 0, 0);
+  for (let t = new Date(start); t < end; t = new Date(t.getTime() + STEP_MIN * 60000)) {
+    const slotStart = new Date(t);
+    const slotEnd = new Date(t.getTime() + STEP_MIN * 60000);
+    slots.push({ start: slotStart, end: slotEnd });
+  }
+  return slots;
+}
 
 function formatHourLabel(d) {
   const h = d.getHours();
@@ -32,77 +83,18 @@ function formatHourLabel(d) {
   return `${h12} ${ampm}`;
 }
 
-function parseLocalDateTime(dateStr, timeStr) {
-  try {
-    const [y, m, d] = (dateStr || '').split('-').map(Number);
-    const [hh, mm] = (timeStr || '').split(':').map(Number);
-    return new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
-  } catch {
-    return new Date();
+function parseLocalDateTime(ymd, hm) {
+  // ymd: 'YYYY-MM-DD', hm: 'HH:MM'
+  if (!ymd) return new Date(NaN);
+  const [y, m, da] = ymd.split('-').map((x) => parseInt(x, 10));
+  let hh = 0, mm = 0;
+  if (hm && typeof hm === 'string') {
+    const parts = hm.split(':').map((x) => parseInt(x, 10));
+    hh = parts[0] || 0;
+    mm = parts[1] || 0;
   }
+  return new Date(y, (m || 1) - 1, da || 1, hh, mm, 0, 0);
 }
-
-function getWeekStart(date) {
-  const d = new Date(date);
-  const day = d.getDay(); // 0=Sun..6=Sat
-  const diff = (day === 0 ? -6 : 1) - day; // move to Monday
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function buildWeekDays(baseDate) {
-  const monday = getWeekStart(baseDate);
-  return Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
-}
-
-function buildTimeSlotsForDay(dayDate) {
-  const slots = [];
-  for (let h = START_HOUR; h < END_HOUR; h++) {
-    for (let m = 0; m < 60; m += STEP_MIN) {
-      const start = new Date(dayDate);
-      start.setHours(h, m, 0, 0);
-      const end = new Date(start);
-      end.setMinutes(start.getMinutes() + STEP_MIN);
-      slots.push({ start, end });
-    }
-  }
-  return slots;
-}
-
-// demo booking inside the current week
-function buildMockEvents(baseDate) {
-  const monday = getWeekStart(baseDate);
-  const mockStart = new Date(monday);
-  mockStart.setDate(monday.getDate() + 2); // Wednesday
-  mockStart.setHours(18, 0, 0, 0);         // 6:00 PM
-  const mockEnd = new Date(mockStart);
-  mockEnd.setMinutes(mockStart.getMinutes() + 60); // 1 hour
-
-  return [
-    {
-      id: 'mock-1',
-      startDate: mockStart,
-      endDate: mockEnd,
-      notes: 'Demo booking',
-      status: 'scheduled',
-      chef_id: 1,
-      customer_id: 1,
-      title: 'Italian (dinner)',
-    },
-  ];
-}
-
-const formatYmd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
-// Visibility rules
-const normalizeStatus = (s) => String(s || '').toLowerCase();
-const CHEF_ALLOWED = new Set(['accepted', 'completed', 'confirm', 'confirmed']); // accepted/completed only
-const CUSTOMER_ALLOWED = new Set(['pending', 'accepted', 'completed']);          // hide cancelled/declined
 
 export default function BookingsScreen() {
   const { apiUrl } = getEnvVars();
@@ -117,33 +109,25 @@ export default function BookingsScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Build visible week and range endpoint
+  // Week days (requires buildWeekDays helper present in file)
   const weekDays = useMemo(() => buildWeekDays(baseDate), [baseDate]);
 
-  // Customer: bookings calendar (date range)
-  const bookingRangeEndpoint = useMemo(() => {
+  // Customers: use range endpoint that includes duration_minutes
+  const customerCalendarEndpoint = useMemo(() => {
     if (!token || !profileId || userType !== 'customer') return null;
     const start = formatYmd(weekDays[0]);
     const end = formatYmd(weekDays[6]);
     return `${BOOKING_API_PREFIX}/customer/${profileId}/calendar?start=${start}&end=${end}`;
   }, [BOOKING_API_PREFIX, token, userType, profileId, weekDays]);
 
-  // Chef: bookings calendar (date range) to supplement orders
-  const chefBookingRangeEndpoint = useMemo(() => {
-    if (!token || !profileId || userType !== 'chef') return null;
-    const start = formatYmd(weekDays[0]);
-    const end = formatYmd(weekDays[6]);
-    return `${BOOKING_API_PREFIX}/chef/${profileId}/calendar?start=${start}&end=${end}`;
-  }, [BOOKING_API_PREFIX, token, userType, profileId, weekDays]);
-
-  // Chef: orders list (filter client-side to the visible week)
+  // Chefs: use orders (have estimated_prep_time)
   const chefOrdersEndpoint = useMemo(() => {
     if (!token || !profileId || userType !== 'chef') return null;
     return `${ORDER_API_PREFIX}/chef/${profileId}`;
   }, [ORDER_API_PREFIX, token, userType, profileId]);
 
-  // Footer "Refresh" action triggers a re-fetch via refreshKey
-  const loadBookings = useCallback(() => {
+  // Refresh trigger (footer action)
+  const triggerRefresh = useCallback(() => {
     setLoading(true);
     setRefreshKey((k) => k + 1);
   }, []);
@@ -153,29 +137,24 @@ export default function BookingsScreen() {
     setLoading(true);
     (async () => {
       if (DEV_MOCK_BOOKINGS) {
-        if (!cancelled) setEvents(buildMockEvents(baseDate));
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setEvents(buildMockEvents(baseDate));
+          setLoading(false);
+        }
         return;
       }
       if (!token || !profileId) return;
 
+      const weekStart = new Date(weekDays[0]); weekStart.setHours(0, 0, 0, 0);
+      const weekEnd = new Date(weekDays[6]); weekEnd.setHours(23, 59, 59, 999);
+
       try {
-        const weekStart = new Date(weekDays[0]); weekStart.setHours(0, 0, 0, 0);
-        const weekEnd = new Date(weekDays[6]); weekEnd.setHours(23, 59, 59, 999);
-
-        // Chef: pull orders AND bookings for the visible week, then merge
-        if (userType === 'chef') {
-          const [ordersRes, chefBookingsRes] = await Promise.all([
-            chefOrdersEndpoint
-              ? fetch(chefOrdersEndpoint, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).catch(() => ({}))
-              : Promise.resolve({}),
-            chefBookingRangeEndpoint
-              ? fetch(chefBookingRangeEndpoint, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).catch(() => ({}))
-              : Promise.resolve({}),
-          ]);
-
-          const ordersRaw = Array.isArray(ordersRes) ? ordersRes : (ordersRes?.orders ?? []);
-          const orderEvents = ordersRaw
+        if (userType === 'chef' && chefOrdersEndpoint) {
+          const payload = await fetchJsonSafe(chefOrdersEndpoint, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const raw = Array.isArray(payload) ? payload : (payload?.orders ?? []);
+          const mapped = (raw || [])
             .map((o) => {
               if (!o?.delivery_datetime) return null;
               const start = new Date(o.delivery_datetime);
@@ -196,44 +175,23 @@ export default function BookingsScreen() {
             })
             .filter(Boolean)
             .filter((e) => e.startDate >= weekStart && e.startDate <= weekEnd)
-            .filter((e) => CHEF_ALLOWED.has(e.status)); // show only accepted/completed
-
-          const chefBookingsRaw = Array.isArray(chefBookingsRes) ? chefBookingsRes : (chefBookingsRes?.data ?? []);
-          const bookingEvents = chefBookingsRaw
-            .map((b) => {
-              const start = parseLocalDateTime(b.booking_date, b.booking_time);
-              const dur = Number.isFinite(b?.duration_minutes) ? b.duration_minutes : 60;
-              const end = new Date(start.getTime() + dur * 60000);
-              const status = normalizeStatus(b.status || 'scheduled');
-              return {
-                id: `booking-${b.booking_id ?? b.id}`,
-                startDate: start,
-                endDate: end,
-                notes: b.special_notes ?? '',
-                status,
-                chef_id: b.chef_id,
-                customer_id: b.customer_id,
-                title: b.cuisine_type ? `${b.cuisine_type}${b.meal_type ? ` (${b.meal_type})` : ''}` : 'Booking',
-              };
-            })
-            .filter((e) => CHEF_ALLOWED.has(e.status)); // show only accepted/completed
-
-          const merged = [...orderEvents, ...bookingEvents];
-          if (!cancelled) setEvents(merged);
+            .filter((e) => CHEF_ALLOWED.has(e.status));
+          if (!cancelled) setEvents(mapped);
           return;
         }
 
-        // Customer: bookings calendar for range (hide cancelled/declined)
-        if (userType === 'customer' && bookingRangeEndpoint) {
-          const res = await fetch(bookingRangeEndpoint, { headers: { Authorization: `Bearer ${token}` } });
-          const payload = await res.json().catch(() => ({}));
+        // Customer: use duration-aware calendar endpoint
+        if (userType === 'customer' && customerCalendarEndpoint) {
+          const payload = await fetchJsonSafe(customerCalendarEndpoint, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           const raw = Array.isArray(payload) ? payload : (payload?.data ?? []);
-          const mapped = raw
+          const mapped = (raw || [])
             .map((b) => {
               const start = parseLocalDateTime(b.booking_date, b.booking_time);
               const dur = Number.isFinite(b?.duration_minutes) ? b.duration_minutes : 60;
               const end = new Date(start.getTime() + dur * 60000);
-              const status = normalizeStatus(b.status || 'scheduled');
+              const status = normalizeStatus(b.status || 'pending');
               return {
                 id: b.booking_id ?? b.id,
                 startDate: start,
@@ -245,9 +203,13 @@ export default function BookingsScreen() {
                 title: b.cuisine_type ? `${b.cuisine_type}${b.meal_type ? ` (${b.meal_type})` : ''}` : 'Booking',
               };
             })
-            .filter((e) => CUSTOMER_ALLOWED.has(e.status)); // pending/accepted/completed only
+            .filter((e) => e.startDate >= weekStart && e.startDate <= weekEnd)
+            .filter((e) => CUSTOMER_ALLOWED.has(e.status));
           if (!cancelled) setEvents(mapped);
+          return;
         }
+
+        if (!cancelled) setEvents([]);
       } catch {
         if (!cancelled) setEvents([]);
       } finally {
@@ -255,7 +217,7 @@ export default function BookingsScreen() {
       }
     })();
     return () => { cancelled = true; };
-  }, [token, profileId, userType, chefOrdersEndpoint, chefBookingRangeEndpoint, bookingRangeEndpoint, baseDate, weekDays, refreshKey]);
+  }, [token, profileId, userType, customerCalendarEndpoint, chefOrdersEndpoint, baseDate, weekDays, refreshKey]);
 
   const onPrevWeek = () => setBaseDate((d) => {
     const nd = new Date(d);
@@ -567,7 +529,7 @@ export default function BookingsScreen() {
         <Button
           title={loading ? 'Refreshing…' : 'Refresh'}
           style="primary"
-          onPress={loadBookings}
+          onPress={triggerRefresh}
         />
         {userType === 'customer' && (
           <Button
