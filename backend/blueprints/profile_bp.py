@@ -128,6 +128,40 @@ def get_chef_profile(chef_id):
         except:
             pass
         
+        # gather chef availability days and time range (based on meal)
+        cursor.execute('''
+            SELECT 
+                cad.day_of_week, 
+                cad.meal_type
+                cad.start_time, 
+                cad.end_time,
+            FROM chef_availability_days cad
+            WHERE cad.chef_id = %s
+            ORDER BY 
+                FIELD(cad.day_of_week, 'monday','tuesday','wednesday','thursday','friday','saturday','sunday'),
+                FIELD(cad.meal_type, 'breakfast', 'lunch', 'dinner')
+        ''', (chef_id,))
+        
+        availability_data = cursor.fetchall()
+        
+        #organizes the fetched availability data to be grouped by day of the week
+        availability = {}
+        for row in availability_data:
+            day = row['day_of_week']
+            if day not in availability:
+                availability[day] = []
+            availability[day].append({
+                'meal_type': row['meal_type'],
+                'start_time': str(row['start_time']),
+                'end_time': str(row['end_time'])
+            })
+
+        # Clear any remaining results
+        try:
+            cursor.nextset()
+        except:
+            pass
+        
         # Get chef cuisine photos
         cursor.execute('''
             SELECT 
@@ -183,6 +217,7 @@ def get_chef_profile(chef_id):
             'reviews': comments,
             'cuisine_photos': cuisine_photos,
             'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None
+            'availability': availability,
         }
         
         # Only include private information if explicitly requested (for chef's own profile or admin access)
@@ -288,6 +323,40 @@ def get_chef_public_profile(chef_id):
             'avg_rating': avg_rating,
             'total_ratings': total_ratings
         }
+
+        # gather chef availability days and time range 
+        cursor.execute('''
+            SELECT 
+                cad.day_of_week, 
+                cad.meal_type
+                cad.start_time, 
+                cad.end_time,
+            FROM chef_availability_days cad
+            WHERE cad.chef_id = %s
+            ORDER BY 
+                FIELD(cad.day_of_week, 'monday','tuesday','wednesday','thursday','friday','saturday','sunday'),
+                FIELD(cad.meal_type, 'breakfast', 'lunch', 'dinner')
+        ''', (chef_id,))
+
+        availability_data = cursor.fetchall()
+
+        #organizes the fetched availability data to be grouped by day of the week
+        availability = {}
+        for row in availability_data:
+            day = row['day_of_week']
+            if day not in availability:
+                availability[day] = []
+            availability[day].append({
+                'meal_type': row['meal_type'],
+                'start_time': str(row['start_time']),
+                'end_time': str(row['end_time'])
+            })
+
+        # Clear any remaining results
+        try:
+            cursor.nextset()
+        except:
+            pass
         
         # Get chef cuisine photos
         cursor.execute('''
@@ -343,6 +412,7 @@ def get_chef_public_profile(chef_id):
             'average_rating': float(rating_info['avg_rating'] or 0),
             'total_ratings': rating_info['total_ratings'] or 0,
             'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None,
+            'availability': availability,
             'is_public_view': True  # Flag to indicate this is public view
         }
         
@@ -1461,4 +1531,66 @@ def toggle_photo_featured(chef_id, photo_id):
         }), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+#route for chef to update their availability status
+@profile_bp.route('/chef/<int:chef_id>/availability', methods=['PUT'])
+def update_chef_availability(chef_id):
+    """Update chef's availability status"""
+    try:
+        data = request.get_json()
+        '''if not data or 'is_available' not in data:
+            return jsonify({'error': 'is_available field is required'}), 400
+        
+        is_available = data['is_available']
+        if not isinstance(is_available, bool):
+            return jsonify({'error': 'is_available must be a boolean value'}), 400'''
+        
+        if not data or 'availability' not in data:
+            return jsonify({'error': 'Availability data required'}), 400
+
+        availability = data['availability']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        #clear chef's current schedule from availability days table
+        cursor.execute('DELETE FROM chef_availability_days WHERE chef_id = %s', (chef_id,))
+
+        #insert updated availability into table
+        for day_info in availability:
+            day_of_week = day_info.get('day_of_week')
+            meal_type = day_info.get('meal_type')
+            start_time = day_info.get('start_time')  # Expecting 'HH:MM:SS' format 
+            end_time = day_info.get('end_time')      # Expecting 'HH:MM:SS' format 
+
+        for day, type in availability.items():
+            if day.lower() not in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']:
+                continue  # skip invalid days
+            for t in type:
+                meal_type = t.get('meal_type')
+                start_time = t.get('start_time')
+                end_time = t.get('end_time')   
+            
+                if not(meal_type and start_time and end_time):
+                    continue  # skip incomplete entries
+                
+                #inserts new schedule for chef to chef_availability_days table
+                cursor.execute('''
+                    INSERT INTO chef_availability_days (chef_id, day_of_week, start_time, end_time, meal_type)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (chef_id, day_of_week, start_time, end_time, meal_type))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'message': 'availability updated successfully',
+            'chef_id': chef_id,
+            'updated_availability': availability
+        }), 200
+        
+    except Exception as e:
+        print(f"Error updating availability for chef {chef_id}: {e}")
         return jsonify({'error': str(e)}), 500
