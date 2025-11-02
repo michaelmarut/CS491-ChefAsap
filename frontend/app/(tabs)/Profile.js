@@ -244,7 +244,7 @@ export default function ProfileScreen() {
 
 
     return (
-        <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
+        <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
             {/*console.log(JSON.stringify(profileData))*/}
             <Card
                 title="Profile"
@@ -459,7 +459,7 @@ export default function ProfileScreen() {
                 onPress={logout}
             />
 
-            <View className="h-24" />
+            <View className="h-8" />
         </ScrollView>
     );
 }

@@ -139,7 +139,7 @@ export default function ChefOrdersScreen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <ScrollView 
-                className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12"
+                className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5"
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
@@ -366,10 +366,10 @@ export default function ChefOrdersScreen() {
                     title="← Back to Profile"
                     style="secondary"
                     href="/(tabs)/BookingsScreen"
-                    customClasses="min-w-[60%] mt-4"
+                    customClasses="min-w-[60%]"
                 />
 
-                <View className="h-24" />
+                <View className="h-8" />
             </ScrollView>
         </>
     );

@@ -92,8 +92,7 @@ export default function Signin() {
 
   return (
     <View className="p-5 bg-base-100 dark:bg-base-dark-100 flex-1">
-
-      <Text className="text-4xl font-bold text-center mb-5 text-primary-500 dark:text-dark-500 mt-8">
+      <Text className="text-4xl font-bold text-center mb-5 text-primary-500 dark:text-dark-500">
         Sign In
       </Text>
 

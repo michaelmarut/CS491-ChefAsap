@@ -279,7 +279,7 @@ export default function SearchScreen() {
     };
 
     return (
-        <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
+        <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
             <SearchBarComponent
                 key={refreshKey}
                 formData={formData}
@@ -337,7 +337,7 @@ export default function SearchScreen() {
                     <LoadingIcon icon='food' size={64} message='Fetching Nearby Chefs...'/>
                 }
             </Card>
-            <View className="h-24" />
+            <View className="h-8" />
         </ScrollView>
     );
 

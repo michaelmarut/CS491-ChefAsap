@@ -1,8 +1,8 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useColorScheme } from 'nativewind';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StatusBar } from 'expo-status-bar';
-import { useEdgeToEdge } from 'react-native-edge-to-edge'; 
+import { SystemBars } from 'react-native-edge-to-edge';
+import { View } from 'react-native';
 
 const THEME_STORAGE_KEY = 'user-color-theme';
 
@@ -16,11 +16,7 @@ export default function ThemeProvider({ children }) {
     const { colorScheme, setColorScheme } = useColorScheme();
     const [manualTheme, setManualTheme] = useState('system');
 
-    const activeBackground = colorScheme === 'dark' ? '#65A30D' : '#4D7C0F'; // Example bg colors
-    useEdgeToEdge({
-
-        backgroundColor: activeBackground,
-    });
+    const activeBackground = colorScheme === 'dark' ? '#4D7C0F' : '#65A30D'; // Example bg colors
 
     useEffect(() => {
         const loadTheme = async () => {
@@ -48,8 +44,13 @@ export default function ThemeProvider({ children }) {
     
     return (
         <ThemeContext.Provider value={contextValue}>
-            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            {children}
+            <View style={{ flex: 1, backgroundColor: activeBackground }}>
+                <SystemBars
+                    style={colorScheme === 'dark' ? 'light' : 'dark'}
+                    animated
+                />
+                {children}
+            </View>
         </ThemeContext.Provider>
     );
 }
