@@ -100,6 +100,7 @@ def get_customer_orders(customer_id):
             SELECT 
                 o.id as order_id,
                 o.order_date,
+                o.delivery_datetime,               
                 o.status,
                 o.total_amount,
                 o.estimated_prep_time,
@@ -113,7 +114,7 @@ def get_customer_orders(customer_id):
             JOIN chefs c ON o.chef_id = c.id
             LEFT JOIN order_items oi ON o.id = oi.order_id
             WHERE o.customer_id = %s
-            GROUP BY o.id, o.order_date, o.status, o.total_amount, o.estimated_prep_time,
+            GROUP BY o.id, o.order_date, o.delivery_datetime, o.status, o.total_amount, o.estimated_prep_time,
                      o.delivery_address, o.special_instructions,
                      c.first_name, c.last_name, c.photo_url
             ORDER BY o.order_date DESC
@@ -129,6 +130,8 @@ def get_customer_orders(customer_id):
                 formatted_order['order_date'] = formatted_order['order_date'].isoformat()
             if formatted_order.get('total_amount'):
                 formatted_order['total_amount'] = float(formatted_order['total_amount'])
+            if formatted_order.get('delivery_datetime'):
+                formatted_order['delivery_datetime'] = formatted_order['delivery_datetime'].isoformat()
             formatted_order['chef_name'] = f"{formatted_order['chef_first_name']} {formatted_order['chef_last_name']}"
             formatted_orders.append(formatted_order)
         

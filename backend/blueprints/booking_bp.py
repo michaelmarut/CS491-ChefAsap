@@ -770,6 +770,10 @@ def update_booking_status(booking_id):
 
 @booking_bp.get("/customer/<int:customer_id>/calendar")
 def calendar_for_customer(customer_id: int):
+    """
+    Return customer's bookings within a date range, including duration_minutes
+    from chef_menu_items.prep_time. Default is 60.
+    """
     start = request.args.get("start")
     end = request.args.get("end")
     try:
@@ -783,8 +787,6 @@ def calendar_for_customer(customer_id: int):
     conn = get_db_connection()
     cur = get_cursor(conn, dictionary=True)
     try:
-        # Best-effort prep time: match a chef_menu_items row for the chef and cuisine_type.
-        # If there are multiple, pick the highest prep_time; fallback to 60 when none match.
         cur.execute(
             """
             SELECT
@@ -797,50 +799,53 @@ def calendar_for_customer(customer_id: int):
               b.special_notes,
               b.cuisine_type,
               b.meal_type,
-              COALESCE(cmi_match.prep_time, 60) AS duration_minutes
+              COALESCE(MAX(cmi.prep_time), 60) AS duration_minutes
             FROM bookings b
-            LEFT JOIN LATERAL (
-              SELECT cmi.prep_time
-              FROM chef_menu_items cmi
-              WHERE cmi.chef_id = b.chef_id
-                AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
-              ORDER BY cmi.prep_time DESC
-              LIMIT 1
-            ) AS cmi_match ON TRUE
+            LEFT JOIN chef_menu_items cmi
+              ON cmi.chef_id = b.chef_id
+             AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
             WHERE b.customer_id = %s
               AND b.booking_date BETWEEN %s AND %s
+            GROUP BY
+              b.id, b.customer_id, b.chef_id, b.booking_date, b.booking_time, b.status,
+              b.special_notes, b.cuisine_type, b.meal_type
             ORDER BY b.booking_date, b.booking_time
             """,
             (customer_id, start_d, end_d),
         )
         rows = cur.fetchall()
 
-        def shape(r):
+        data = []
+        for r in rows:
             bd = str(r.get("booking_date")) if r.get("booking_date") is not None else None
             bt_raw = r.get("booking_time")
             bt = (bt_raw.strftime("%H:%M") if hasattr(bt_raw, "strftime") else (str(bt_raw)[:5] if bt_raw else None))
-            return {
+            data.append({
                 "booking_id": r.get("booking_id"),
                 "customer_id": r.get("customer_id"),
                 "chef_id": r.get("chef_id"),
                 "booking_date": bd,
                 "booking_time": bt,
-                "status": r.get("status") or "scheduled",
+                "status": r.get("status") or "pending",
                 "special_notes": r.get("special_notes") or "",
                 "cuisine_type": r.get("cuisine_type"),
                 "meal_type": r.get("meal_type"),
                 "duration_minutes": int(r.get("duration_minutes") or 60),
-            }
-
-        return jsonify({"success": True, "data": [shape(r) for r in rows]})
+            })
+        return jsonify({"success": True, "data": data})
     finally:
         try:
             cur.close()
         finally:
             conn.close()
 
+
 @booking_bp.get("/chef/<int:chef_id>/calendar")
 def calendar_for_chef(chef_id: int):
+    """
+    Return chef's bookings within a date range, including duration_minutes from
+    chef_menu_items.prep_time. Default is 60.
+    """
     start = request.args.get("start")
     end = request.args.get("end")
     try:
@@ -866,42 +871,40 @@ def calendar_for_chef(chef_id: int):
               b.special_notes,
               b.cuisine_type,
               b.meal_type,
-              COALESCE(cmi_match.prep_time, 60) AS duration_minutes
+              COALESCE(MAX(cmi.prep_time), 60) AS duration_minutes
             FROM bookings b
-            LEFT JOIN LATERAL (
-              SELECT cmi.prep_time
-              FROM chef_menu_items cmi
-              WHERE cmi.chef_id = b.chef_id
-                AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
-              ORDER BY cmi.prep_time DESC
-              LIMIT 1
-            ) AS cmi_match ON TRUE
+            LEFT JOIN chef_menu_items cmi
+              ON cmi.chef_id = b.chef_id
+             AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
             WHERE b.chef_id = %s
               AND b.booking_date BETWEEN %s AND %s
+            GROUP BY
+              b.id, b.customer_id, b.chef_id, b.booking_date, b.booking_time, b.status,
+              b.special_notes, b.cuisine_type, b.meal_type
             ORDER BY b.booking_date, b.booking_time
             """,
             (chef_id, start_d, end_d),
         )
         rows = cur.fetchall()
 
-        def shape(r):
+        data = []
+        for r in rows:
             bd = str(r.get("booking_date")) if r.get("booking_date") is not None else None
             bt_raw = r.get("booking_time")
             bt = (bt_raw.strftime("%H:%M") if hasattr(bt_raw, "strftime") else (str(bt_raw)[:5] if bt_raw else None))
-            return {
+            data.append({
                 "booking_id": r.get("booking_id"),
                 "customer_id": r.get("customer_id"),
                 "chef_id": r.get("chef_id"),
                 "booking_date": bd,
                 "booking_time": bt,
-                "status": r.get("status") or "scheduled",
+                "status": r.get("status") or "pending",
                 "special_notes": r.get("special_notes") or "",
                 "cuisine_type": r.get("cuisine_type"),
                 "meal_type": r.get("meal_type"),
                 "duration_minutes": int(r.get("duration_minutes") or 60),
-            }
-
-        return jsonify({"success": True, "data": [shape(r) for r in rows]})
+            })
+        return jsonify({"success": True, "data": data})
     finally:
         try:
             cur.close()
