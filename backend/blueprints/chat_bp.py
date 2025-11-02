@@ -330,6 +330,7 @@ def get_conversations():
                 SELECT 
                     c.id as chat_id,
                     c.customer_id,
+                    u.id as customer_user_id,
                     cu.first_name as customer_first_name,
                     cu.last_name as customer_last_name,
                     cu.email as customer_email,
@@ -351,6 +352,7 @@ def get_conversations():
                     ) as unread_count
                 FROM chats c
                 JOIN customers cu ON c.customer_id = cu.id
+                JOIN users u ON u.customer_id = cu.id
                 WHERE c.chef_id = %s AND c.status = 'active'
                 ORDER BY c.last_message_at DESC
             """, (chef_id,))
@@ -381,6 +383,7 @@ def get_conversations():
                 SELECT 
                     c.id as chat_id,
                     c.chef_id,
+                    u.id as chef_user_id, 
                     ch.first_name as chef_first_name,
                     ch.last_name as chef_last_name,
                     ch.email as chef_email,
@@ -402,6 +405,7 @@ def get_conversations():
                     ) as unread_count
                 FROM chats c
                 JOIN chefs ch ON c.chef_id = ch.id
+                JOIN users u ON u.chef_id = ch.id
                 WHERE c.customer_id = %s AND c.status = 'active'
                 ORDER BY c.last_message_at DESC
             """, (customer_id,))

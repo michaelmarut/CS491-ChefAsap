@@ -75,10 +75,10 @@ export default function Messages() {
     const handleConversationPress = (conversation) => {
         // Navigate to chat
         router.push({
-            pathname: './ChatScreen',
+            pathname: '/ChatScreen',
             params: {
                 chatId: conversation.chat_id,
-                otherUserId: userType === 'chef' ? conversation.customer_id : conversation.chef_id,
+                otherUserId: userType === 'chef' ? conversation.customer_user_id : conversation.chef_user_id,
                 otherUserName: userType === 'chef' 
                     ? `${conversation.customer_first_name} ${conversation.customer_last_name}`
                     : `${conversation.chef_first_name} ${conversation.chef_last_name}`,
