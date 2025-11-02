@@ -139,9 +139,9 @@ export default function ChatScreen() {
                 }),
             });
 
-            console.log('Request body:', {
+            console.log('Request body :', {
                 customer_id: customerId,
-                chef_id: chefId,
+                //chef_id: chefId,
                 sender_type: userType,
                 message: trimmedMessage,
             });

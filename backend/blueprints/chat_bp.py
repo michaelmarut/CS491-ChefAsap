@@ -15,7 +15,7 @@ def send_message():
         return jsonify(error=f"Missing required field(s): {', '.join(missing)}"), 400
     
     customer_id = data['customer_id'] #from "users" table
-    chef_id = data['chef_id'] #from "users" table
+    chef_id = data['chef_id'] #from "chefs" table
     booking_id = data.get('booking_id')  # Optional
     sender_type = data['sender_type']  # 'customer' or 'chef'
     message = data['message']
@@ -37,14 +37,13 @@ def send_message():
 
         if query:
             customer_id = query[0]
-        else:
-            customer_id = None
 
-        #finds chef_id based on user_id
-        cursor.execute("""
+
+        """#finds chef_id based on user_id
+        cursor.execute("/""
             SELECT chef_id FROM users
             WHERE id=%s
-        """, (chef_id,))
+        ""/", (chef_id,))
         
         query = cursor.fetchone()
 
@@ -52,6 +51,7 @@ def send_message():
             chef_id = query[0]
         else:
             chef_id = None
+            """
 
         #saves the correct id from chef/customer table
         sender_id = customer_id if sender_type == 'customer' else chef_id
@@ -69,7 +69,7 @@ def send_message():
         """, (customer_id, chef_id, booking_id, booking_id))
         
         chat_result = cursor.fetchone()
-        
+        print('CHEFFF:',{chef_id})
         if chat_result:
             chat_id = chat_result[0]
         else:
@@ -128,19 +128,21 @@ def get_chat_history():
             SELECT customer_id FROM users
             WHERE id=%s
         """, (customer_id,))
-
+        print("Customer id",customer_id)
         query = cursor.fetchone()
 
         if query:
             customer_id = query['customer_id']
         else:
-            customer_id = None
+            customer_id = customer_id
+            return jsonify(error="Missing customer id.")
+        print("Chef id correct: ",chef_id)
 
-        #finds chef_id based on user_id
-        cursor.execute("""
+        """ #finds chef_id based on user_id
+        cursor.execute(""/"
             SELECT chef_id FROM users
             WHERE id=%s
-        """, (chef_id,))
+        ""/", (chef_id,))
         
         query = cursor.fetchone()
 
@@ -148,6 +150,7 @@ def get_chat_history():
             chef_id = query['chef_id']
         else:
             chef_id = None
+        """
 
         # Find the chat session
         cursor.execute("""
@@ -330,7 +333,7 @@ def get_conversations():
                 SELECT 
                     c.id as chat_id,
                     c.customer_id,
-                    u.id as customer_user_id,
+                    u.id as customer_id,
                     cu.first_name as customer_first_name,
                     cu.last_name as customer_last_name,
                     cu.email as customer_email,

@@ -29,7 +29,7 @@ export default function Messages() {
             else {
                 user = `customer_id=${userId}`;
             }  
-            console.log('user variable:', user);
+            
             const url = `${apiUrl}/api/chat/conversations?${user}`;
             console.log('Fetching conversations from URL:', url);
 
@@ -78,7 +78,7 @@ export default function Messages() {
             pathname: '/ChatScreen',
             params: {
                 chatId: conversation.chat_id,
-                otherUserId: userType === 'chef' ? conversation.customer_user_id : conversation.chef_user_id,
+                otherUserId: userType === 'chef' ? conversation.customer_id : conversation.chef_id,
                 otherUserName: userType === 'chef' 
                     ? `${conversation.customer_first_name} ${conversation.customer_last_name}`
                     : `${conversation.chef_first_name} ${conversation.chef_last_name}`,
