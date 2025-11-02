@@ -18,17 +18,12 @@ const FOOTER_PADDING = 12;
 const DATE_HEADER_TEXT_STYLE = { fontSize: 13, fontWeight: '600' };
 const DEV_MOCK_BOOKINGS = false;
 
-// Helpers
-const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
-const formatTime = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-const formatHeader = (d) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-const formatYmd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
-// Status visibility rules and safe fetch
+// Status visibility rules
 const normalizeStatus = (s) => String(s || '').toLowerCase();
 const CHEF_ALLOWED = new Set(['accepted', 'completed', 'confirm', 'confirmed']);
 const CUSTOMER_ALLOWED = new Set(['pending', 'accepted', 'completed']);
 
+// Safe fetch to avoid JSON parse errors on HTML/404
 async function fetchJsonSafe(url, options) {
   try {
     const res = await fetch(url, options);
@@ -41,7 +36,6 @@ async function fetchJsonSafe(url, options) {
   }
 }
 
-// Calendar helpers
 function getWeekStart(d) {
   const dt = new Date(d);
   dt.setHours(0, 0, 0, 0);
@@ -96,6 +90,23 @@ function parseLocalDateTime(ymd, hm) {
   return new Date(y, (m || 1) - 1, da || 1, hh, mm, 0, 0);
 }
 
+// Helpers pad, formatYmd, formatTime, formatHeader
+function pad(n) {
+  return n < 10 ? `0${n}` : `${n}`;
+}
+function formatYmd(d) {
+  const y = d.getFullYear();
+  const m = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  return `${y}-${m}-${day}`;
+}
+function formatTime(d) {
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+function formatHeader(d) {
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 export default function BookingsScreen() {
   const { apiUrl } = getEnvVars();
   const { token, userType, profileId } = useAuth();
@@ -109,7 +120,6 @@ export default function BookingsScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Week days
   const weekDays = useMemo(() => buildWeekDays(baseDate), [baseDate]);
 
   // Customers: use range endpoint that includes duration_minutes
@@ -121,10 +131,12 @@ export default function BookingsScreen() {
   }, [BOOKING_API_PREFIX, token, userType, profileId, weekDays]);
 
   // Chefs: use orders endpoint
-  const chefOrdersEndpoint = useMemo(() => {
+  const chefCalendarEndpoint = useMemo(() => {
     if (!token || !profileId || userType !== 'chef') return null;
-    return `${ORDER_API_PREFIX}/chef/${profileId}`;
-  }, [ORDER_API_PREFIX, token, userType, profileId]);
+    const start = formatYmd(weekDays[0]);
+    const end = formatYmd(weekDays[6]);
+    return `${BOOKING_API_PREFIX}/chef/${profileId}/calendar?start=${start}&end=${end}`;
+  }, [BOOKING_API_PREFIX, token, userType, profileId, weekDays]);
 
   // Refresh trigger (footer action)
   const triggerRefresh = useCallback(() => {
@@ -149,39 +161,37 @@ export default function BookingsScreen() {
       const weekEnd = new Date(weekDays[6]); weekEnd.setHours(23, 59, 59, 999);
 
       try {
-        if (userType === 'chef' && chefOrdersEndpoint) {
-          const payload = await fetchJsonSafe(chefOrdersEndpoint, {
+        if (userType === 'chef' && chefCalendarEndpoint) {
+          // Chef calendar: bookings with duration_minutes
+          const payload = await fetchJsonSafe(chefCalendarEndpoint, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          const raw = Array.isArray(payload) ? payload : (payload?.orders ?? []);
+          const raw = Array.isArray(payload) ? payload : (payload?.data ?? []);
           const mapped = (raw || [])
-            .map((o) => {
-              if (!o?.delivery_datetime) return null;
-              const start = new Date(o.delivery_datetime);
-              if (isNaN(start.getTime())) return null;
-              const dur = Number.isFinite(o?.estimated_prep_time) ? o.estimated_prep_time : 60;
+            .map((b) => {
+              const start = parseLocalDateTime(b.booking_date, b.booking_time);
+              const dur = Number.isFinite(b?.duration_minutes) ? b.duration_minutes : 60;
               const end = new Date(start.getTime() + dur * 60000);
-              const status = normalizeStatus(o.status || 'pending');
+              const status = normalizeStatus(b.status || 'pending');
               return {
-                id: `order-${o.order_id ?? o.id}`,
+                id: b.booking_id ?? b.id,
                 startDate: start,
                 endDate: end,
-                notes: o.special_instructions ?? '',
+                notes: b.special_notes ?? '',
                 status,
-                chef_id: profileId,
-                customer_id: o.customer_id,
-                title: o.item_count ? `Order (${o.item_count} items)` : 'Order',
+                chef_id: b.chef_id,
+                customer_id: b.customer_id,
+                title: b.cuisine_type ? `${b.cuisine_type}${b.meal_type ? ` (${b.meal_type})` : ''}` : 'Booking',
               };
             })
-            .filter(Boolean)
             .filter((e) => e.startDate >= weekStart && e.startDate <= weekEnd)
             .filter((e) => CHEF_ALLOWED.has(e.status));
           if (!cancelled) setEvents(mapped);
           return;
         }
 
-        // Customer: use duration-aware calendar endpoint
         if (userType === 'customer' && customerCalendarEndpoint) {
+          // Customer calendar: bookings with duration_minutes
           const payload = await fetchJsonSafe(customerCalendarEndpoint, {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -217,7 +227,7 @@ export default function BookingsScreen() {
       }
     })();
     return () => { cancelled = true; };
-  }, [token, profileId, userType, customerCalendarEndpoint, chefOrdersEndpoint, baseDate, weekDays, refreshKey]);
+  }, [token, profileId, userType, customerCalendarEndpoint, chefCalendarEndpoint, baseDate, weekDays, refreshKey]);
 
   const onPrevWeek = () => setBaseDate((d) => {
     const nd = new Date(d);

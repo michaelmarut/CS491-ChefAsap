@@ -768,11 +768,13 @@ def update_booking_status(booking_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@booking_bp.get("/customer/<int:customer_id>/calendar")
+# Calendar endpoints: bookings with derived duration_minutes (MAX prep_time per chef+cuisine)
+@booking_bp.route('/customer/<int:customer_id>/calendar', methods=['GET'])
 def calendar_for_customer(customer_id: int):
     """
     Return customer's bookings within a date range, including duration_minutes
-    from chef_menu_items.prep_time. Default is 60.
+    derived from chef_menu_items.prep_time (max per cuisine/chef). Fallback 60.
+    Query params: start=YYYY-MM-DD, end=YYYY-MM-DD (inclusive).
     """
     start = request.args.get("start")
     end = request.args.get("end")
@@ -817,22 +819,30 @@ def calendar_for_customer(customer_id: int):
 
         data = []
         for r in rows:
-            bd = str(r.get("booking_date")) if r.get("booking_date") is not None else None
+            bd = r.get("booking_date")
             bt_raw = r.get("booking_time")
-            bt = (bt_raw.strftime("%H:%M") if hasattr(bt_raw, "strftime") else (str(bt_raw)[:5] if bt_raw else None))
+            booking_date = str(bd) if bd is not None else None
+            booking_time = (
+                bt_raw.strftime("%H:%M")
+                if hasattr(bt_raw, "strftime")
+                else (str(bt_raw)[:5] if bt_raw else None)
+            )
             data.append({
                 "booking_id": r.get("booking_id"),
                 "customer_id": r.get("customer_id"),
                 "chef_id": r.get("chef_id"),
-                "booking_date": bd,
-                "booking_time": bt,
+                "booking_date": booking_date,
+                "booking_time": booking_time,
                 "status": r.get("status") or "pending",
                 "special_notes": r.get("special_notes") or "",
                 "cuisine_type": r.get("cuisine_type"),
                 "meal_type": r.get("meal_type"),
                 "duration_minutes": int(r.get("duration_minutes") or 60),
             })
+
         return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return handle_db_error(e)
     finally:
         try:
             cur.close()
@@ -840,11 +850,12 @@ def calendar_for_customer(customer_id: int):
             conn.close()
 
 
-@booking_bp.get("/chef/<int:chef_id>/calendar")
+@booking_bp.route('/chef/<int:chef_id>/calendar', methods=['GET'])
 def calendar_for_chef(chef_id: int):
     """
-    Return chef's bookings within a date range, including duration_minutes from
-    chef_menu_items.prep_time. Default is 60.
+    Return chef's bookings within a date range, including duration_minutes
+    derived from chef_menu_items.prep_time (max per cuisine/chef). Fallback 60.
+    Query params: start=YYYY-MM-DD, end=YYYY-MM-DD (inclusive).
     """
     start = request.args.get("start")
     end = request.args.get("end")
@@ -889,22 +900,30 @@ def calendar_for_chef(chef_id: int):
 
         data = []
         for r in rows:
-            bd = str(r.get("booking_date")) if r.get("booking_date") is not None else None
+            bd = r.get("booking_date")
             bt_raw = r.get("booking_time")
-            bt = (bt_raw.strftime("%H:%M") if hasattr(bt_raw, "strftime") else (str(bt_raw)[:5] if bt_raw else None))
+            booking_date = str(bd) if bd is not None else None
+            booking_time = (
+                bt_raw.strftime("%H:%M")
+                if hasattr(bt_raw, "strftime")
+                else (str(bt_raw)[:5] if bt_raw else None)
+            )
             data.append({
                 "booking_id": r.get("booking_id"),
                 "customer_id": r.get("customer_id"),
                 "chef_id": r.get("chef_id"),
-                "booking_date": bd,
-                "booking_time": bt,
+                "booking_date": booking_date,
+                "booking_time": booking_time,
                 "status": r.get("status") or "pending",
                 "special_notes": r.get("special_notes") or "",
                 "cuisine_type": r.get("cuisine_type"),
                 "meal_type": r.get("meal_type"),
                 "duration_minutes": int(r.get("duration_minutes") or 60),
             })
+
         return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return handle_db_error(e)
     finally:
         try:
             cur.close()
