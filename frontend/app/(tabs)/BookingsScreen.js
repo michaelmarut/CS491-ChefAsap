@@ -260,7 +260,7 @@ export default function BookingsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
       {/* Week controls */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, paddingTop: 48, borderBottomWidth: 1, borderColor: '#e5e7eb' }} className="bg-base-100 dark:bg-dark-100">
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderColor: '#e5e7eb' }} className="bg-base-100 dark:bg-dark-100">
         <Text style={{ fontSize: 15, fontWeight: '600' }} className="text-olive-400 dark:text-dark-400">
           Week of {formatHeader(weekDays[0])}
         </Text>

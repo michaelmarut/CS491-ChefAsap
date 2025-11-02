@@ -3,11 +3,11 @@ import Button from '../components/Button';
 
 export default function LandingScreen() {
   return (
-    <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
-      <View className="p-6 rounded-2xl bg-primary-200 items-center w-[80%] h-[90%] shadow-lg shadow-primary-400 dark:bg-dark-200 dark:shadow-dark-400">
+    <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100 p-8">
+      <View className="p-6 rounded-2xl bg-primary-200 items-center w-full h-full shadow-lg shadow-primary-400 dark:bg-dark-200 dark:shadow-dark-400">
         <View className="mb-8 items-center">
           <Image
-            source={require('../assets/images/chefAsapLogo1Circle.png')}
+            source={require('../assets/icon.png')}
             className="w-48 h-48 mb-4"
             resizeMode="contain"
           />

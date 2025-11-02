@@ -223,7 +223,7 @@ export default function ChefProfileScreen() {
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
-            <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
+            <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
                 {/*console.log(JSON.stringify(chefData))*/}
                 <Card
                     title={`${chefData?.first_name} ${chefData?.last_name}`}
@@ -378,7 +378,7 @@ export default function ChefProfileScreen() {
                     href={userType === 'customer' ? "/(tabs)/SearchScreen" : "/(tabs)/Profile"}
                     customClasses="min-w-[60%]"
                 />
-                <View className="h-24" />
+                <View className="h-8" />
             </ScrollView>
         </>
     );

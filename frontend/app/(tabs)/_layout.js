@@ -31,7 +31,7 @@ export default function TabLayout() {
         // other options: tabBarIcon (notifications), tabBarAccessibilityLabel (accessibility (out of scope))
         tabBarStyle: {
             backgroundColor: manualTheme === 'light' ? "#65A30D" : "#4D7C0F", // primary-300
-            //height: 100, //if height needs to be defined
+            height: 75, //if height needs to be defined
         },
         tabBarLabelStyle: {
             fontSize: 12,

@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+# Expo Prebuild Folders
+android/
+ios/
+
 # Expo
 .expo/
 dist/

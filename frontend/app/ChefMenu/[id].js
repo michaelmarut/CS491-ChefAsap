@@ -378,7 +378,7 @@ export default function ChefMenu() {
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
-            <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
+            <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
                 {/*<Text>{JSON.stringify(chefData)}</Text>*/}
                 <View className="flex justify-center items-center bg-primary-100 dark:bg-dark-100 rounded-3xl mb-4 border-2 shadow-sm shadow-primary-500 border-primary-100 dark:border-dark-100">
                     <View className="flex-row w-full justify-between items-center p-2 pl-4 pr-4">
@@ -685,20 +685,21 @@ export default function ChefMenu() {
                     </View>
                 </Modal>
 
+                {/* replaced by booking button above -- that one could be moved down here?
                 <Button
                     title="View Order"
                     style="primary"
                     customClasses="min-w-[60%]"
                     onPress={() => alert("Checkout Placeholder")}
                     disabled={userType === 'chef'}
-                />
+                />*/}
                 <Button
                     title="← Return"
                     style="secondary"
                     href={userType === 'customer' ? `/ChefProfileScreen/${id}` : "/ChefMenuScreen"}
                     customClasses="min-w-[60%]"
                 />
-                <View className="h-24" />
+                <View className="h-8" />
             </ScrollView>
         </>
     );
