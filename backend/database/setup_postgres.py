@@ -166,15 +166,17 @@ def init_postgres_db():
         ''')
 
         # Chef availability days
+        #meal windows | breakfast: 6:00am - 11:00am lunch: 11:00am - 5:00pm dinner: 5:00pm - 10:00pm
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS chef_availability_days (
                 id SERIAL PRIMARY KEY,
                 chef_id INTEGER NOT NULL,
                 day_of_week VARCHAR(20) NOT NULL CHECK (day_of_week IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')),
+                meal_type VARCHAR(20) NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner')),
                 start_time TIME NOT NULL,
                 end_time TIME NOT NULL,
                 FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE,
-                UNIQUE (chef_id, day_of_week)
+                CONSTRAINT unique_shifts UNIQUE (chef_id, day_of_week, meal_type)
             )
         ''')
 
