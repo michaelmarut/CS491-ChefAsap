@@ -19,7 +19,7 @@ export default function ChatScreen() {
     const [sending, setSending] = useState(false);
     const { chatId, otherUserName, otherUserId } = useLocalSearchParams();
     const { apiUrl } = getEnvVars();
-    const { userId, userType, token } = useAuth();
+    const { userId, userType, token, profileId } = useAuth();
     const { manualTheme } = useTheme();
     const router = useRouter();
     const flatListRef = useRef();
@@ -27,12 +27,12 @@ export default function ChatScreen() {
     let chefId, customerId;
 
     if (userType === 'chef') {
-        chefId = userId;
+        chefId = profileId;
         customerId = otherUserId;
         console.log('I am chef ', chefId, 'Talking to customer', customerId);
     }
     else {
-        customerId = userId;
+        customerId = profileId;
         chefId = otherUserId;
         console.log('Talking to customer', customerId, 'I am chef ', chefId);
     }

@@ -15,23 +15,13 @@ export default function Messages() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
     const { apiUrl } = getEnvVars();
-    const { userId, userType, token } = useAuth(); 
+    const { userId, userType, token, profileId } = useAuth(); 
     const { manualTheme } = useTheme();
     const router = useRouter();
 
     const fetchConversations = async () => {
         try {
-            
-            let user;
-
-            if (userType === 'chef') {
-                user = `chef_id=${userId}`;
-            } 
-            else {
-                user = `customer_id=${userId}`;
-            }  
-            
-            const url = `${apiUrl}/api/chat/conversations?${user}`;
+            const url = `${apiUrl}/api/chat/conversations?${userType}_id=${profileId}`;
             console.log('Fetching conversations from URL:', url);
 
             const response = await fetch(url, {
@@ -71,7 +61,7 @@ export default function Messages() {
         useCallback(() => {
             setLoading(true);
             fetchConversations();
-        }, [userId, userType])
+        }, [profileId, userType])
     );
 
     const onRefresh = useCallback(() => {
@@ -85,7 +75,7 @@ export default function Messages() {
             pathname: '/ChatScreen',
             params: {
                 chatId: conversation.chat_id,
-                otherUserId: userType === 'chef' ? conversation.customer_id : conversation.chef_user_id,
+                otherUserId: userType === 'chef' ? conversation.customer_id : conversation.chef_id,
                 otherUserName: userType === 'chef' 
                     ? `${conversation.customer_first_name} ${conversation.customer_last_name}`
                     : `${conversation.chef_first_name} ${conversation.chef_last_name}`,
@@ -114,6 +104,7 @@ export default function Messages() {
     };
 
     const renderConversation = ({ item }) => {
+        console.log(JSON.stringify(item))
 
         let otherUserName;
          
@@ -123,8 +114,6 @@ export default function Messages() {
         else {
             otherUserName = `${item.chef_first_name} ${item.chef_last_name}`;
         }
-        
-
         
         const hasUnread = item.unread_count > 0;
 

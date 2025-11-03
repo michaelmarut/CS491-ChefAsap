@@ -16,7 +16,7 @@ export default function ThemeProvider({ children }) {
     const { colorScheme, setColorScheme } = useColorScheme();
     const [manualTheme, setManualTheme] = useState('system');
 
-    const activeBackground = colorScheme === 'dark' ? '#4D7C0F' : '#65A30D'; // Example bg colors
+    const activeBackground = colorScheme === 'dark' ? '#4D7C0F' : '#65A30D';
 
     useEffect(() => {
         const loadTheme = async () => {
