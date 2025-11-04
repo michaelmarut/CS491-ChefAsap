@@ -216,7 +216,7 @@ def get_chef_profile(chef_id):
             'total_reviews': rating_info['total_ratings'],
             'reviews': comments,
             'cuisine_photos': cuisine_photos,
-            'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None
+            'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None,
             'availability': availability,
         }
         

@@ -18,6 +18,11 @@ const FOOTER_PADDING = 12;
 const DATE_HEADER_TEXT_STYLE = { fontSize: 13, fontWeight: '600' };
 const DEV_MOCK_BOOKINGS = false;
 
+// color constants in tailwind
+const BASE_GRID = 'bg-white dark:bg-black'
+const BASE_GRID_ALT = 'bg-gray-300 dark:bg-gray-700'
+const BORDER_GRID = 'border-[#e5e7e] dark:border-gray-300'
+
 // Status visibility rules
 const normalizeStatus = (s) => String(s || '').toLowerCase();
 const CHEF_ALLOWED = new Set(['accepted', 'completed', 'confirm', 'confirmed']);
@@ -268,38 +273,44 @@ export default function BookingsScreen() {
   const syncSourceRef = useRef(null); // 'header' | 'grid' | null
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+    <View className='flex-1 bg-base-100'>
       {/* Week controls */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderColor: '#e5e7eb' }} className="bg-base-100 dark:bg-dark-100">
-        <Text style={{ fontSize: 15, fontWeight: '600' }} className="text-olive-400 dark:text-dark-400">
+      <View className='bg-base-100 dark:bg-dark-100 flex-row items-center justify-between px-3 py-2 border border-b-1 border-[#e5e7eb]'>
+        <Text className="text-olive-400 dark:text-dark-400 font-bold">
           Week of {formatHeader(weekDays[0])}
         </Text>
-        <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity
+        <View className='flex-row'>
+          <Button
             onPress={onPrevWeek}
-            style={{ paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#d1d5db', backgroundColor: 'transparent', borderRadius: 8, marginRight: 6 }}
-          >
-            <Text style={{ fontSize: 14, color: '#111827' }}>Prev</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+            title={'Prev'}
+            style='secondary'
+            customClasses='py-1 px-3 my-1 mr-1'
+            customTextClasses='text-sm'
+          />
+          <Button
             onPress={onToday}
-            style={{ paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#d1fae5', borderRadius: 8, marginRight: 6, borderWidth: 1, borderColor: '#86efac' }}
-          >
-            <Text style={{ fontSize: 14, color: '#065f46', fontWeight: '600' }}>Today</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+            title={'Today'}
+            customClasses='py-1 px-3 my-0 mr-1'
+            customTextClasses='text-md'
+          />
+          <Button
             onPress={onNextWeek}
-            style={{ paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#d1d5db', backgroundColor: 'transparent', borderRadius: 8 }}
-          >
-            <Text style={{ fontSize: 14, color: '#111827' }}>Next</Text>
-          </TouchableOpacity>
+            style='secondary'
+            title={'Next'}
+            customClasses='py-1 px-3 my-1'
+            customTextClasses='text-sm'
+          />
         </View>
       </View>
 
       {/* Fixed day header that scrolls horizontally with the grid */}
-      <View style={{ flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e5e7eb' }}>
+      <View //style={{ flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e5e7eb' }} 
+      className={`flex-row ${BASE_GRID} border-b-1 ${BORDER_GRID}`}
+      >
         {/* Left spacer so header aligns with the grid (time column) */}
-        <View style={{ width: TIME_COL_WIDTH, height: HEADER_HEIGHT, borderRightWidth: 1, borderColor: '#e5e7eb' }} />
+        <View style={{ width: TIME_COL_WIDTH, height: HEADER_HEIGHT, borderRightWidth: 1, borderColor: '#e5e7eb' }} 
+          //className={`w-[${TIME_COL_WIDTH}px] border-r-1 ${BORDER_GRID}`}
+        />
         <ScrollView
           ref={headerHScrollRef}
           horizontal
