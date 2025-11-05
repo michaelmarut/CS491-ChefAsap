@@ -9,10 +9,15 @@ import getEnvVars from "../config";
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './providers/ThemeProvider';
 import Octicons from '@expo/vector-icons/Octicons';
+import LoadingIcon from './components/LoadingIcon';
+import ProfilePicture from './components/ProfilePicture';
+import Button from './components/Button';
+import { getTailwindColor } from './utils/getTailwindColor';
+import Input from './components/Input';
 
 export default function ChatScreen() {
 
-    const [loading, setLoading] = useState(true); //use Omar's
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [newMessage, setNewMessage] = useState('');
     const [messages, setMessages] = useState([]);
@@ -208,12 +213,13 @@ export default function ChatScreen() {
                 className={`my-2 flex-row ${sentByUser ? 'justify-end' : 'justify-start'}`}
             >
                 <View
-                    className={`max-w-3/4 p-3 rounded-lg ${sentByUser ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                    className={`max-w-3/4 p-3 rounded-3xl ${sentByUser ? 'bg-primary-200 dark:bg-dark-300 rounded-tr-none' : 'bg-primary-300 dark:bg-dark-200 rounded-tl-none'}`}
+                    style={{ borderBottomLeftRadius: sentByUser ? null : 0, borderBottomRightRadius: sentByUser ? 0 : null }}
                 >
-                    <Text className={`${sentByUser ? 'text-white' : 'text-black dark:text-white'}`}>
+                    <Text className={`${sentByUser ? 'text-primary-500 dark:text-dark-500' : 'text-primary-100 dark:text-dark-400'}`}>
                         {item.message}
                     </Text>
-                    <Text className={`text-xs mt-1 ${sentByUser ? 'text-white/70' : 'text-black/70 dark:text-white/70'}`}>
+                    <Text className={`text-xs mt-1 ${sentByUser ? 'text-primary-400 dark:text-dark-400' : 'text-primary-200 dark:text-dark-300'}`}>
                         {formatTime(item.sent_at)}
                     </Text>
                 </View>
@@ -221,15 +227,12 @@ export default function ChatScreen() {
         );
     }
 
-    if (loading) { //update to use Omar's loading svg or splash screen
+    if (loading) {
         return (
             <>
                 <Stack.Screen options={{ headerShown: false }} />
-                <View className="flex-1 dark:bg-base-dark-100 justify-center items-center">
-                    <ActivityIndicator size="large" color={manualTheme === 'dark' ? '#D9F99D ' : '#4D7C0F'} />
-                    <Text className="text-gray-600 dark:text-gray-400 mt-4">
-                        Loading chat...
-                    </Text>
+                <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
+                    <LoadingIcon message="Loading chat..." />
                 </View>
             </>
         );
@@ -239,81 +242,67 @@ export default function ChatScreen() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <View className="flex-1 bg-base-100 dark:bg-base-dark-100">
-
                 {/* Display name of other user */}
-                <View className="bg-white dark:bg-base-dark-200 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex-row items-center">
-                    <TouchableOpacity onPress={() => router.back()} className="mr-3 mt-5">
+                <View className="bg-primary-300 dark:bg-dark-200 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex-row items-center">
+                    <TouchableOpacity onPress={() => router.back()} className="mr-3">
                         <Octicons
                             name="chevron-left"
                             size={24}
-                            color={manualTheme === 'dark' ? '#D9F99D ' : '#4D7C0F'}
+                            color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.100')}
                         />
                     </TouchableOpacity>
-                    <View className="flex-1 mt-5">
-                        <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                            {otherUserName}
-                        </Text>
-                    </View>
+                    <Text className="text-xl font-bold text-primary-500 dark:text-dark-500">
+                        {otherUserName}
+                    </Text>
                 </View>
 
-                {/* Messages List */}
-                {messages.length === 0 ? (
-                    <View className="flex-1 justify-center items-center px-6">
-                        <Octicons
-                            name="comment"
-                            size={64}
-                            color={manualTheme === 'dark' ? '#D9F99D ' : '#4D7C0F'}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 50}
+                >
+                    {messages.length === 0 ? (
+                        <View className="flex-1 justify-center items-center px-6">
+                            <Octicons
+                                name="comment"
+                                size={64}
+                                color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.100')}
+                            />
+                            <Text className="text-gray-900 dark:text-gray-100 text-lg font-semibold mt-4 text-center">
+                                No messages yet
+                            </Text>
+                            <Text className="text-gray-600 dark:text-gray-400 text-center mt-2">
+                                Start the conversation by sending a message below
+                            </Text>
+                        </View>
+                    ) : (
+                        <FlatList
+                            ref={flatListRef}
+                            data={messages}
+                            renderItem={renderMessage}
+                            keyExtractor={(item) => item.message_id.toString()}
+                            contentContainerStyle={{ padding: 16 }}
                         />
-                        <Text className="text-gray-900 dark:text-gray-100 text-lg font-semibold mt-4 text-center">
-                            No messages yet
-                        </Text>
-                        <Text className="text-gray-600 dark:text-gray-400 text-center mt-2">
-                            Start the conversation by sending a message below
-                        </Text>
-                    </View>
-                ) : (
-                    <KeyboardAwareFlatList
-                        ref={flatListRef}
-                        data={messages}
-                        renderItem={renderMessage}
-                        keyExtractor={(item) => item.message_id.toString()}
-                        contentContainerStyle={{ padding: 16 }}
-                        enableOnAndroid={true}
-                        extraScrollHeight={200}
-                    //scrollToEnd={true}
-                    //bottomOffset={100}                    
+                    )}
 
-                    />
-                )}
-
-                {/* Text Input */}
-                <View className="bg-white dark:bg-base-dark-200 border-t border-gray-200 dark:border-gray-700 px-2 py-6 mb-2">
-                    <View className="flex-row items-center mb-6">
-                        <TextInput
-                            value={newMessage}
-                            onChangeText={setNewMessage}
-                            placeholder="Type a message..."
-                            placeholderTextColor={manualTheme === 'dark' ? '#D9F99D ' : '#4D7C0F'}
-                            className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-3 rounded-full mr-2"
-                            multiline
-                            maxLength={500}
-                        />
-                        <TouchableOpacity
-                            onPress={handleSendMessage}
-                            disabled={!newMessage.trim() || sending}
-                            className={`w-12 h-12 rounded-full items-center justify-center ${!newMessage.trim() || sending
-                                    ? 'bg-gray-300 dark:bg-gray-600'
-                                    : 'bg-primary-500'
-                                }`}
-                        >
-                            {sending ? (
-                                <ActivityIndicator size="small" color="#FFF" />
-                            ) : (
-                                <Octicons name="paper-airplane" size={20} color="#FFF" />
-                            )}
-                        </TouchableOpacity>
+                    <View className="bg-primary-300 dark:bg-primary-400 border-t border-gray-200 dark:border-gray-700 px-2 py-2">
+                        <View className="flex-row justify-center mb-2">
+                            <Input
+                                value={newMessage}
+                                onChangeText={setNewMessage}
+                                placeholder="Type a message..."
+                                containerClasses='w-[85%] mr-2'
+                            />
+                            <Button
+                                onPress={handleSendMessage}
+                                disabled={sending || !newMessage.trim()}
+                                icon={sending ? 'sync' : 'paper-airplane'}
+                                style='secondary'
+                                customClasses="rounded-full h-12 w-12"
+                            />
+                        </View>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </View>
         </>
     );

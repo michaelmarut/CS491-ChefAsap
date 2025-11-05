@@ -26,7 +26,7 @@ export default function ThemeButton() {
         <Button
             icon={iconName}
             onPress={() => setManualTheme(getNextTheme())}
-            customClasses="absolute -top-[70px] right-[40px] z-10 p-3 rounded-full pl-3"
+            customClasses="absolute -top-[62px] right-[40px] z-10 p-3 rounded-full pl-3"
             style='accent'
         />
     );

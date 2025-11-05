@@ -8,6 +8,8 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import { enableScreens } from 'react-native-screens';
 
+import '../global.css';
+
 enableScreens(true);
 
 export default function RootLayout() {

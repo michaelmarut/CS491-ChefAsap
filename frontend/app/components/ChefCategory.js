@@ -167,13 +167,13 @@ export default function ChefCategory({
                         onPress={() => setEditing(true)}
                         icon="pencil"
                         style="accent"
-                        customClasses="absolute -top-[70px] right-[88px] z-10 p-3 rounded-full pl-3"
+                        customClasses="absolute -top-[62px] right-[84px] z-10 p-3 rounded-full pl-3"
                     />
                     <Button
                         onPress={() => handleDeleteCategory()}
                         icon="trash"
                         style="accent"
-                        customClasses="absolute -top-[70px] right-10 z-10 p-3 rounded-full pl-3"
+                        customClasses="absolute -top-[62px] right-10 z-10 p-3 rounded-full pl-3"
                     />
                 </>
             }

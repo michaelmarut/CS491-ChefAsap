@@ -254,7 +254,7 @@ export default function ProfileScreen() {
                     href="/ProfileSettings"
                     icon="gear"
                     style="accent"
-                    customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                    customClasses="absolute -top-[62px] -right-2 z-10 p-3 rounded-full pl-3"
                 />
                 <ThemeButton />
 
@@ -264,16 +264,19 @@ export default function ProfileScreen() {
                 {userType === 'chef' && (
                     <>
                         <RatingsDisplay rating={profileData?.avg_rating} />
-                        <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
-                            {profileData?.total_reviews} Total Reviews
+                        <View className='flex-row items-center justify-center'>
+                            <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
+                                {profileData?.total_reviews} Total Reviews
+
+                            </Text>
                             <Button
                                 icon='cross-reference'
                                 base='link'
                                 style='transparent'
-                                customClasses='p-0 pl-2 pt-3'
+                                customClasses='m-0 px-0 py-0 pl-2 pb-4'
                                 onPress={() => alert("Reviews Placeholder")}
                             />
-                        </Text>
+                        </View>
                     </>
                 )}
                 <Text className="text-sm text-center text-primary-400 pt-2 border-t border-primary-200 dark:text-dark-400 dark:border-dark-200">Member Since: {profileData?.member_since}</Text>
@@ -302,7 +305,7 @@ export default function ProfileScreen() {
                                 onPress={() => setEditingDetails(true)}
                                 icon="pencil"
                                 style="accent"
-                                customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                                    customClasses="absolute -top-[62px] -right-2 z-10 p-3 rounded-full pl-3"
                             />
                         )}
 
@@ -323,7 +326,7 @@ export default function ProfileScreen() {
                                         >
                                             <Text className={`${selectedMealTimings.includes(timing)
                                                 ? 'text-white'
-                                                : 'text-gray-700 dark:text-gray-200'
+                                                : 'text-gray-640 dark:text-gray-200'
                                                 }`}>
                                                 {timing}
                                             </Text>
@@ -345,12 +348,12 @@ export default function ProfileScreen() {
                                                 onPress={() => toggleCuisine(cuisine.name)}
                                                 className={`px-3 py-1.5 rounded-full ${selectedCuisines.includes(cuisine.name)
                                                     ? 'bg-lime-600'
-                                                    : 'bg-gray-200 dark:bg-gray-700'
+                                                    : 'bg-gray-200 dark:bg-gray-640'
                                                     }`}
                                             >
                                                 <Text className={`text-sm ${selectedCuisines.includes(cuisine.name)
                                                     ? 'text-white font-semibold'
-                                                    : 'text-gray-700 dark:text-gray-300'
+                                                    : 'text-gray-640 dark:text-gray-300'
                                                     }`}>
                                                     {cuisine.name}
                                                 </Text>
@@ -362,13 +365,13 @@ export default function ProfileScreen() {
                                     onPress={handleCancelDetailsEdit}
                                     icon="x"
                                     style="accent"
-                                    customClasses="absolute -top-[70px] right-10 z-10 p-3 rounded-full pl-3"
+                                        customClasses="absolute -top-[62px] right-10 z-10 p-3 rounded-full pl-3"
                                 />
                                 <Button
                                     onPress={handleSaveDetails}
                                     icon={savingDetails ? 'sync' : 'check'}
                                     style="accent"
-                                    customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                                        customClasses="absolute -top-[62px] -right-2 z-10 p-3 rounded-full pl-3"
                                     disabled={savingDetails}
                                 />
                             </View>
@@ -398,7 +401,7 @@ export default function ProfileScreen() {
                                 onPress={() => setEditingAbout(true)}
                                 icon="pencil"
                                 style="accent"
-                                customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                                customClasses="absolute -top-[62px] -right-2 z-10 p-3 rounded-full pl-3"
                             />
                         )}
 
@@ -420,13 +423,13 @@ export default function ProfileScreen() {
                                     onPress={handleCancelEdit}
                                     icon="x"
                                     style="accent"
-                                    customClasses="absolute -top-[70px] right-10 z-10 p-3 rounded-full pl-3"
+                                    customClasses="absolute -top-[62px] right-10 z-10 p-3 rounded-full pl-3"
                                 />
                                 <Button
                                     onPress={handleSaveAbout}
                                     icon={savingAbout ? 'sync' : 'check'}
                                     style="accent"
-                                    customClasses="absolute -top-[70px] -right-2 z-10 p-3 rounded-full pl-3"
+                                    customClasses="absolute -top-[62px] -right-2 z-10 p-3 rounded-full pl-3"
                                     disabled={savingAbout}
                                 />
                             </View>
