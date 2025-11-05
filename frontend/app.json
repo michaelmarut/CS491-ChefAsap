@@ -11,8 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "ChefAsap needs access to your location to find nearby chefs."
-      }
+        "NSLocationWhenInUseUsageDescription": "ChefAsap needs access to your location to find nearby chefs.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.osid54.ChefAsap"
     },
     "android": {
       "edgeToEdgeEnabled": true,

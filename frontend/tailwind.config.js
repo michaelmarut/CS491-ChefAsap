@@ -3,36 +3,42 @@ module.exports = {
   content: [
     './app/**/*.{js,jsx,ts,tsx}',
   ],
+  presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
-        'olive-100': '#d9f99d',   // light olive
-        'olive-200': '#bef264',   // olive accent
-        'olive-300': '#65a30d',   // olive green
-        'olive-400': '#4d7c0f',   // rich olive
-        'olive-500': '#36401F',   // earthy dark olive
-
-        'primary-100': '#d9f99d',   // light olive
-        'primary-200': '#bef264',   // olive accent
-        'primary-300': '#65a30d',   // olive green
-        'primary-400': '#4d7c0f',   // rich olive
-        'primary-500': '#36401F',   // earthy dark olive
-
-        'dark-500': '#d9f99d',
-        'dark-400': '#bef264',
-        'dark-300': '#65a30d',
-        'dark-200': '#4d7c0f',
-        'dark-100': '#36401F',
-
-        'base-100': '#fefce8',    // soft cream 
-        'base-200': '#6b7280',    // neutral slate
-        'base-300': '#2c3e50',    // fallback background color
-
-        'base-dark-300': '#fefce8',
-        'base-dark-200': '#6b7280',
-        'base-dark-100': '#27292aff',
-
-        'warm-gray': '#78716c',   // warm gray
+        olive: {
+          100: '#d9f99d', // light olive
+          200: '#bef264', // olive accent
+          300: '#65a30d', // olive green
+          400: '#4d7c0f', // rich olive
+          500: '#36401F', // earthy dark olive
+        },
+        primary: {
+          100: '#d9f99d',
+          200: '#bef264',
+          300: '#65a30d',
+          400: '#4d7c0f',
+          500: '#36401F',
+        },
+        dark: {
+          100: '#36401F',
+          200: '#4d7c0f',
+          300: '#65a30d',
+          400: '#bef264',
+          500: '#d9f99d',
+        },
+        base: {
+          100: '#fefce8', // soft cream
+          200: '#6b7280', // neutral slate
+          300: '#2c3e50', // fallback background color
+          dark: {
+            100: '#27292aff',
+            200: '#6b7280',
+            300: '#fefce8',
+          },
+        },
+        'warm-gray': '#78716c', // warm gray
       },
       fontFamily: {
       }

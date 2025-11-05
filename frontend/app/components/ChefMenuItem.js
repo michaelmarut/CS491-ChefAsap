@@ -541,7 +541,7 @@ export default function ChefMenuItem({
                 title={item?.is_available ? "Make Unavailable" : "Make Available"}
                 onPress={handleToggleAvailability}
                 style='secondary'
-                customClasses="h-12 py-1"
+                customClasses="h-12 pb-1 pt-1"
                 customTextClasses='text-md'
                 disabled={availabilityLoading}
             />
@@ -549,7 +549,7 @@ export default function ChefMenuItem({
                 <Button
                     title={"Edit item"}
                     onPress={() => setEditing(true)}
-                    customClasses="w-[80%] mr-1 h-12 py-1"
+                    customClasses="w-[85%] mr-1 h-12 pb-1 pt-1"
                     customTextClasses='text-md'
                 />
                 <Button

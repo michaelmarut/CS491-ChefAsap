@@ -273,6 +273,7 @@ def get_conversations():
                     cu.email as customer_email,
                     c.booking_id,
                     c.last_message_at,
+                    cu.photo_url,
                     (
                         SELECT cm.message_text 
                         FROM chat_messages cm 
@@ -307,6 +308,7 @@ def get_conversations():
                     ch.email as chef_email,
                     c.booking_id,
                     c.last_message_at,
+                    ch.photo_url,
                     (
                         SELECT cm.message_text 
                         FROM chat_messages cm 

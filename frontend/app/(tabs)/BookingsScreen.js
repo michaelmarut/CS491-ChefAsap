@@ -18,11 +18,6 @@ const FOOTER_PADDING = 12;
 const DATE_HEADER_TEXT_STYLE = { fontSize: 13, fontWeight: '600' };
 const DEV_MOCK_BOOKINGS = false;
 
-// color constants in tailwind
-const BASE_GRID = 'bg-white dark:bg-black'
-const BASE_GRID_ALT = 'bg-gray-300 dark:bg-gray-700'
-const BORDER_GRID = 'border-[#e5e7e] dark:border-gray-300'
-
 // Status visibility rules
 const normalizeStatus = (s) => String(s || '').toLowerCase();
 const CHEF_ALLOWED = new Set(['accepted', 'completed', 'confirm', 'confirmed']);
@@ -273,10 +268,10 @@ export default function BookingsScreen() {
   const syncSourceRef = useRef(null); // 'header' | 'grid' | null
 
   return (
-    <View className='flex-1 bg-base-100'>
+    <View className='flex-1 bg-base-100 dark:bg-base-dark-100'>
       {/* Week controls */}
-      <View className='bg-base-100 dark:bg-dark-100 flex-row items-center justify-between px-3 py-2 border border-b-1 border-[#e5e7eb]'>
-        <Text className="text-olive-400 dark:text-dark-400 font-bold">
+      <View className='bg-base-100 dark:bg-dark-100 flex-row items-center justify-between px-3 py-2 border-b border-[#e5e7eb] dark:border-gray-500'>
+        <Text className="text-primary-400 dark:text-dark-400 text-lg font-bold">
           Week of {formatHeader(weekDays[0])}
         </Text>
         <View className='flex-row'>
@@ -284,32 +279,31 @@ export default function BookingsScreen() {
             onPress={onPrevWeek}
             title={'Prev'}
             style='secondary'
-            customClasses='py-1 px-3 my-1 mr-1'
+            customClasses='px-3 mr-1 pt-1 pb-1 mb-0'
             customTextClasses='text-sm'
           />
           <Button
             onPress={onToday}
             title={'Today'}
-            customClasses='py-1 px-3 my-0 mr-1'
+            customClasses='px-3 mr-1 pt-2 pb-2 mb-0'
             customTextClasses='text-md'
           />
           <Button
             onPress={onNextWeek}
             style='secondary'
             title={'Next'}
-            customClasses='py-1 px-3 my-1'
+            customClasses='px-3 pt-1 pb-1 mb-0'
             customTextClasses='text-sm'
           />
         </View>
       </View>
 
       {/* Fixed day header that scrolls horizontally with the grid */}
-      <View //style={{ flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e5e7eb' }} 
-      className={`flex-row ${BASE_GRID} border-b-1 ${BORDER_GRID}`}
-      >
+      <View className='flex-row bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700'>
         {/* Left spacer so header aligns with the grid (time column) */}
-        <View style={{ width: TIME_COL_WIDTH, height: HEADER_HEIGHT, borderRightWidth: 1, borderColor: '#e5e7eb' }} 
-          //className={`w-[${TIME_COL_WIDTH}px] border-r-1 ${BORDER_GRID}`}
+        <View
+          style={{ width: TIME_COL_WIDTH, height: HEADER_HEIGHT }}
+          className='border-r-2 border-gray-200 dark:border-gray-700'
         />
         <ScrollView
           ref={headerHScrollRef}
@@ -329,19 +323,14 @@ export default function BookingsScreen() {
           onMomentumScrollEnd={() => { syncSourceRef.current = null; }}
         >
           <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
-            <View style={{ height: HEADER_HEIGHT, flexDirection: 'row', backgroundColor: '#fff' }}>
+            <View style={{ height: HEADER_HEIGHT }} className='flex-row bg-white dark:bg-gray-800'>
               {weekDays.map((d, i) => (
                 <View
                   key={i}
-                  style={{
-                    width: DAY_COLUMN_WIDTH,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderLeftWidth: i === 0 ? 0 : 1,
-                    borderColor: '#e5e7eb',
-                  }}
+                  style={{ width: DAY_COLUMN_WIDTH }}
+                  className={`items-center justify-center border-gray-200 dark:border-gray-700 ${i === 0 ? '' : 'border-l'}`}
                 >
-                  <Text style={DATE_HEADER_TEXT_STYLE} className="text-olive-400 dark:text-dark-400">{formatHeader(d)} </Text>
+                  <Text style={DATE_HEADER_TEXT_STYLE} className="text-primary-400 dark:text-dark-400">{formatHeader(d)} </Text>
                 </View>
               ))}
             </View>
@@ -356,28 +345,27 @@ export default function BookingsScreen() {
         showsVerticalScrollIndicator
         contentContainerStyle={{ paddingBottom: FOOTER_PADDING }}
       >
-        <View style={{ flexDirection: 'row' }}>
+        <View className='flex-row'>
           {/* LEFT: fixed time column */}
-          <View style={{ width: TIME_COL_WIDTH, borderRightWidth: 1, borderColor: '#e5e7eb' }}>
+          <View
+            style={{ width: TIME_COL_WIDTH }}
+            className='border-r-2 border-gray-200 dark:border-gray-700'
+          >
             {/* Time grid background + hour labels aligned to hour lines */}
             {(() => {
               const timeSlots = buildTimeSlotsForDay(weekDays[0]);
               const gridHeight = timeSlots.length * SLOT_HEIGHT;
 
               return (
-                <View style={{ position: 'relative', backgroundColor: '#fff' }}>
+                <View style={{ position: 'relative', height: gridHeight }} className='bg-white dark:bg-gray-800'>
                   {/* Background: hour lines */}
                   {timeSlots.map((slot, idx) => {
                     const isHour = slot.start.getMinutes() === 0;
                     return (
                       <View
                         key={idx}
-                        style={{
-                          height: SLOT_HEIGHT,
-                          backgroundColor: '#fff',
-                          borderTopWidth: isHour ? 2 : 0,
-                          borderTopColor: '#e5e7eb',
-                        }}
+                        style={{ height: SLOT_HEIGHT }}
+                        className={`bg-white dark:bg-gray-800 ${isHour ? 'border-t-2' : ''} border-t-gray-200 dark:border-t-gray-700`}
                       />
                     );
                   })}
@@ -401,7 +389,7 @@ export default function BookingsScreen() {
                             fontWeight: '600',
                             textAlign: 'right',
                           }}
-                          className="text-olive-400 dark:text-dark-400"
+                          className="text-primary-400 dark:text-dark-400"
                         >
                           {formatHourLabel(labelDate)}
                         </Text>
@@ -433,7 +421,7 @@ export default function BookingsScreen() {
             <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
 
               {/* Grid: background + events overlay */}
-              <View style={{ flexDirection: 'row' }}>
+              <View className='flex-row'>
                 {weekDays.map((day, dayIdx) => {
                   const daySlots = buildTimeSlotsForDay(day);
                   const dayEvents = eventsByDay[dayIdx] || [];
@@ -449,12 +437,8 @@ export default function BookingsScreen() {
                   return (
                     <View
                       key={dayIdx}
-                      style={{
-                        width: DAY_COLUMN_WIDTH,
-                        borderLeftWidth: dayIdx === 0 ? 0 : 1,
-                        borderColor: '#e5e7eb',
-                        position: 'relative',
-                      }}
+                      style={{ width: DAY_COLUMN_WIDTH, position: 'relative' }}
+                      className={`border-gray-200 dark:border-gray-700 ${dayIdx === 0 ? '' : 'border-l'}`}
                     >
                       {/* Background grid (hour line on top, thin half-hour line) */}
                       {daySlots.map((slot, sIdx) => {
@@ -462,14 +446,8 @@ export default function BookingsScreen() {
                         return (
                           <View
                             key={sIdx}
-                            style={{
-                              height: SLOT_HEIGHT,
-                              borderTopWidth: isHour ? 2 : 0,
-                              borderTopColor: '#e5e7eb',
-                              borderBottomWidth: 1,
-                              borderBottomColor: '#f3f4f6',
-                              backgroundColor: isHour ? '#ffffff' : '#fafafa',
-                            }}
+                            style={{ height: SLOT_HEIGHT }}
+                            className={`border-b border-gray-100 dark:border-gray-900 ${isHour ? 'border-t-2 border-t-gray-200 dark:border-t-gray-700 bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'} `}
                           />
                         );
                       })}
@@ -494,13 +472,13 @@ export default function BookingsScreen() {
                           // Simple status color mapping
                           const status = evt.status || 'scheduled';
                           const bg =
-                            status === 'cancelled' ? '#fee2e2' :
-                            status === 'completed' ? '#dcfce7' :
-                            '#dbeafe'; // scheduled/default
+                            status === 'cancelled' ? 'bg-red-100 dark:bg-red-900' :
+                              status === 'completed' ? 'bg-green-100 dark:bg-green-900' : 
+                                'bg-primary-400 dark:bg-primary-300';
                           const border =
-                            status === 'cancelled' ? '#ef4444' :
-                            status === 'completed' ? '#10b981' :
-                            '#3b82f6';
+                            status === 'cancelled' ? 'border-red-500 dark:border-red-400' : 
+                              status === 'completed' ? 'border-green-600 dark:border-green-400' :
+                                'border-blue-500 dark:border-blue-400';
 
                           return (
                             <TouchableOpacity
@@ -510,23 +488,15 @@ export default function BookingsScreen() {
                               style={{
                                 position: 'absolute',
                                 top,
-                                left: 4,
-                                right: 4,
                                 height,
-                                backgroundColor: bg,
-                                borderLeftWidth: 3,
-                                borderLeftColor: border,
-                                borderRadius: 8,
-                                paddingHorizontal: 8,
-                                paddingVertical: 6,
-                                overflow: 'hidden',
                               }}
+                              className={`left-1 right-1 ${bg} border-l-3 ${border} rounded-lg px-2 py-1 overflow-hidden`}
                             >
-                              <Text style={{ color: '#111827', fontSize: 12, fontWeight: '600' }}>
+                              <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold'>
                                 {formatTime(clippedStart)}–{formatTime(clippedEnd)} {evt.title || 'Booking'}
                               </Text>
                               {!!evt.notes && (
-                                <Text numberOfLines={1} style={{ color: '#374151', fontSize: 12, marginTop: 2 }}>
+                                <Text numberOfLines={1} className='text-primary-100 dark:text-primary-100 text-xs mt-0.5'>
                                   {evt.notes}
                                 </Text>
                               )}
@@ -545,7 +515,7 @@ export default function BookingsScreen() {
       </ScrollView>
 
       {/* Footer actions */}
-      <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#e5e7eb', gap: 8 }} className="bg-base-100 dark:bg-dark-100">
+      <View className="bg-base-100 dark:bg-dark-100 p-3 border-t border-gray-200 dark:border-gray-700 gap-2">
         <Button
           title={loading ? 'Refreshing…' : 'Refresh'}
           style="primary"
@@ -575,78 +545,62 @@ export default function BookingsScreen() {
         onRequestClose={() => setSelected(null)}
       >
         <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          }}
+          className='flex-1 justify-center items-center'
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
         >
           {/* Backdrop: tap anywhere outside the card to close */}
           <Pressable
             onPress={() => setSelected(null)}
-            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+            className='absolute inset-0'
           />
 
           <View
-            style={{
-              width: '90%',
-              maxWidth: 400,
-              backgroundColor: '#ffffff',
-              borderRadius: 12,
-              overflow: 'hidden',
-              elevation: 4,
-            }}
+            className='w-[90%] max-w-sm bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg'
+            style={{ elevation: 4 }}
           >
             {/* Header: close button + title */}
             <View
-              style={{
-                padding: 16,
-                paddingBottom: 0,
-                borderBottomWidth: 1,
-                borderColor: '#e5e7eb',
-                position: 'relative',
-              }}
+              className='p-4 pb-0 border-b border-gray-200 dark:border-gray-700 relative'
             >
               <TouchableOpacity
                 onPress={() => setSelected(null)}
-                style={{ position: 'absolute', top: 12, right: 12, padding: 8, zIndex: 2 }}
+                className='absolute top-3 right-3 p-2 z-10'
                 hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
                 accessibilityRole="button"
                 accessibilityLabel="Close"
               >
-                <Text style={{ fontSize: 18, color: '#111827' }}>✕</Text>
+                <Text className='text-gray-900 dark:text-white text-lg'>✕</Text>
               </TouchableOpacity>
 
-              <Text style={{ fontSize: 18, fontWeight: '600', color: '#111827' }}>
+              <Text className='text-gray-900 dark:text-white text-lg font-semibold'>
                 {selected?.title || 'Booking'}
               </Text>
             </View>
 
             {/* Body: read-only details */}
-            <View style={{ padding: 16, gap: 8 }}>
+            <View className='p-4 gap-2'>
               {selected?.status && (
-                <Text style={{ fontSize: 13, color: '#374151' }}>
+                <Text className='text-gray-700 dark:text-gray-300 text-sm'>
                   Status: {String(selected.status).charAt(0).toUpperCase() + String(selected.status).slice(1)}
                 </Text>
               )}
               {selected?.startDate && (
-                <Text style={{ fontSize: 13, color: '#374151' }}>
+                <Text className='text-gray-700 dark:text-gray-300 text-sm'>
                   Date: {formatHeader(new Date(selected.startDate))}
                 </Text>
               )}
               {(selected?.startDate && selected?.endDate) && (
-                <Text style={{ fontSize: 13, color: '#374151' }}>
+                <Text className='text-gray-700 dark:text-gray-300 text-sm'>
                   Time: {formatTime(new Date(selected.startDate))} – {formatTime(new Date(selected.endDate))}
                 </Text>
               )}
               {(selected?.startDate && selected?.endDate) && (
-                <Text style={{ fontSize: 13, color: '#374151' }}>
+                <Text className='text-gray-700 dark:text-gray-300 text-sm'>
                   Duration: {Math.max(1, Math.round((new Date(selected.endDate) - new Date(selected.startDate)) / 60000))} min
                 </Text>
               )}
               {!!selected?.notes && (
-                <Text style={{ fontSize: 13, color: '#374151', marginTop: 8 }}>
+                <Text className='text-gray-700 dark:text-gray-300 text-sm mt-2'>
                   Notes: {selected.notes}
                 </Text>
               )}

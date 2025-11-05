@@ -2,6 +2,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { Link } from 'expo-router';
 import { Octicons } from "@expo/vector-icons";
 import { useTheme } from '../providers/ThemeProvider';
+import { getTailwindColor } from '../utils/getTailwindColor';
 
 export default function Button({
     title, // button text
@@ -21,22 +22,22 @@ export default function Button({
         primary: {
             button: "bg-primary-400 border-primary-100 dark:bg-dark-400 dark:border-dark-100",
             text: "text-primary-100 dark:text-dark-100",
-            icon: manualTheme === 'light' ? '#bef264' : "#4d7c0f"
+            icon: manualTheme === 'light' ? getTailwindColor('primary.100') : getTailwindColor('dark.100')
         },
         secondary: {
             button: "bg-primary-100 border-primary-400 dark:bg-dark-100 dark:border-dark-400",
             text: "text-primary-400 dark:text-dark-400",
-            icon: manualTheme === 'light' ? '#4d7c0f' : "#bef264"
+            icon: manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('dark.400')
         },
         accent: {
             button: "bg-primary-400 border-base-100 dark:border-base-dark-100 dark:bg-dark-400",
             text: "text-base-100 dark:text-base-dark-100",
-            icon: manualTheme === 'light' ? '#FEFCE8' : "#2C3E50"
+            icon: manualTheme === 'light' ? getTailwindColor('base.100') : getTailwindColor('base.dark.100')
         },
         transparent: {
             button: "bg-transparent border-transparent",
             text: "text-transparent",
-            icon: "#6B7280"
+            icon: getTailwindColor('warm-gray')
         }
     };
 

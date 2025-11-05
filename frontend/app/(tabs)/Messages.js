@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FlatList, View, Text, TouchableOpacity, 
-        ActivityIndicator, RefreshControl } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { FlatList, View, Text, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import getEnvVars from "../../config";
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../providers/ThemeProvider';
 import Octicons from '@expo/vector-icons/Octicons';
-
+import ProfilePicture from "../components/ProfilePicture";
+import LoadingIcon from '../components/LoadingIcon';
 
 export default function Messages() {
     
@@ -124,11 +124,7 @@ export default function Messages() {
             >
                 <View className="flex-row items-center p-4">
                     {/* Profile Photo */} 
-                    <View className="w-12 h-12 rounded-full bg-primary-300 dark:bg-primary-600 items-center justify-center mr-3">
-                        <Text className="text-white text-lg font-bold">
-                            {otherUserName.charAt(0).toUpperCase()}
-                        </Text>
-                    </View>
+                    <ProfilePicture photoUrl={item.photo_url} size={12} customClasses='mr-3' firstName={item.customer_first_name} lastName={item.customer_last_name} />
 
                     {/* Message Content */}
                     <View className="flex-1">
@@ -173,13 +169,14 @@ export default function Messages() {
             </TouchableOpacity>
         );
     };
-
-    if (loading) {
+    if (loading && !refreshing) {
         return (
-            <View className="flex-1 bg-base-100 dark:bg-base-dark-100 justify-center items-center">
-                <ActivityIndicator size="large" color={manualTheme === 'dark' ? '#D9F99D ' : '#4D7C0F'}/>
-                <Text className="text-gray-600 dark:text-gray-400 mt-4">Loading messages...</Text>
-            </View>
+            <>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
+                    <LoadingIcon message="Loading messages..." />
+                </View>
+            </>
         );
     }
 
@@ -202,7 +199,7 @@ export default function Messages() {
     }
 
     return (
-        <View className="flex-1 bg-base-100 dark:bg-base-dark-100">
+        <View className="flex-1 bg-base-100 dark:bg-base-dark-100 ">
 
             {/* Conversation List */}
             {conversations.length === 0 ? (
@@ -234,7 +231,7 @@ export default function Messages() {
                         />
                     }
                     contentContainerStyle={{ flexGrow: 1 }}
-                    paddingTop={40}
+                    paddingTop={0}
                 />
             )}
         </View>

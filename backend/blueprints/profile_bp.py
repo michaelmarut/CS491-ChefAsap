@@ -132,14 +132,20 @@ def get_chef_profile(chef_id):
         cursor.execute('''
             SELECT 
                 cad.day_of_week, 
-                cad.meal_type
+                cad.meal_type,
                 cad.start_time, 
-                cad.end_time,
+                cad.end_time
             FROM chef_availability_days cad
             WHERE cad.chef_id = %s
             ORDER BY 
-                FIELD(cad.day_of_week, 'monday','tuesday','wednesday','thursday','friday','saturday','sunday'),
-                FIELD(cad.meal_type, 'breakfast', 'lunch', 'dinner')
+                array_position(
+                    ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
+                    cad.day_of_week
+                ),
+                array_position(
+                    ARRAY['breakfast', 'lunch', 'dinner'],
+                    cad.meal_type
+                );
         ''', (chef_id,))
         
         availability_data = cursor.fetchall()
@@ -328,14 +334,20 @@ def get_chef_public_profile(chef_id):
         cursor.execute('''
             SELECT 
                 cad.day_of_week, 
-                cad.meal_type
+                cad.meal_type,
                 cad.start_time, 
-                cad.end_time,
+                cad.end_time
             FROM chef_availability_days cad
             WHERE cad.chef_id = %s
             ORDER BY 
-                FIELD(cad.day_of_week, 'monday','tuesday','wednesday','thursday','friday','saturday','sunday'),
-                FIELD(cad.meal_type, 'breakfast', 'lunch', 'dinner')
+                array_position(
+                    ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
+                    cad.day_of_week
+                ),
+                array_position(
+                    ARRAY['breakfast', 'lunch', 'dinner'],
+                    cad.meal_type
+                );
         ''', (chef_id,))
 
         availability_data = cursor.fetchall()

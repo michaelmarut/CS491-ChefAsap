@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import Octicons from '@expo/vector-icons/Octicons';
 import Button from './Button';
 import { useTheme } from '../providers/ThemeProvider';
+import { getTailwindColor } from '../utils/getTailwindColor';
 
 export default function Card({
     title,
@@ -44,7 +45,7 @@ export default function Card({
                 <Octicons
                     name={headerIcon}
                     size={20}
-                    color={manualTheme === 'light' ? '#4D7C0F' : "#BEF264"}
+                    color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.100')}
                     style={{ marginRight: 8 }}
                 />
             )}
@@ -67,7 +68,7 @@ export default function Card({
                         <Octicons
                             name={isExpanded ? 'chevron-up' : 'chevron-down'}
                             size={20}
-                            color="#4d7c0f"
+                            color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.100')}
                             style={{ position: 'absolute', right: 20 }}
                         />
                         
