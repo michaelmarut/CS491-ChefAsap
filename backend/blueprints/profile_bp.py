@@ -47,6 +47,8 @@ def get_chef_profile(chef_id):
                 c.email,
                 c.phone,
                 c.photo_url,
+                c.description,
+                c.meal_timings,
                 c.created_at,
                 ca.address_line1,
                 ca.address_line2,
@@ -89,25 +91,82 @@ def get_chef_profile(chef_id):
         except:
             pass
         
-        # Get chef ratings average - consume all results  
+        # Get chef ratings average
         cursor.execute('''
-            SELECT 
-                AVG(rating) as avg_rating,
-                COUNT(*) as total_ratings
-            FROM chef_ratings 
-            WHERE chef_id = %s
-        ''', (chef_id,))
+            SELECT average_rating, total_reviews FROM chef_rating_summary crs
+            WHERE chef_id = %s''', (chef_id,))
         
-        rating_info = cursor.fetchone()
+        ratings_data = cursor.fetchone()
+        
+        # Process rating data
+        total_ratings = ratings_data['total_reviews'] if ratings_data else 0
+        avg_rating = round(float(ratings_data['average_rating']), 2) if ratings_data else 0
+        
+        rating_info = {
+            'avg_rating': avg_rating,
+            'total_ratings': total_ratings
+        }
+
+        cursor.execute('''
+            SELECT r.customer_id, r.rating, r.comment FROM chef_rating r
+            where chef_id = %s
+            ORDER BY rating_id DESC''', (chef_id,))
+        comments = cursor.fetchall()
+
+        #returns rating avg and comments
+        '''return jsonify({
+            'chef': chef_id,
+            'rating' : ratings_data['avg_rating'],
+            'total_reviews': ratings_data['total_ratings'],
+            'reviews': comments
+        }), 200'''
+        
         
         # Clear any remaining results
         try:
             cursor.nextset()
         except:
             pass
-            
-        if not rating_info:
-            rating_info = {'avg_rating': 0, 'total_ratings': 0}
+        
+        # gather chef availability days and time range (based on meal)
+        cursor.execute('''
+            SELECT 
+                cad.day_of_week, 
+                cad.meal_type,
+                cad.start_time, 
+                cad.end_time
+            FROM chef_availability_days cad
+            WHERE cad.chef_id = %s
+            ORDER BY 
+                array_position(
+                    ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
+                    cad.day_of_week
+                ),
+                array_position(
+                    ARRAY['breakfast', 'lunch', 'dinner'],
+                    cad.meal_type
+                );
+        ''', (chef_id,))
+        
+        availability_data = cursor.fetchall()
+        
+        #organizes the fetched availability data to be grouped by day of the week
+        availability = {}
+        for row in availability_data:
+            day = row['day_of_week']
+            if day not in availability:
+                availability[day] = []
+            availability[day].append({
+                'meal_type': row['meal_type'],
+                'start_time': str(row['start_time']),
+                'end_time': str(row['end_time'])
+            })
+
+        # Clear any remaining results
+        try:
+            cursor.nextset()
+        except:
+            pass
         
         # Get chef cuisine photos
         cursor.execute('''
@@ -155,12 +214,16 @@ def get_chef_profile(chef_id):
             'first_name': chef_profile['first_name'],
             'last_name': chef_profile['last_name'],
             'photo_url': chef_profile['photo_url'],
+            'description': chef_profile['description'],
+            'meal_timings': chef_profile['meal_timings'] if chef_profile['meal_timings'] else [],
             'residency': residency,
             'cuisines': cuisines,
+            'avg_rating' : rating_info['avg_rating'],
+            'total_reviews': rating_info['total_ratings'],
+            'reviews': comments,
             'cuisine_photos': cuisine_photos,
-            'average_rating': float(rating_info['avg_rating'] or 0),
-            'total_ratings': rating_info['total_ratings'] or 0,
-            'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None
+            'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None,
+            'availability': availability,
         }
         
         # Only include private information if explicitly requested (for chef's own profile or admin access)
@@ -210,6 +273,8 @@ def get_chef_public_profile(chef_id):
                 c.first_name,
                 c.last_name,
                 c.photo_url,
+                c.description,
+                c.meal_timings,
                 c.created_at,
                 ca.city,
                 ca.state
@@ -251,23 +316,59 @@ def get_chef_public_profile(chef_id):
         
         # Get chef ratings average
         cursor.execute('''
+            SELECT average_rating, total_reviews FROM chef_rating_summary crs
+            WHERE chef_id = %s''', (chef_id,))
+        
+        ratings_data = cursor.fetchone()
+        
+        # Process rating data
+        total_ratings = ratings_data['total_reviews'] if ratings_data else 0
+        avg_rating = round(float(ratings_data['average_rating']), 2) if ratings_data else 0
+        
+        rating_info = {
+            'avg_rating': avg_rating,
+            'total_ratings': total_ratings
+        }
+
+        # gather chef availability days and time range 
+        cursor.execute('''
             SELECT 
-                AVG(rating) as avg_rating,
-                COUNT(*) as total_ratings
-            FROM chef_ratings 
-            WHERE chef_id = %s
+                cad.day_of_week, 
+                cad.meal_type,
+                cad.start_time, 
+                cad.end_time
+            FROM chef_availability_days cad
+            WHERE cad.chef_id = %s
+            ORDER BY 
+                array_position(
+                    ARRAY['monday','tuesday','wednesday','thursday','friday','saturday','sunday'],
+                    cad.day_of_week
+                ),
+                array_position(
+                    ARRAY['breakfast', 'lunch', 'dinner'],
+                    cad.meal_type
+                );
         ''', (chef_id,))
-        
-        rating_info = cursor.fetchone()
-        
+
+        availability_data = cursor.fetchall()
+
+        #organizes the fetched availability data to be grouped by day of the week
+        availability = {}
+        for row in availability_data:
+            day = row['day_of_week']
+            if day not in availability:
+                availability[day] = []
+            availability[day].append({
+                'meal_type': row['meal_type'],
+                'start_time': str(row['start_time']),
+                'end_time': str(row['end_time'])
+            })
+
         # Clear any remaining results
         try:
             cursor.nextset()
         except:
             pass
-            
-        if not rating_info:
-            rating_info = {'avg_rating': 0, 'total_ratings': 0}
         
         # Get chef cuisine photos
         cursor.execute('''
@@ -315,12 +416,15 @@ def get_chef_public_profile(chef_id):
             'first_name': chef_profile['first_name'],
             'last_name': chef_profile['last_name'],
             'photo_url': chef_profile['photo_url'],
+            'description': chef_profile['description'],
+            'meal_timings': chef_profile['meal_timings'] if chef_profile['meal_timings'] else [],
             'public_location': public_location,
             'cuisines': cuisines,
             'cuisine_photos': cuisine_photos,
             'average_rating': float(rating_info['avg_rating'] or 0),
             'total_ratings': rating_info['total_ratings'] or 0,
             'member_since': chef_profile['created_at'].strftime('%B %Y') if chef_profile['created_at'] else None,
+            'availability': availability,
             'is_public_view': True  # Flag to indicate this is public view
         }
         
@@ -349,6 +453,8 @@ def update_chef_profile(chef_id):
         last_name = data.get('last_name')
         phone = data.get('phone')
         photo_url = data.get('photo_url')
+        description = data.get('description')  # About/bio field
+        meal_timings = data.get('meal_timings')  # Array of meal timings: ['Breakfast', 'Lunch', 'Dinner']
         
         # Address fields - all editable
         address_line1 = data.get('address_line1')
@@ -373,6 +479,10 @@ def update_chef_profile(chef_id):
         
         if photo_url and not validate_image_url(photo_url):
             return jsonify({'error': 'Invalid image URL format'}), 400
+        
+        # Validate description length (max 500 chars based on DB schema)
+        if description is not None and len(description) > 500:
+            return jsonify({'error': 'Description cannot exceed 500 characters'}), 400
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -401,6 +511,14 @@ def update_chef_profile(chef_id):
         if photo_url is not None:
             update_fields.append('photo_url = %s')
             update_values.append(photo_url)
+        
+        if description is not None:
+            update_fields.append('description = %s')
+            update_values.append(description)
+        
+        if meal_timings is not None:
+            update_fields.append('meal_timings = %s')
+            update_values.append(meal_timings)
         
         # Always update the timestamp
         update_fields.append('updated_at = NOW()')
@@ -460,6 +578,77 @@ def update_chef_profile(chef_id):
         conn.close()
         
         return jsonify({'message': 'Profile updated successfully'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@profile_bp.route('/chef/<int:chef_id>/cuisines', methods=['PUT'])
+def update_chef_cuisines(chef_id):
+    """Update chef's cuisines"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'cuisines' not in data:
+            return jsonify({'error': 'Cuisines list is required'}), 400
+        
+        cuisine_names = data.get('cuisines', [])
+        
+        if not isinstance(cuisine_names, list):
+            return jsonify({'error': 'Cuisines must be an array'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if chef exists
+        cursor.execute('SELECT id FROM chefs WHERE id = %s', (chef_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Chef not found'}), 404
+        
+        # Delete existing cuisines
+        cursor.execute('DELETE FROM chef_cuisines WHERE chef_id = %s', (chef_id,))
+        
+        # Add new cuisines
+        for cuisine_name in cuisine_names:
+            # Get cuisine_id from cuisine_types table
+            cursor.execute('SELECT id FROM cuisine_types WHERE name = %s', (cuisine_name,))
+            cuisine_result = cursor.fetchone()
+            
+            if cuisine_result:
+                cuisine_id = cuisine_result[0]
+                # Insert into chef_cuisines
+                cursor.execute('''
+                    INSERT INTO chef_cuisines (chef_id, cuisine_id)
+                    VALUES (%s, %s)
+                    ON CONFLICT (chef_id, cuisine_id) DO NOTHING
+                ''', (chef_id, cuisine_id))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'message': 'Cuisines updated successfully', 'cuisines': cuisine_names}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@profile_bp.route('/cuisines', methods=['GET'])
+def get_all_cuisines():
+    """Get all available cuisine types"""
+    try:
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+        
+        cursor.execute('SELECT id, name FROM cuisine_types ORDER BY name')
+        cuisines = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+        
+        cuisine_list = [{'id': c['id'], 'name': c['name']} for c in cuisines]
+        
+        return jsonify({'cuisines': cuisine_list}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -732,7 +921,66 @@ def upload_chef_photo(chef_id):
         return jsonify({'photo_url': photo_url}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@profile_bp.route('/chef/<int:chef_id>/photo', methods=['GET'])
+def get_chef_photo(chef_id):
+    """Fetch the chef's profile photo URL from the database."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT photo_url FROM chefs WHERE id = %s', (chef_id,))
+        
+        result = cursor.fetchone() 
+        
+        cursor.close()
+        conn.close()
 
+        if result:
+            photo_url = result[0]
+            if photo_url:
+                return jsonify({'chef_id': chef_id, 'photo_url': photo_url}), 200
+            else:
+                return jsonify({'chef_id': chef_id, 'photo_url': None, 'message': 'No photo uploaded yet'}), 200
+        else:
+            return jsonify({'error': 'Chef not found'}), 404
+
+    except Exception as e:
+        print(f"Error fetching photo for chef {chef_id}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@profile_bp.route('/chef/<int:chef_id>/rating', methods=['POST'])
+def add_chef_rating():
+    data = request.get_json()
+    chef_id = data.get('chef_id')
+    customer_id = data.get('customer_id')
+    #currently ratings will be done on chef profile so booking_id may be needed later on
+    #booking_id = data.get('booking_id')
+    rating = data.get('rating')
+    comment = data.get('comment', '')
+
+    if not all([chef_id, customer_id, rating]):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    try:
+        conn = get_db_connection()
+        cursor = get_cursor(conn)
+
+        cursor.execute('''
+            INSERT INTO chef_rating(chef_id, customer_id, rating, comment)
+            VALUES (%s, %s, %s, %s)''', (chef_id, customer_id, rating, comment))
+        
+        conn.commit()
+        return jsonify({'message': 'Rating successfully posted'}), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+        
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
 
 # ============= Chef Cuisine Photos Management =============
 
@@ -1295,4 +1543,66 @@ def toggle_photo_featured(chef_id, photo_id):
         }), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+#route for chef to update their availability status
+@profile_bp.route('/chef/<int:chef_id>/availability', methods=['PUT'])
+def update_chef_availability(chef_id):
+    """Update chef's availability status"""
+    try:
+        data = request.get_json()
+        '''if not data or 'is_available' not in data:
+            return jsonify({'error': 'is_available field is required'}), 400
+        
+        is_available = data['is_available']
+        if not isinstance(is_available, bool):
+            return jsonify({'error': 'is_available must be a boolean value'}), 400'''
+        
+        if not data or 'availability' not in data:
+            return jsonify({'error': 'Availability data required'}), 400
+
+        availability = data['availability']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        #clear chef's current schedule from availability days table
+        cursor.execute('DELETE FROM chef_availability_days WHERE chef_id = %s', (chef_id,))
+
+        #insert updated availability into table
+        for day_info in availability:
+            day_of_week = day_info.get('day_of_week')
+            meal_type = day_info.get('meal_type')
+            start_time = day_info.get('start_time')  # Expecting 'HH:MM:SS' format 
+            end_time = day_info.get('end_time')      # Expecting 'HH:MM:SS' format 
+
+        for day, type in availability.items():
+            if day.lower() not in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']:
+                continue  # skip invalid days
+            for t in type:
+                meal_type = t.get('meal_type')
+                start_time = t.get('start_time')
+                end_time = t.get('end_time')   
+            
+                if not(meal_type and start_time and end_time):
+                    continue  # skip incomplete entries
+                
+                #inserts new schedule for chef to chef_availability_days table
+                cursor.execute('''
+                    INSERT INTO chef_availability_days (chef_id, day_of_week, start_time, end_time, meal_type)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (chef_id, day_of_week, start_time, end_time, meal_type))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'message': 'availability updated successfully',
+            'chef_id': chef_id,
+            'updated_availability': availability
+        }), 200
+        
+    except Exception as e:
+        print(f"Error updating availability for chef {chef_id}: {e}")
         return jsonify({'error': str(e)}), 500

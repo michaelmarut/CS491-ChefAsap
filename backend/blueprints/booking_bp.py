@@ -4,6 +4,7 @@ from database.config import db_config
 from database.db_helper import get_db_connection, get_cursor, handle_db_error
 import math
 from services.geocoding_service import geocoding_service, get_coordinates_for_zip
+from datetime import date as _date
 
 # Create the blueprint
 booking_bp = Blueprint('booking', __name__)
@@ -242,6 +243,7 @@ def get_customer_dashboard(customer_id):
         base_query = '''
             SELECT 
                 b.id as booking_id,
+                b.chef_id,
                 b.booking_date,
                 b.booking_time,
                 b.cuisine_type,
@@ -256,11 +258,16 @@ def get_customer_dashboard(customer_id):
                 c.email as chef_email,
                 c.phone as chef_phone,
                 c.photo_url as chef_photo,
-                csa.city as chef_city,
-                csa.state as chef_state
+                ca.address_line1 as chef_address_line1,
+                ca.address_line2 as chef_address_line2,
+                ca.city as chef_city,
+                ca.state as chef_state,
+                ca.zip_code as chef_zip_code,
+                CASE WHEN cr.id IS NOT NULL THEN TRUE ELSE FALSE END as has_reviewed
             FROM bookings b
             LEFT JOIN chefs c ON b.chef_id = c.id
-            LEFT JOIN chef_service_areas csa ON c.id = csa.chef_id
+            LEFT JOIN chef_addresses ca ON c.id = ca.chef_id AND ca.is_default = TRUE
+            LEFT JOIN chef_ratings cr ON b.id = cr.booking_id AND cr.customer_id = b.customer_id
             WHERE b.customer_id = %s
         '''
         
@@ -645,3 +652,280 @@ def get_nearby_chefs(customer_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@booking_bp.route('/chef/<int:chef_id>/bookings', methods=['GET'])
+def get_chef_bookings(chef_id):
+    """Get all bookings for a specific chef"""
+    try:
+        status = request.args.get('status', 'all')
+        
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+        
+        # Base query
+        query = '''
+            SELECT 
+                b.id as booking_id,
+                b.booking_date,
+                b.booking_time,
+                b.cuisine_type,
+                b.meal_type,
+                b.event_type,
+                b.number_of_people,
+                b.special_notes,
+                b.status,
+                b.total_cost,
+                b.produce_supply,
+                b.created_at,
+                b.updated_at,
+                c.first_name || ' ' || c.last_name as customer_name,
+                c.email as customer_email,
+                c.phone as customer_phone,
+                ca.address_line1 as chef_address_line1,
+                ca.address_line2 as chef_address_line2,
+                ca.city as chef_city,
+                ca.state as chef_state,
+                ca.zip_code as chef_zip_code
+            FROM bookings b
+            JOIN customers c ON b.customer_id = c.id
+            JOIN chefs ch ON b.chef_id = ch.id
+            LEFT JOIN chef_addresses ca ON ch.id = ca.chef_id AND ca.is_default = TRUE
+            WHERE b.chef_id = %s
+        '''
+        
+        params = [chef_id]
+        
+        if status != 'all':
+            query += ' AND b.status = %s'
+            params.append(status)
+        
+        query += ' ORDER BY b.booking_date DESC, b.booking_time DESC'
+        
+        cursor.execute(query, tuple(params))
+        bookings = cursor.fetchall()
+        
+        # Format the results
+        formatted_bookings = []
+        for booking in bookings:
+            formatted_booking = dict(booking)
+            # Format date and time
+            if formatted_booking.get('booking_date'):
+                formatted_booking['booking_date'] = formatted_booking['booking_date'].strftime('%Y-%m-%d')
+            if formatted_booking.get('booking_time'):
+                formatted_booking['booking_time'] = str(formatted_booking['booking_time'])
+            if formatted_booking.get('total_cost'):
+                formatted_booking['total_cost'] = float(formatted_booking['total_cost'])
+            formatted_bookings.append(formatted_booking)
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'bookings': formatted_bookings,
+            'count': len(formatted_bookings)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@booking_bp.route('/booking/<int:booking_id>/status', methods=['PUT'])
+def update_booking_status(booking_id):
+    """Update booking status (for chef to accept/decline bookings)"""
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        if not new_status:
+            return jsonify({'error': 'Status is required'}), 400
+        
+        # Validate status
+        valid_statuses = ['pending', 'accepted', 'declined', 'completed', 'cancelled']
+        if new_status not in valid_statuses:
+            return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE bookings 
+            SET status = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        ''', (new_status, booking_id))
+        
+        if cursor.rowcount == 0:
+            return jsonify({'error': 'Booking not found'}), 404
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Booking status updated to {new_status}'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Calendar endpoints: bookings with derived duration_minutes (MAX prep_time per chef+cuisine)
+@booking_bp.route('/customer/<int:customer_id>/calendar', methods=['GET'])
+def calendar_for_customer(customer_id: int):
+    """
+    Return customer's bookings within a date range, including duration_minutes
+    derived from chef_menu_items.prep_time (max per cuisine/chef). Fallback 60.
+    Query params: start=YYYY-MM-DD, end=YYYY-MM-DD (inclusive).
+    """
+    start = request.args.get("start")
+    end = request.args.get("end")
+    try:
+        start_d = _date.fromisoformat(start) if start else None
+        end_d = _date.fromisoformat(end) if end else None
+        if not start_d or not end_d:
+            return jsonify({"success": False, "error": "start and end (YYYY-MM-DD) are required"}), 400
+    except Exception:
+        return jsonify({"success": False, "error": "Invalid date format"}), 400
+
+    conn = get_db_connection()
+    cur = get_cursor(conn, dictionary=True)
+    try:
+        cur.execute(
+            """
+            SELECT
+              b.id AS booking_id,
+              b.customer_id,
+              b.chef_id,
+              b.booking_date,
+              b.booking_time,
+              b.status,
+              b.special_notes,
+              b.cuisine_type,
+              b.meal_type,
+              COALESCE(MAX(cmi.prep_time), 60) AS duration_minutes
+            FROM bookings b
+            LEFT JOIN chef_menu_items cmi
+              ON cmi.chef_id = b.chef_id
+             AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
+            WHERE b.customer_id = %s
+              AND b.booking_date BETWEEN %s AND %s
+            GROUP BY
+              b.id, b.customer_id, b.chef_id, b.booking_date, b.booking_time, b.status,
+              b.special_notes, b.cuisine_type, b.meal_type
+            ORDER BY b.booking_date, b.booking_time
+            """,
+            (customer_id, start_d, end_d),
+        )
+        rows = cur.fetchall()
+
+        data = []
+        for r in rows:
+            bd = r.get("booking_date")
+            bt_raw = r.get("booking_time")
+            booking_date = str(bd) if bd is not None else None
+            booking_time = (
+                bt_raw.strftime("%H:%M")
+                if hasattr(bt_raw, "strftime")
+                else (str(bt_raw)[:5] if bt_raw else None)
+            )
+            data.append({
+                "booking_id": r.get("booking_id"),
+                "customer_id": r.get("customer_id"),
+                "chef_id": r.get("chef_id"),
+                "booking_date": booking_date,
+                "booking_time": booking_time,
+                "status": r.get("status") or "pending",
+                "special_notes": r.get("special_notes") or "",
+                "cuisine_type": r.get("cuisine_type"),
+                "meal_type": r.get("meal_type"),
+                "duration_minutes": int(r.get("duration_minutes") or 60),
+            })
+
+        return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return handle_db_error(e)
+    finally:
+        try:
+            cur.close()
+        finally:
+            conn.close()
+
+
+@booking_bp.route('/chef/<int:chef_id>/calendar', methods=['GET'])
+def calendar_for_chef(chef_id: int):
+    """
+    Return chef's bookings within a date range, including duration_minutes
+    derived from chef_menu_items.prep_time (max per cuisine/chef). Fallback 60.
+    Query params: start=YYYY-MM-DD, end=YYYY-MM-DD (inclusive).
+    """
+    start = request.args.get("start")
+    end = request.args.get("end")
+    try:
+        start_d = _date.fromisoformat(start) if start else None
+        end_d = _date.fromisoformat(end) if end else None
+        if not start_d or not end_d:
+            return jsonify({"success": False, "error": "start and end (YYYY-MM-DD) are required"}), 400
+    except Exception:
+        return jsonify({"success": False, "error": "Invalid date format"}), 400
+
+    conn = get_db_connection()
+    cur = get_cursor(conn, dictionary=True)
+    try:
+        cur.execute(
+            """
+            SELECT
+              b.id AS booking_id,
+              b.customer_id,
+              b.chef_id,
+              b.booking_date,
+              b.booking_time,
+              b.status,
+              b.special_notes,
+              b.cuisine_type,
+              b.meal_type,
+              COALESCE(MAX(cmi.prep_time), 60) AS duration_minutes
+            FROM bookings b
+            LEFT JOIN chef_menu_items cmi
+              ON cmi.chef_id = b.chef_id
+             AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
+            WHERE b.chef_id = %s
+              AND b.booking_date BETWEEN %s AND %s
+            GROUP BY
+              b.id, b.customer_id, b.chef_id, b.booking_date, b.booking_time, b.status,
+              b.special_notes, b.cuisine_type, b.meal_type
+            ORDER BY b.booking_date, b.booking_time
+            """,
+            (chef_id, start_d, end_d),
+        )
+        rows = cur.fetchall()
+
+        data = []
+        for r in rows:
+            bd = r.get("booking_date")
+            bt_raw = r.get("booking_time")
+            booking_date = str(bd) if bd is not None else None
+            booking_time = (
+                bt_raw.strftime("%H:%M")
+                if hasattr(bt_raw, "strftime")
+                else (str(bt_raw)[:5] if bt_raw else None)
+            )
+            data.append({
+                "booking_id": r.get("booking_id"),
+                "customer_id": r.get("customer_id"),
+                "chef_id": r.get("chef_id"),
+                "booking_date": booking_date,
+                "booking_time": booking_time,
+                "status": r.get("status") or "pending",
+                "special_notes": r.get("special_notes") or "",
+                "cuisine_type": r.get("cuisine_type"),
+                "meal_type": r.get("meal_type"),
+                "duration_minutes": int(r.get("duration_minutes") or 60),
+            })
+
+        return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return handle_db_error(e)
+    finally:
+        try:
+            cur.close()
+        finally:
+            conn.close()

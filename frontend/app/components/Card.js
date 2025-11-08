@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import Octicons from '@expo/vector-icons/Octicons';
 import Button from './Button';
 import { useTheme } from '../providers/ThemeProvider';
+import { getTailwindColor } from '../utils/getTailwindColor';
 
 export default function Card({
     title,
@@ -33,8 +34,8 @@ export default function Card({
         }
         : {};
 
-    const cardClasses = "bg-white dark:bg-black rounded-xl shadow-sm shadow-primary-500 mb-4 p-0 overflow-hidden " + customClasses;
-    const headerClasses = "flex-row items-center justify-between p-4 border-b border-gray-100 bg-primary-100 dark:bg-dark-100 " + customHeader;
+    const cardClasses = "bg-white dark:bg-black rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 mb-4 p-0 overflow-hidden " + customClasses;
+    const headerClasses = "flex-row items-center justify-between p-4 bg-primary-100 dark:bg-dark-100 " + customHeader;
     const contentWrapperClasses = "m-4 " + customCard;
     const footerClasses = "p-4 pt-0";
 
@@ -44,7 +45,7 @@ export default function Card({
                 <Octicons
                     name={headerIcon}
                     size={20}
-                    color={manualTheme === 'light' ? '#4D7C0F' : "#BEF264"}
+                    color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.100')}
                     style={{ marginRight: 8 }}
                 />
             )}
@@ -67,8 +68,10 @@ export default function Card({
                         <Octicons
                             name={isExpanded ? 'chevron-up' : 'chevron-down'}
                             size={20}
-                            color="#4d7c0f" // primary-400
+                            color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.100')}
+                            style={{ position: 'absolute', right: 20 }}
                         />
+                        
                     )}
                 </TouchableOpacity>
             )}

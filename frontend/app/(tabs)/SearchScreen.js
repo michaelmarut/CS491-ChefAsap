@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity } from "react-native";
+import { Link } from 'expo-router';
 import getEnvVars from "../../config";
 import { useAuth } from "../context/AuthContext";
 
@@ -9,12 +10,6 @@ import LoadingIcon from "../components/LoadingIcon";
 import SearchBarComponent from '../components/SearchBar';
 import SearchResultCard from '../components/SearchResultCard';
 import ProfilePicture from '../components/ProfilePicture';
-
-const SEARCH_RESULTS = [
-    { chef_id: 5, distance: 1.1, cuisine: ["Italian"], timing: ["Lunch"], rating: 5 },
-    { chef_id: 6, distance: 1.7, cuisine: ["French", "Italian"], timing: ["Lunch", "Dinner"], rating: 3 },
-    { chef_id: 7, distance: 2.2, cuisine: ["Italian", "Vietnamese"], timing: ["Lunch", "Dinner"], rating: 4 },
-];
 
 const tempChefCard = (
     <View className="flex bg-primary-100 shadow-sm shadow-primary-300 mr-4 rounded-xl border-2 border-primary-400 dark:bg-dark-100 dark:shadow-dark-300 dark:border-dark-400">
@@ -60,6 +55,89 @@ export default function SearchScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchResults, setSearchResults] = useState([]);
+    const [recentSearches, setRecentSearches] = useState([]);
+    const [recentChefs, setRecentChefs] = useState([]);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [autoLoadCompleted, setAutoLoadCompleted] = useState(false);
+
+
+    // Auto-load nearby chefs when location is available
+    useEffect(() => {
+        if (formData.latitude && formData.longitude && token) {
+            fetchSearchResults();
+            setAutoLoadCompleted(true);
+        }
+    }, [formData.latitude, formData.longitude, token]);
+
+    // Fetch recent searches when component loads
+    useEffect(() => {
+        if (token && profileId) {
+            fetchRecentSearches();
+            fetchRecentChefs();
+        }
+    }, [token, profileId]);
+
+    const handleSearch = () => {
+        fetchSearchResults();
+    };
+
+    // Fetch recent searches for the customer (search keywords)
+    const fetchRecentSearches = async () => {
+        if (!profileId) return;
+
+        try {
+            const url = `${apiUrl}/search/recent/${profileId}?limit=5`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setRecentSearches(data.recent_searches || []);
+            }
+        } catch (err) {
+            console.error('Failed to fetch recent searches:', err);
+        }
+    };
+
+    // Fetch recently booked chefs (based on completed bookings)
+    const fetchRecentChefs = async () => {
+        console.log('[SearchScreen] fetchRecentChefs called, profileId:', profileId);
+        if (!profileId) {
+            console.log('[SearchScreen] No profileId, skipping fetch');
+            return;
+        }
+
+        try {
+            const url = `${apiUrl}/search/viewed-chefs/${profileId}?limit=5`;
+            console.log('[SearchScreen] Fetching recent chefs from:', url);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+            console.log('[SearchScreen] Recent chefs response:', data);
+
+            if (response.ok && data.success) {
+                console.log('[SearchScreen] Setting recent chefs:', data.viewed_chefs?.length || 0, 'chefs');
+                setRecentChefs(data.viewed_chefs || []);
+            } else {
+                console.log('[SearchScreen] Response not ok or not success:', response.ok, data.success);
+            }
+        } catch (err) {
+            console.error('[SearchScreen] Failed to fetch recent chefs:', err);
+        }
+    };
 
     const fetchSearchResults = async () => {
         setLoading(true);
@@ -78,6 +156,11 @@ export default function SearchScreen() {
             ];
 
             const allRelevantParams = [...apiParams, ...otherFutureParams];
+
+            // Add customer_id to save search history
+            if (profileId) {
+                searchParams.append('customer_id', profileId);
+            }
 
             for (const key of allRelevantParams) {
                 const value = formData[key];
@@ -115,11 +198,15 @@ export default function SearchScreen() {
                     last_name: chef.last_name,
                     distance: chef.distance_miles,
                     cuisine: chef.cuisines || [],
-                    timing: [], // TODO: Add meal availability data from backend
+                    timing: chef.meal_timings || [],
                     rating: Math.round(chef.rating?.average_rating || 0)
                 }));
                 setSearchResults(transformedResults);
                 setError(null);
+                
+                // Refresh recent searches after a successful search
+                fetchRecentSearches();
+                setRefreshKey(prev => prev + 1);
             } else {
                 setError(data.error || 'Failed to load results.');
                 alert('Error' + (data.error || 'Failed to load results.'));
@@ -141,13 +228,60 @@ export default function SearchScreen() {
         }
     }, [formData.latitude, formData.longitude, token]);
 
-    const handleSearch = () => {
-        fetchSearchResults();
+    // Fetch recent searches when component loads
+    useEffect(() => {
+        if (token && profileId) {
+            fetchRecentSearches();
+            fetchRecentChefs();
+        }
+    }, [token, profileId]);
+
+    // Render recently booked chef card
+    const renderRecentChef = (chef) => (
+        <Link key={chef.chef_id} href={`/ChefProfileScreen/${chef.chef_id}`} asChild>
+            <TouchableOpacity className="flex bg-primary-100 shadow-sm shadow-primary-300 mr-4 rounded-xl border-2 border-primary-400 dark:bg-dark-100 dark:shadow-dark-300 dark:border-dark-400">
+                <View className="w-full p-2">
+                    <ProfilePicture size={24} firstName={chef.first_name} lastName={chef.last_name} />
+                </View>
+                <View className="bg-primary-300 rounded-b-lg w-full p-2 items-center dark:bg-dark-300">
+                    <Text className="text-sm text-primary-100 text-center dark:text-dark-100 font-semibold">
+                        {chef.full_name}
+                    </Text>
+                    <Text className="text-xs text-primary-100 text-center dark:text-dark-100">
+                        {chef.cuisines && chef.cuisines.length > 0 ? chef.cuisines.slice(0, 2).join(', ') : 'Chef'}
+                    </Text>
+                    {chef.rating && chef.rating.average_rating && (
+                        <Text className="text-xs text-primary-100 text-center dark:text-dark-100">
+                            ⭐ {chef.rating.average_rating}
+                        </Text>
+                    )}
+                </View>
+            </TouchableOpacity>
+        </Link>
+    );
+
+    // Function to re-run a recent search
+    const handleRecentSearchClick = (search) => {
+        setFormData({
+            ...formData,
+            searchQuery: search.search_query || '',
+            cuisine: search.cuisine || '',
+            gender: search.gender || 'all',
+            timing: search.meal_timing || 'all',
+            min_rating: search.min_rating || 0,
+            max_price: search.max_price || 500,
+            radius: search.radius || 10,
+            latitude: search.latitude || formData.latitude,
+            longitude: search.longitude || formData.longitude,
+        });
+        // Trigger search with these parameters
+        setTimeout(() => fetchSearchResults(), 100);
     };
 
     return (
-        <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-12">
+        <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
             <SearchBarComponent
+                key={refreshKey}
                 formData={formData}
                 setFormData={setFormData}
                 handleSearch={handleSearch}
@@ -171,9 +305,15 @@ export default function SearchScreen() {
                 isScrollable={true}
                 scrollDirection="horizontal"
             >
-                {tempChefCard}
-                {tempChefCard}
-                {tempChefCard}
+                {recentChefs.length > 0 ? (
+                    recentChefs.map((chef) => renderRecentChef(chef))
+                ) : (
+                    <View className="p-4">
+                        <Text className="text-primary-700 dark:text-dark-700 text-center">
+                            No recently viewed chefs. Browse chef profiles to see them here!
+                        </Text>
+                    </View>
+                )}
             </Card>
             <Card
                 title="Nearby Chefs"
@@ -181,17 +321,23 @@ export default function SearchScreen() {
                 isScrollable={true}
                 scrollDirection="vertical"
             >
-                {searchResults.map((result, index) =>
+                
+                {searchResults.length != 0 ? searchResults.map((result, index) =>
                     <SearchResultCard
                         key={index}
                         chef_id={result["chef_id"]}
+                        first_name={result["first_name"]}
+                        last_name={result["last_name"]}
                         distance={result["distance"]}
                         cuisine={result["cuisine"]}
                         timing={result["timing"]}
                         rating={result["rating"]}
-                    />)}
+                    />)
+                    :
+                    <LoadingIcon icon='food' size={64} message='Fetching Nearby Chefs...'/>
+                }
             </Card>
-            <View className="h-24" />
+            <View className="h-8" />
         </ScrollView>
     );
 

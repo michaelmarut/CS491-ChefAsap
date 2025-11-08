@@ -4,22 +4,25 @@
     "slug": "ChefAsap",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/images/chefAsapLogo1Circle.png",
+    "icon": "./app/assets/icon.png",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "ChefAsap needs access to your location to find nearby chefs."
-      }
+        "NSLocationWhenInUseUsageDescription": "ChefAsap needs access to your location to find nearby chefs.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.osid54.ChefAsap"
     },
     "android": {
       "edgeToEdgeEnabled": true,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "package": "com.osid54.ChefAsap"
     },
     "web": {
       "bundler": "metro",
@@ -29,10 +32,17 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      "react-native-edge-to-edge"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "38736753-1748-4823-be61-e905938e4b80"
+      }
     }
   }
 }
