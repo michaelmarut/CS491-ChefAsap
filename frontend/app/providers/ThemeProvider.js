@@ -44,7 +44,7 @@ export default function ThemeProvider({ children }) {
     
     return (
         <ThemeContext.Provider value={contextValue}>
-            <View style={{ flex: 1, backgroundColor: activeBackground }}>
+            <View style={{ flex: 1, backgroundColor: colorScheme === 'dark' ? '#4D7C0F' : '#65A30D' }}>
                 <SystemBars
                     style={colorScheme === 'dark' ? 'light' : 'dark'}
                     animated

@@ -4,6 +4,8 @@ import { View } from 'react-native';
 import LoadingIcon from './components/LoadingIcon';
 import ThemeProvider from './providers/ThemeProvider'; 
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useState } from 'react';
 
 import 'react-native-reanimated';
 import { enableScreens } from 'react-native-screens';
@@ -11,6 +13,7 @@ import { enableScreens } from 'react-native-screens';
 import '../global.css';
 
 enableScreens(true);
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
     return (
@@ -27,15 +30,14 @@ export default function RootLayout() {
 function RootStack() {
     const { isAuthenticated, isLoading } = useAuth();
 
+    useEffect(() => {
+        if (!isLoading) {
+            SplashScreen.hide();
+        }
+    }, [isLoading]);
+
     if (isLoading) {
-        return (
-            <>
-                <Stack.Screen options={{ headerShown: false }} />
-                <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
-                    <LoadingIcon />
-                </View>
-            </>
-        );
+        return null;
     }
 
     return (

@@ -31,7 +31,6 @@ export default function LandingScreen() {
             customClasses="min-w-[50%]"
           />
         </View>
-
       </View>
     </View>
   );
