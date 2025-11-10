@@ -10,8 +10,9 @@ import { getTailwindColor } from '../utils/getTailwindColor';
 export default function TabLayout() {
     const { isAuthenticated, userType, isLoading } = useAuth();
     const router = useRouter();
-    const { manualTheme } = useTheme();
-
+    const { manualTheme, /*setIsOnAuthPage*/ } = useTheme();
+    //setIsOnAuthPage(false);
+    
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
             router.replace('/(auth)');

@@ -214,15 +214,15 @@ export default function Signup() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5">
+    <ScrollView className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5 pt-0">
 
-      <Text className="text-4xl font-bold text-center text-primary-500">
+      <Text className="text-4xl font-bold text-center text-primary-500 dark:text-dark-500">
         Create An Account
       </Text>
 
       <Button
         title="Already have an account?"
-        style="secondary"
+        style="transparent"
         base="link"
         customTextClasses='mb-2'
         href="/SignInScreen"

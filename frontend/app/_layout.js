@@ -43,11 +43,15 @@ function RootStack() {
     return (
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}> 
             <Stack>
-                {!isAuthenticated ? (
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+                {/*!isAuthenticated ? (
                     <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                 ) : (
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                )}
+                )*/}
+                
                 <Stack.Screen name="ChefProfileScreen/[id]" options={{ headerShown: false }} />
                 <Stack.Screen name="ChefMenu/[id]" options={{ headerShown: false }} />
             </Stack>

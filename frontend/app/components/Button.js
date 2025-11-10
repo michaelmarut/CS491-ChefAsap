@@ -36,7 +36,7 @@ export default function Button({
         },
         transparent: {
             button: "bg-transparent border-transparent",
-            text: "text-transparent",
+            text: "text-primary-400 dark:text-dark-400",
             icon: getTailwindColor('warm-gray')
         }
     };

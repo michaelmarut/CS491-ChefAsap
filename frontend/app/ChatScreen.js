@@ -213,8 +213,7 @@ export default function ChatScreen() {
                 className={`my-2 flex-row ${sentByUser ? 'justify-end' : 'justify-start'}`}
             >
                 <View
-                    className={`max-w-3/4 p-3 rounded-3xl ${sentByUser ? 'bg-primary-200 dark:bg-dark-300 rounded-tr-none' : 'bg-primary-300 dark:bg-dark-200 rounded-tl-none'}`}
-                    style={{ borderBottomLeftRadius: sentByUser ? null : 0, borderBottomRightRadius: sentByUser ? 0 : null }}
+                    className={`max-w-3/4 p-3 rounded-3xl ${sentByUser ? 'bg-primary-200 dark:bg-dark-300 rounded-br-none' : 'bg-primary-300 dark:bg-dark-200 rounded-bl-none'}`}
                 >
                     <Text className={`${sentByUser ? 'text-primary-500 dark:text-dark-500' : 'text-primary-100 dark:text-dark-400'}`}>
                         {item.message}

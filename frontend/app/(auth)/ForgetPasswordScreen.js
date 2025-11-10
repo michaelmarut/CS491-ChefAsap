@@ -91,7 +91,7 @@ export default function ForgetPassword() {
   };
 
   return (
-    <View className="p-5 bg-base-100 dark:bg-base-dark-100 flex-1">
+    <View className="bg-base-100 dark:bg-base-dark-100 flex-1 p-5 pt-0">
 
       <Text className="text-4xl font-bold text-center mb-5 text-primary-500 dark:text-dark-500">
         Reset Password
