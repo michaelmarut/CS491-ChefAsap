@@ -64,9 +64,9 @@ export default function ThemeProvider({ children }) {
                         : getTailwindColor('primary.300')
                     : isOnAuthPage
                         ? getTailwindColor('base.dark.100')
-                        : getTailwindColor('dark.200') }}>
+                        : getTailwindColor('dark.200')
+            }}>
                 <SystemBars
-                    style={colorScheme}
                     animated
                     hidden={true}
                 />

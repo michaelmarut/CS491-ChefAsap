@@ -46,6 +46,10 @@ export default function Button({
             button: "py-3 rounded-full mb-2 border-2 shadow-sm shadow-primary-500 dark:shadow-dark-500",
             text: "text-center font-bold text-lg",
         },
+        icon: {
+            button: "rounded-full border-2 shadow-sm shadow-primary-500 dark:shadow-dark-500",
+            text: "text-center font-bold text-lg",
+        },
         link: {
             button: "py-2 px-4 bg-transparent",
             text: "text-center text-md underline",

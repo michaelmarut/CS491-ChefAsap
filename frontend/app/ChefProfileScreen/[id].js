@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 const featuredDishComponent = (item, apiUrl) => (
     <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
         {item.photo_url ? (
-            <Image 
+            <Image
                 source={{ uri: `${apiUrl}${item.photo_url}` }}
                 className="h-[200px] w-[200px] rounded-lg"
                 resizeMode="cover"
@@ -52,7 +52,7 @@ const featuredDishComponent = (item, apiUrl) => (
 );
 
 export default function ChefProfileScreen() {
-    const { id } = useLocalSearchParams();
+    const { id, distance } = useLocalSearchParams();
 
     const { token, userId, profileId, userType } = useAuth();
     const { apiUrl } = getEnvVars();
@@ -61,12 +61,11 @@ export default function ChefProfileScreen() {
     const [featuredItems, setFeaturedItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [editingAbout, setEditingAbout] = useState(false);
-    const [aboutText, setAboutText] = useState('');
-    const [savingAbout, setSavingAbout] = useState(false);
     const [chefCuisines, setChefCuisines] = useState([]);
     const [mealTimings, setMealTimings] = useState([]);
-    
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [updatingFavoriteStatus, setUpdatingFavoriteStatus] = useState(false);
+
     const router = useRouter();
 
     useEffect(() => {
@@ -97,7 +96,6 @@ export default function ChefProfileScreen() {
 
                 if (profileResponse.ok) {
                     setChefData(profileData.profile);
-                    setAboutText(profileData.profile.description || '');
                     setChefCuisines(profileData.profile.cuisines || []);
                     setMealTimings(profileData.profile.meal_timings || ['Breakfast', 'Lunch', 'Dinner']);
                 } else {
@@ -121,6 +119,23 @@ export default function ChefProfileScreen() {
                     setFeaturedItems(featuredData.featured_items || []);
                 } else {
                     setFeaturedItems([]);
+                }
+
+                const faveURL = `${apiUrl}/booking/customer/${profileId}/favorite-chefs/${chefId}`;
+                const faveResponse = await fetch(faveURL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const faveData = await faveResponse.json();
+
+                if (faveResponse.ok) {
+                    setIsFavorited(faveData.is_favorited || false);
+                } else {
+                    setIsFavorited(false);
                 }
 
                 // Save chef view record (only for customers)
@@ -154,43 +169,44 @@ export default function ChefProfileScreen() {
 
     }, [id, apiUrl, token]);
 
-    const handleSaveAbout = async () => {
-        if (aboutText.length > 500) {
-            Alert.alert('Error', 'Description cannot exceed 500 characters');
-            return;
-        }
+    const handleFavoriting = async () => {
+        const chefId = parseInt(id, 10);
 
-        setSavingAbout(true);
-        try {
-            const response = await fetch(`${apiUrl}/profile/chef/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ description: aboutText }),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                Alert.alert('Success', 'About section updated successfully');
-                setChefData({ ...chefData, description: aboutText });
-                setEditingAbout(false);
-            } else {
-                Alert.alert('Error', result.error || 'Failed to update');
+        if (!isFavorited) {
+            try {
+                setUpdatingFavoriteStatus(true);
+                await fetch(`${apiUrl}/booking/customer/${profileId}/favorite-chefs/${chefId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+            } catch (err) {
+                Alert.alert('Error', 'Network error. Could not favorite chef.');
+                console.error('Favorite chef error:', err);
+            } finally {
+                setIsFavorited(true);
+                setUpdatingFavoriteStatus(false);
             }
-        } catch (error) {
-            console.error('Failed to save about:', error);
-            Alert.alert('Error', 'Network error. Please try again.');
-        } finally {
-            setSavingAbout(false);
+        } else {
+            try {
+                setUpdatingFavoriteStatus(true);
+                await fetch(`${apiUrl}/booking/customer/${profileId}/favorite-chefs/${chefId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+            } catch (err) {
+                Alert.alert('Error', 'Network error. Could not unfavorite chef.');
+                console.error('Unfavorite chef error:', err);
+            } finally {
+                setIsFavorited(false);
+                setUpdatingFavoriteStatus(false);
+            }
         }
-    };
-
-    const handleCancelEdit = () => {
-        setAboutText(chefData?.description || '');
-        setEditingAbout(false);
     };
 
     const handleChatPress = () => {
@@ -207,7 +223,6 @@ export default function ChefProfileScreen() {
             }
         });
     };
-
 
     if (loading) {
         return (
@@ -232,36 +247,42 @@ export default function ChefProfileScreen() {
                 >
                     <ProfilePicture photoUrl={chefData?.photo_url} firstName={chefData?.first_name} lastName={chefData?.last_name} />
                     <RatingsDisplay rating={chefData?.average_rating} />
-                    <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
-                        {chefData.total_ratings} Total Reviews
+                    <View className='flex-row items-center justify-center'>
+                        <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
+                            {chefData?.total_reviews} Total Reviews
+                        </Text>
                         <Button
                             icon='cross-reference'
                             base='link'
                             style='transparent'
-                            customClasses='p-0 pl-2 pt-3'
+                            customClasses='m-0 px-0 py-0 pl-2 pb-4'
                             onPress={() => alert("Reviews Placeholder")}
                         />
-                    </Text>
+                    </View>
                     <Text className="text-sm text-center text-primary-400 pt-2 border-t border-primary-200 dark:text-dark-400 dark:border-dark-200">Serving Since: {chefData.member_since}</Text>
+
+                    <Button
+                        onPress={handleFavoriting}
+                        icon={updatingFavoriteStatus ? 'sync' : isFavorited ? 'heart-fill' : 'heart'}
+                        style="accent"
+                        customClasses="absolute -top-[62px] -right-2 z-10 p-3 rounded-full pl-3"
+                        disabled={updatingFavoriteStatus}
+                    />
                 </Card>
 
                 <Card>
                     <Text className="text-lg text-center text-primary-400 font-semibold dark:text-dark-400">Located in: {chefData.public_location} </Text>
-                    <Text className="text-lg text-center text-primary-400 dark:text-dark-400">Distance from you: (1.5 mi. Away) </Text>
+                    {distance && <Text className="text-lg text-center text-primary-400 dark:text-dark-400">Distance from you: {distance} miles </Text>}
                 </Card>
 
                 <Card>
-                    <Text className="text-lg text-primary-400 text-center font-semibold mb-3 dark:text-dark-400">
-                        Chef Details
-                    </Text>
-
                     {/* Meal Timings */}
                     {mealTimings.length > 0 && (
                         <View className="mb-3">
                             <Text className="text-md text-primary-400 font-semibold mb-2 dark:text-dark-400">
                                 Serves:
                             </Text>
-                            <Text className="text-md text-primary-400 font-semibold mb-2 dark:text-dark-400">
+                            <Text className="text-md text-primary-400 mb-2 dark:text-dark-400 text-center">
                                 {mealTimings?.join(', ')}
                             </Text>
                         </View>
@@ -273,7 +294,7 @@ export default function ChefProfileScreen() {
                             Cuisine Specialties:
                         </Text>
                         {chefCuisines.length > 0 ? (
-                            <TagsBox words={chefCuisines} />
+                            <TagsBox words={chefCuisines} theme='light' />
                         ) : (
                             <Text className="text-md text-center text-gray-500 dark:text-gray-400">
                                 No cuisine specialties listed
@@ -287,55 +308,9 @@ export default function ChefProfileScreen() {
                     customHeader='justify-center'
                     customHeaderText='text-xl'
                 >
-                    {/* Show edit button only if chef is viewing their own profile */}
-                    {userType === 'chef' && profileId === parseInt(id, 10) && !editingAbout && (
-                        <TouchableOpacity
-                            onPress={() => setEditingAbout(true)}
-                            className="absolute top-4 right-4 bg-lime-600 rounded-full p-2"
-                        >
-                            <Octicons name="pencil" size={18} color="white" />
-                        </TouchableOpacity>
-                    )}
-
-                    {editingAbout ? (
-                        <View>
-                            <TextInput
-                                className="border border-primary-200 dark:border-dark-200 rounded-lg p-3 text-primary-400 dark:text-dark-400 bg-white dark:bg-gray-800 min-h-[150px]"
-                                multiline
-                                numberOfLines={6}
-                                value={aboutText}
-                                onChangeText={setAboutText}
-                                placeholder="Tell customers about yourself and your cooking..."
-                                placeholderTextColor="#9CA3AF"
-                                maxLength={500}
-                                textAlignVertical="top"
-                            />
-                            <Text className="text-sm text-right text-gray-500 mt-1 dark:text-gray-400">
-                                {aboutText.length}/500
-                            </Text>
-                            <View className="flex-row justify-end gap-2 mt-3">
-                                <TouchableOpacity
-                                    onPress={handleCancelEdit}
-                                    className="bg-gray-300 dark:bg-gray-600 px-4 py-2 rounded-full"
-                                >
-                                    <Text className="text-gray-700 dark:text-gray-200 font-semibold">Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleSaveAbout}
-                                    disabled={savingAbout}
-                                    className="bg-lime-600 px-4 py-2 rounded-full"
-                                >
-                                    <Text className="text-white font-semibold">
-                                        {savingAbout ? 'Saving...' : 'Save'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    ) : (
-                        <Text className="text-lg text-center text-primary-400 text-pretty dark:text-dark-400">
-                            {chefData?.description || 'No description available'}
-                        </Text>
-                    )}
+                    <Text className="text-lg text-center text-primary-400 text-pretty dark:text-dark-400">
+                        {chefData?.description || 'No description available'}
+                    </Text>
                 </Card>
 
                 <Card
@@ -375,7 +350,7 @@ export default function ChefProfileScreen() {
                 <Button
                     title="← Return"
                     style="secondary"
-                    href={userType === 'customer' ? "/(tabs)/SearchScreen" : "/(tabs)/Profile"}
+                    onPress={() => router.back()}
                     customClasses="min-w-[60%]"
                 />
                 <View className="h-8" />

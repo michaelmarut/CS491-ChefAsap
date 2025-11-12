@@ -459,6 +459,7 @@ export default function ChefMenuItem({
                     selectedValue={form.category_id}
                     onValueChange={(val) => handleChange('category_id', val)}
                     items={categoryList}
+                    customClass='mb-2'
                 />
                 <Button
                     title={isNewDraft ? "Save Item" : "Save Changes"}

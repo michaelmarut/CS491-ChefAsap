@@ -1,9 +1,11 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
+import getTailwindColor from '../utils/getTailwindColor';
 
 export default function RatingsDisplay({
-    rating
+    rating,
+    color
 }) {
     rating = Math.round(rating);
     return (
@@ -13,14 +15,14 @@ export default function RatingsDisplay({
                     key={index}
                     name={"star-fill"}
                     size={24}
-                    color={"#65A30D"}
+                    color={color ? getTailwindColor(color) : "#65A30D"}
                 />)}
             {Array.from({ length: 5 - rating }, (a, i) => i).map((num, index) =>
                 <Octicons
                     key={index}
                     name={"star"}
                     size={24}
-                    color={"#65A30D"}
+                    color={color ? getTailwindColor(color) : "#65A30D"}
                 />)}
         </View>
     );

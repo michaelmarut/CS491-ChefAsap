@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
+import { useRouter } from 'expo-router';
 import Octicons from '@expo/vector-icons/Octicons';
 
 import getEnvVars from "../../config";
@@ -22,11 +23,20 @@ export default function SearchResultCard({
 }) {
     const [photoData, setPhotoData] = useState(null);
     const { token } = useAuth();
+    const router = useRouter();
 
     const { apiUrl } = getEnvVars();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const handleChefPress = () => {
+        router.push({
+            pathname: `/ChefProfileScreen/${chef_id}`,
+            params: {
+                distance: distance,
+            }
+        });
+    };
 
     useEffect(() => {
         const fetchPhoto = async () => {
@@ -79,14 +89,16 @@ export default function SearchResultCard({
                 </View>
                 :
                 <View className="flex-row w-full justify-between bg-base-100 dark:bg-base-dark-100 rounded-b-3xl border-t-2 border-primary-300 dark:border-dark-300">
-                    <View className="flex justify-center items-center w-1/2 bg-primary-100 pt-2 px-1 rounded-bl-3xl dark:bg-dark-100">
+                    <View className="flex justify-between items-center w-1/2 bg-primary-100 pt-2 px-1 rounded-bl-3xl dark:bg-dark-100">
                         <TagsBox words={cuisine} />
-                        <Text className="text-md text-primary-400 dark:text-dark-400 pt-2">Available:</Text>
-                        <Text className="text-md text-primary-400 dark:text-dark-400 pb-2 text-wrap">{timing.join(', ')}</Text>
+                        <View>
+                            <Text className="text-md text-primary-400 dark:text-dark-400 pt-2 font-medium text-center">Available:</Text>
+                            <Text className="text-sm text-primary-400 dark:text-dark-400 pb-2 text-wrap text-center">{timing.join(', ')}</Text>
+                        </View>
                         <Button
                             title={"View Chef "}
                             style={"accent"}
-                            href={`/ChefProfileScreen/${chef_id}`}
+                            onPress={handleChefPress}
                             icon={"link-external"}
                             customClasses="w-[90%] rounded-3xl"
                             customTextClasses='text-sm font-medium'
