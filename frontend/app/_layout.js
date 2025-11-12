@@ -6,6 +6,7 @@ import ThemeProvider from './providers/ThemeProvider';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 import 'react-native-reanimated';
 import { enableScreens } from 'react-native-screens';
@@ -15,14 +16,19 @@ import '../global.css';
 enableScreens(true);
 SplashScreen.preventAutoHideAsync();
 
+// Stripe Publishable Key
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SRj3W9CvQ6WUVNny6jBYmY0S4iOxJ6LD7oL8xmyfPRBZ64NlZN6Wrkxn9nDQwCggNiY4GV1oTirQ9VaqEpNxeO800vd5hgmXY';
+
 export default function RootLayout() {
     return (
         <SafeAreaProvider>
-            <AuthProvider>
-                <ThemeProvider>
-                    <RootStack />
-                </ThemeProvider>
-            </AuthProvider>
+            <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+                <AuthProvider>
+                    <ThemeProvider>
+                        <RootStack />
+                    </ThemeProvider>
+                </AuthProvider>
+            </StripeProvider>
         </SafeAreaProvider>
     );
 }
