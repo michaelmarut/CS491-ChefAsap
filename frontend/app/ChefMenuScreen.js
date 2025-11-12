@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { ScrollView, Text, Alert, View, FlatList } from "react-native";
 
 import getEnvVars from "../config";
@@ -25,6 +25,8 @@ export default function ChefMenu() {
     const [categories, setCategories] = useState([]);
     const [newCategoryName, setNewCategoryName] = useState('');
 
+    const router = useRouter();
+    
     // Group items by category
     const itemsByCategory = useMemo(() => {
         const grouped = {};
@@ -395,7 +397,7 @@ export default function ChefMenu() {
                 <Button
                     title="← Return"
                     style="secondary"
-                    href={`/(tabs)/Profile`}
+                    onPress={() => router.back()}
                     customClasses="min-w-[60%]"
                 />
                 <View className="h-8" />

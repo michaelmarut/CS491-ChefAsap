@@ -392,27 +392,28 @@ def get_favorite_chefs(customer_id):
                 c.id as chef_id,
                 c.first_name,
                 c.last_name,
-                c.first_name || ' ' || c.last_name as chef_name,
+                c.first_name || ' ' || c.last_name as full_name,
                 c.email,
                 c.phone,
                 c.photo_url,
                 STRING_AGG(ct.name, ', ' ORDER BY ct.name) as cuisines,
-                AVG(cr.rating) as average_rating,
-                COUNT(cr.rating) as total_reviews,
-                csa.city,
-                csa.state,
-                cp.base_rate_per_person,
+                crs.average_rating,
+                crs.total_reviews,
+                --csa.city,
+                --csa.state,
+                --cp.base_rate_per_person,
                 fcf.created_at as favorited_at
             FROM customer_favorite_chefs fcf
             JOIN chefs c ON fcf.chef_id = c.id
             LEFT JOIN chef_cuisines cc ON c.id = cc.chef_id
             LEFT JOIN cuisine_types ct ON cc.cuisine_id = ct.id
-            LEFT JOIN chef_ratings cr ON c.id = cr.chef_id
-            LEFT JOIN chef_service_areas csa ON c.id = csa.chef_id
-            LEFT JOIN chef_pricing cp ON c.id = cp.chef_id
+            LEFT JOIN chef_rating_summary crs ON c.id = crs.chef_id
+            --LEFT JOIN chef_service_areas csa ON c.id = csa.chef_id
+            --LEFT JOIN chef_pricing cp ON c.id = cp.chef_id
             WHERE fcf.customer_id = %s
             GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone, c.photo_url,
-                     csa.city, csa.state, cp.base_rate_per_person, fcf.created_at
+                    --csa.city, csa.state, cp.base_rate_per_person,
+                    fcf.created_at, crs.average_rating, crs.total_reviews
             ORDER BY fcf.created_at DESC
         ''', (customer_id,))
         
@@ -421,16 +422,18 @@ def get_favorite_chefs(customer_id):
         # Format data
         formatted_chefs = []
         for chef in favorite_chefs:
-            formatted_chef = dict(chef)
-            if formatted_chef.get('favorited_at'):
-                formatted_chef['favorited_at'] = formatted_chef['favorited_at'].isoformat()
-            if formatted_chef.get('cuisines'):
-                formatted_chef['cuisines'] = formatted_chef['cuisines'].split(',')
-            if formatted_chef.get('average_rating'):
-                formatted_chef['average_rating'] = round(float(formatted_chef['average_rating']), 2)
-            if formatted_chef.get('base_rate_per_person'):
-                formatted_chef['base_rate_per_person'] = float(formatted_chef['base_rate_per_person'])
-            formatted_chefs.append(formatted_chef)
+            chef_data = dict(chef)
+            if chef_data.get('favorited_at'):
+                chef_data['favorited_at'] = chef_data['favorited_at'].isoformat()
+            if chef_data.get('cuisines'):
+                chef_data['cuisines'] = chef_data['cuisines'].split(',')
+            if chef_data.get('base_rate_per_person'):
+                chef_data['base_rate_per_person'] = float(chef_data['base_rate_per_person'])
+            chef_data['rating'] = {
+                    'average_rating': round(float(chef['average_rating']), 2) if chef['average_rating'] else None,
+                    'total_reviews': chef['total_reviews'] or 0
+                }
+            formatted_chefs.append(chef_data)
         
         cursor.close()
         conn.close()
@@ -444,16 +447,34 @@ def get_favorite_chefs(customer_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@booking_bp.route('/customer/<int:customer_id>/favorite-chefs', methods=['POST'])
-def add_favorite_chef(customer_id):
+@booking_bp.route('/customer/<int:customer_id>/favorite-chefs/<int:chef_id>', methods=['GET'])
+def get_is_favorite_chef(customer_id, chef_id):
+    """See if a chef is in a customer's favorites"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT * FROM customer_favorite_chefs 
+            WHERE customer_id = %s AND chef_id = %s
+        ''', (customer_id, chef_id))
+        
+        favorited_chef = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'is_favorited': True if favorited_chef else False
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@booking_bp.route('/customer/<int:customer_id>/favorite-chefs/<int:chef_id>', methods=['POST'])
+def add_favorite_chef(customer_id, chef_id):
     """Add a chef to customer's favorites"""
     try:
-        data = request.get_json()
-        chef_id = data.get('chef_id')
-        
-        if not chef_id:
-            return jsonify({'error': 'chef_id is required'}), 400
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -536,16 +557,16 @@ def get_recent_chefs(customer_id):
         # Format data
         formatted_chefs = []
         for chef in recent_chefs:
-            formatted_chef = dict(chef)
-            if formatted_chef.get('last_completed_date'):
-                formatted_chef['last_completed_date'] = str(formatted_chef['last_completed_date'])
-            if formatted_chef.get('cuisines'):
-                formatted_chef['cuisines'] = formatted_chef['cuisines'].split(',')
-            if formatted_chef.get('average_rating'):
-                formatted_chef['average_rating'] = round(float(formatted_chef['average_rating']), 2)
-            if formatted_chef.get('base_rate_per_person'):
-                formatted_chef['base_rate_per_person'] = float(formatted_chef['base_rate_per_person'])
-            formatted_chefs.append(formatted_chef)
+            chef_data = dict(chef)
+            if chef_data.get('last_completed_date'):
+                chef_data['last_completed_date'] = str(chef_data['last_completed_date'])
+            if chef_data.get('cuisines'):
+                chef_data['cuisines'] = chef_data['cuisines'].split(',')
+            if chef_data.get('average_rating'):
+                chef_data['average_rating'] = round(float(chef_data['average_rating']), 2)
+            if chef_data.get('base_rate_per_person'):
+                chef_data['base_rate_per_person'] = float(chef_data['base_rate_per_person'])
+            formatted_chefs.append(chef_data)
         
         cursor.close()
         conn.close()
@@ -621,15 +642,15 @@ def get_nearby_chefs(customer_id):
             # Check if customer is within chef's service radius and within max_distance
             service_radius = chef['service_radius_miles'] or 10
             if distance <= min(service_radius, max_distance):
-                formatted_chef = dict(chef)
-                formatted_chef['distance_miles'] = round(distance, 1)
-                if formatted_chef.get('cuisines'):
-                    formatted_chef['cuisines'] = formatted_chef['cuisines'].split(',')
-                if formatted_chef.get('average_rating'):
-                    formatted_chef['average_rating'] = round(float(formatted_chef['average_rating']), 2)
-                if formatted_chef.get('base_rate_per_person'):
-                    formatted_chef['base_rate_per_person'] = float(formatted_chef['base_rate_per_person'])
-                nearby_chefs.append(formatted_chef)
+                chef_data = dict(chef)
+                chef_data['distance_miles'] = round(distance, 1)
+                if chef_data.get('cuisines'):
+                    chef_data['cuisines'] = chef_data['cuisines'].split(',')
+                if chef_data.get('average_rating'):
+                    chef_data['average_rating'] = round(float(chef_data['average_rating']), 2)
+                if chef_data.get('base_rate_per_person'):
+                    chef_data['base_rate_per_person'] = float(chef_data['base_rate_per_person'])
+                nearby_chefs.append(chef_data)
         
         # Sort by distance
         nearby_chefs.sort(key=lambda x: x['distance_miles'])

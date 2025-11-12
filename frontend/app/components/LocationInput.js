@@ -6,8 +6,6 @@ import Button from './Button';
 import Input from './Input';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LOCATION_STORAGE_KEY = 'last-used-location';
-
 export default function LocationInput({
     onLocationSelect, // callback (lat, lon, addressString) => void.
     formData, // parent form state object
@@ -21,7 +19,7 @@ export default function LocationInput({
 
     useEffect(() => {
         const loadLocation = async () => {
-            const storedLocation = await AsyncStorage.getItem(LOCATION_STORAGE_KEY);
+            const storedLocation = await AsyncStorage.getItem('last-used-location');
             if (storedLocation) {
                 setLastUsedLocation(storedLocation);
                 setAddressInput(storedLocation);
@@ -41,7 +39,7 @@ export default function LocationInput({
 
     const updateSavedLocation = async (newLocation) => {
         setLastUsedLocation(newLocation);
-        await AsyncStorage.setItem(LOCATION_STORAGE_KEY, newLocation);
+        await AsyncStorage.setItem('last-used-location', newLocation);
     };
 
     const getCurrentLocation = async () => {

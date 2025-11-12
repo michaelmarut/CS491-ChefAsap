@@ -310,7 +310,6 @@ def search_nearby_chefs():
         if conn:
             conn.close()
 
-
 @search_bp.route('/recent/<int:customer_id>', methods=['GET'])
 def get_recent_searches(customer_id):
     """
@@ -482,6 +481,7 @@ def get_viewed_chefs(customer_id):
                 c.phone,
                 c.gender,
                 c.meal_timings,
+                c.photo_url,
                 
                 -- Get cuisines
                 STRING_AGG(DISTINCT ct.name, ', ' ORDER BY ct.name) as cuisines,
@@ -502,7 +502,7 @@ def get_viewed_chefs(customer_id):
             WHERE b.customer_id = %s 
                 AND b.status = 'completed'
                 AND b.chef_id IS NOT NULL
-            GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone, c.gender, c.meal_timings,
+            GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone, c.gender, c.meal_timings, c.photo_url,
                      crs.average_rating, crs.total_reviews
             ORDER BY last_booking_date DESC
             LIMIT %s
@@ -527,7 +527,8 @@ def get_viewed_chefs(customer_id):
                     'total_reviews': chef['total_reviews'] or 0
                 },
                 'last_booking_date': chef['last_booking_date'].isoformat() if chef['last_booking_date'] else None,
-                'total_bookings': chef['total_bookings']
+                'total_bookings': chef['total_bookings'],
+                'photo_url': chef['photo_url']
             }
             results.append(chef_data)
 

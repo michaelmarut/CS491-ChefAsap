@@ -696,7 +696,7 @@ export default function ChefMenu() {
                 <Button
                     title="← Return"
                     style="secondary"
-                    href={userType === 'customer' ? `/ChefProfileScreen/${id}` : "/ChefMenuScreen"}
+                    onPress={() => router.back()}
                     customClasses="min-w-[60%]"
                 />
                 <View className="h-8" />
