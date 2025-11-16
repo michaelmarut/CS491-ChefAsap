@@ -128,18 +128,36 @@ def create_stripe_customer(current_user_id, user_type, customer_id):
 @stripe_payment_bp.route('/payment-methods', methods=['GET'])
 def get_payment_methods_no_auth():
     """Get all saved payment methods from Stripe (no auth for now)"""
-    customer_id = request.args.get('customer_id')
+    user_id = request.args.get('customer_id')  # This is actually user_id from frontend
     
-    if not customer_id:
-        return jsonify({'error': 'Customer ID is required'}), 400
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
     
-    print(f"=== Getting payment methods for customer_id: {customer_id} ===")
+    print(f"=== Getting payment methods for user_id: {user_id} ===")
     
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = get_cursor(conn, dictionary=True, buffered=True)
+        
+        # First, get customer_id from users table
+        cursor.execute('''
+            SELECT customer_id FROM users
+            WHERE id = %s AND user_type = 'customer'
+        ''', (user_id,))
+        
+        user_result = cursor.fetchone()
+        
+        if not user_result or not user_result['customer_id']:
+            print(f"No customer found for user_id: {user_id}")
+            return jsonify({
+                'success': True,
+                'payment_methods': [],
+                'message': 'Customer not found'
+            }), 200
+        
+        customer_id = user_result['customer_id']
         
         # Get Stripe customer ID
         cursor.execute('''
@@ -279,17 +297,37 @@ def attach_payment_method_with_token():
     print(f"=== Attaching payment method with token ===")
     
     data = request.get_json()
-    customer_id = data.get('customer_id')
+    user_id = data.get('customer_id')  # This is actually user_id from frontend
     token_id = data.get('token_id')
     
-    if not customer_id or not token_id:
-        return jsonify({'error': 'Customer ID and token ID are required'}), 400
+    if not user_id or not token_id:
+        return jsonify({'error': 'User ID and token ID are required'}), 400
     
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = get_cursor(conn, dictionary=True, buffered=True)
+        
+        # First, get customer_id from users table
+        cursor.execute('''
+            SELECT customer_id, user_type
+            FROM users
+            WHERE id = %s
+        ''', (user_id,))
+        
+        user_result = cursor.fetchone()
+        
+        if not user_result:
+            return jsonify({'error': 'User not found'}), 404
+        
+        if user_result['user_type'] != 'customer':
+            return jsonify({'error': 'User is not a customer'}), 400
+        
+        customer_id = user_result['customer_id']
+        
+        if not customer_id:
+            return jsonify({'error': 'Customer profile not found'}), 404
         
         # Get or create Stripe customer ID
         cursor.execute('''
@@ -457,12 +495,12 @@ def attach_payment_method(current_user_id, user_type, customer_id):
 def detach_payment_method_no_auth(payment_method_id):
     """Detach a payment method from customer (no auth for now)"""
     data = request.get_json()
-    customer_id = data.get('customer_id')
+    user_id = data.get('customer_id')  # This is actually user_id from frontend
     
-    if not customer_id:
-        return jsonify({'error': 'Customer ID is required'}), 400
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
     
-    print(f"=== Detaching payment method {payment_method_id} for customer_id: {customer_id} ===")
+    print(f"=== Detaching payment method {payment_method_id} for user_id: {user_id} ===")
     
     try:
         # Detach payment method
@@ -486,18 +524,31 @@ def detach_payment_method_no_auth(payment_method_id):
 def set_default_payment_method_no_auth(payment_method_id):
     """Set a payment method as default (no auth for now)"""
     data = request.get_json()
-    customer_id = data.get('customer_id')
+    user_id = data.get('customer_id')  # This is actually user_id from frontend
     
-    if not customer_id:
-        return jsonify({'error': 'Customer ID is required'}), 400
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
     
-    print(f"=== Setting default payment method {payment_method_id} for customer_id: {customer_id} ===")
+    print(f"=== Setting default payment method {payment_method_id} for user_id: {user_id} ===")
     
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = get_cursor(conn, dictionary=True, buffered=True)
+        
+        # First, get customer_id from users table
+        cursor.execute('''
+            SELECT customer_id FROM users
+            WHERE id = %s AND user_type = 'customer'
+        ''', (user_id,))
+        
+        user_result = cursor.fetchone()
+        
+        if not user_result or not user_result['customer_id']:
+            return jsonify({'error': 'Customer not found'}), 404
+        
+        customer_id = user_result['customer_id']
         
         # Get Stripe customer ID
         cursor.execute('''
@@ -772,18 +823,31 @@ def set_default_payment_method(current_user_id, user_type, customer_id):
 def test_payment():
     """Test a payment with saved card"""
     data = request.get_json()
-    customer_id = data.get('customer_id')
-    amount = data.get('amount', 1000)  # Default $10.00
+    user_id = data.get('customer_id')  # This is actually user_id from frontend
+    amount = data.get('amount', 100)  # Default $1.00
     payment_method_id = data.get('payment_method_id')  # Optional - use default if not provided
     
-    if not customer_id:
-        return jsonify({'error': 'Customer ID is required'}), 400
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
     
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = get_cursor(conn, dictionary=True, buffered=True)
+        
+        # First, get customer_id from users table
+        cursor.execute('''
+            SELECT customer_id FROM users
+            WHERE id = %s AND user_type = 'customer'
+        ''', (user_id,))
+        
+        user_result = cursor.fetchone()
+        
+        if not user_result or not user_result['customer_id']:
+            return jsonify({'error': 'Customer not found'}), 404
+        
+        customer_id = user_result['customer_id']
         
         # Get Stripe customer ID
         cursor.execute('''
