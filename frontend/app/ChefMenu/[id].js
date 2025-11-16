@@ -276,12 +276,25 @@ export default function ChefMenu() {
     // Fetch customer's payment methods
     const fetchPaymentMethods = async () => {
         console.log('=== Fetching payment methods ===');
+        console.log('User ID:', userId);
         console.log('Profile ID:', profileId);
+        console.log('User Type:', userType);
+        console.log('Token:', token ? 'Present' : 'Missing');
         console.log('API URL:', apiUrl);
+        
+        // Use userId instead of profileId
+        const userIdToUse = userId || profileId;
+        console.log('Using user ID:', userIdToUse);
+        
+        if (!userIdToUse) {
+            console.error('No user ID available!');
+            Alert.alert('Error', 'User not logged in');
+            return;
+        }
         
         setLoadingPaymentMethods(true);
         try {
-            const url = `${apiUrl}/stripe-payment/payment-methods?customer_id=${profileId}`;
+            const url = `${apiUrl}/stripe-payment/payment-methods?customer_id=${userIdToUse}`;
             console.log('Fetching from:', url);
             
             const response = await fetch(url, {
