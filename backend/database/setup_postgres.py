@@ -381,6 +381,8 @@ def init_postgres_db():
                 special_notes TEXT,
                 status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'completed', 'cancelled')),
                 total_cost DECIMAL(10,2),
+                chef_review BOOLEAN DEFAULT FALSE,
+                customer_review BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,

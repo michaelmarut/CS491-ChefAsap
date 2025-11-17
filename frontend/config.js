@@ -1,5 +1,7 @@
 import Constants from 'expo-constants';
 
+// was causing 'ERROR  Connection error: Network request failed' on my computer
+/*
 const getApiUrl = () => {
   // 🔧 临时修复：直接使用后端 IP
   // 后端运行在: 192.168.1.181:3000
@@ -22,11 +24,25 @@ const getApiUrl = () => {
     return backendIP;
   }
 };
+*/
+
+const getApiUrl = () => {
+  const hostUri = Constants.expoConfig?.hostUri;
+
+  if (hostUri) {
+    const ipAddress = hostUri.split(':')[0];
+    const url = `http://${ipAddress}:3000`;
+    return url;
+  } else {
+    const url = 'http://localhost:3000';
+    return url;
+  }
+};
 
 export default function getEnvVars() {
   const config = {
     apiUrl: getApiUrl()
   };
-  console.log('Final Config:', config);
+  //console.log('Final Config:', config);
   return config;
 }

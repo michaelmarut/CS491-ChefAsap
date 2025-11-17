@@ -10,14 +10,14 @@ export default function RatingsDisplay({
     rating = Math.round(rating);
     return (
         <View className="flex-row justify-center items-center pt-2">
-            {Array.from({ length: rating }, (a, i) => i).map((num, index) =>
+            {Array.from({ length: rating }, (_, i) => i).map((index) =>
                 <Octicons
                     key={index}
                     name={"star-fill"}
                     size={24}
                     color={color ? getTailwindColor(color) : "#65A30D"}
                 />)}
-            {Array.from({ length: 5 - rating }, (a, i) => i).map((num, index) =>
+            {Array.from({ length: 5 - rating }, (_, i) => i).map((index) =>
                 <Octicons
                     key={index}
                     name={"star"}

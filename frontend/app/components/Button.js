@@ -7,7 +7,7 @@ import { getTailwindColor } from '../utils/getTailwindColor';
 export default function Button({
     title, // button text
     style = 'primary', // button colors: primary, secondary, accent, transparent
-    base = 'basic', // base button structure: basic, link
+    base = 'basic', // base button structure: basic, link, icon
     href, // pass a href for navigation (not needed if using onPress)
     onPress, // pass an onPress for custom action (not needed if using href)
     customClasses = "", // custom button style overrides
@@ -15,6 +15,7 @@ export default function Button({
     disabled = false, // disable button interaction
     icon = "", // optional Octicons icon name
     iconGap = 5, // if title and icon, this is space between
+    iconSize,
 }) {
     const { manualTheme } = useTheme();
 
@@ -74,7 +75,7 @@ export default function Button({
             {icon ? (
                 <Octicons
                     name={icon}
-                    size={title ? 24 : 16}
+                    size={ iconSize ? iconSize : title ? 24 : 16}
                     color={styles.icon}
                 />
             ) : null}

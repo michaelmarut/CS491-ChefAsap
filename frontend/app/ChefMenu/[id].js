@@ -38,7 +38,7 @@ const menuItemCard = ({ item, onAddToOrder, apiUrl, userType }) => (
             </View>
             <View className="flex w-1/2 justify-center">
                 {item?.photo_url ? (
-                    <Image 
+                    <Image
                         source={{ uri: `${apiUrl}${item.photo_url}` }}
                         className="h-[150px] w-[150px] rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 border border-primary-400 dark:border-dark-400"
                         resizeMode="cover"
@@ -52,16 +52,16 @@ const menuItemCard = ({ item, onAddToOrder, apiUrl, userType }) => (
         </View>
 
         <View className="flex-row justify-between items-center p-2">
-        {item?.prep_time && (
-            <Text className="text-primary-400 text-nd font-medium text-center text-justified dark:text-dark-400">
-                Prep time: {item.prep_time} min
-            </Text>
-        )}
-        {item?.price && (
-            <Text className="text-primary-400 text-xl font-medium text-center dark:text-dark-400 pr-2">
-                ${item.price.toFixed(2)}
-            </Text>
-        )}
+            {item?.prep_time && (
+                <Text className="text-primary-400 text-nd font-medium text-center text-justified dark:text-dark-400">
+                    Prep time: {item.prep_time} min
+                </Text>
+            )}
+            {item?.price && (
+                <Text className="text-primary-400 text-xl font-medium text-center dark:text-dark-400 pr-2">
+                    ${item.price.toFixed(2)}
+                </Text>
+            )}
         </View>
         <Button
             title={item?.is_available ? "Add to order" : "Not available"}
@@ -89,7 +89,7 @@ export default function ChefMenu() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [orderItems, setOrderItems] = useState([]);
-    
+
     // Date/Time selection states (using separate values instead of Date objects)
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedDay, setSelectedDay] = useState(new Date().getDate());
@@ -97,7 +97,7 @@ export default function ChefMenu() {
     const [selectedHour, setSelectedHour] = useState(12);
     const [selectedMinute, setSelectedMinute] = useState(0);
     const [showOrderModal, setShowOrderModal] = useState(false);
-    
+
     // Payment states
     const [paymentMethods, setPaymentMethods] = useState([]);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
@@ -215,7 +215,7 @@ export default function ChefMenu() {
     // Group items by category
     const itemsByCategory = useMemo(() => {
         const grouped = {};
-        
+
         // Add all categories
         categories.forEach(cat => {
             grouped[cat.id] = {
@@ -223,13 +223,13 @@ export default function ChefMenu() {
                 items: []
             };
         });
-        
+
         // Add uncategorized group
         grouped['uncategorized'] = {
             name: 'Other Dishes',
             items: []
         };
-        
+
         // Group menu items
         menuItems.forEach(item => {
             if (item.category_id && grouped[item.category_id]) {
@@ -238,7 +238,7 @@ export default function ChefMenu() {
                 grouped['uncategorized'].items.push(item);
             }
         });
-        
+
         return grouped;
     }, [menuItems, categories]);
 
@@ -251,11 +251,11 @@ export default function ChefMenu() {
 
         // Check if item already in order
         const existingItem = orderItems.find(orderItem => orderItem.id === item.id);
-        
+
         if (existingItem) {
             // Increase quantity
-            setOrderItems(orderItems.map(orderItem => 
-                orderItem.id === item.id 
+            setOrderItems(orderItems.map(orderItem =>
+                orderItem.id === item.id
                     ? { ...orderItem, quantity: orderItem.quantity + 1 }
                     : orderItem
             ));
@@ -281,22 +281,22 @@ export default function ChefMenu() {
         console.log('User Type:', userType);
         console.log('Token:', token ? 'Present' : 'Missing');
         console.log('API URL:', apiUrl);
-        
+
         // Use userId instead of profileId
         const userIdToUse = userId || profileId;
         console.log('Using user ID:', userIdToUse);
-        
+
         if (!userIdToUse) {
             console.error('No user ID available!');
             Alert.alert('Error', 'User not logged in');
             return;
         }
-        
+
         setLoadingPaymentMethods(true);
         try {
             const url = `${apiUrl}/stripe-payment/payment-methods?customer_id=${userIdToUse}`;
             console.log('Fetching from:', url);
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -385,7 +385,7 @@ export default function ChefMenu() {
             // Step 2: If payment successful, create booking
             const cuisineType = orderItems.length > 0 ? orderItems[0].cuisine_type || 'Mixed' : 'Mixed';
             const mealType = getMealType(selectedHour);
-            
+
             const bookingResponse = await fetch(`${apiUrl}/booking/create`, {
                 method: 'POST',
                 headers: {
@@ -437,10 +437,10 @@ export default function ChefMenu() {
             // Success! Show confirmation
             setShowOrderModal(false);
             setPaymentProcessing(false);
-            
+
             // Get payment method details for confirmation
             const selectedCard = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
-            
+
             Alert.alert(
                 'Booking Confirmed! 🎉',
                 `Booking #${bookingResult.booking_id}\n\n` +
@@ -546,7 +546,7 @@ export default function ChefMenu() {
                 {categories.map(category => {
                     const categoryItems = itemsByCategory[category.id]?.items || [];
                     if (categoryItems.length === 0) return null;
-                    
+
                     return (
                         <Card
                             key={category.id}
@@ -587,67 +587,67 @@ export default function ChefMenu() {
                 )}
 
                 {orderItems.length > 0 && (
-                    <Card
-                        title={`My Selection (${orderItems.length} ${orderItems.length === 1 ? 'item' : 'items'})`}
-                        customHeader='justify-center'
-                        customHeaderText='text-xl'
-                        isCollapsible={true}
-                        startExpanded={false}
-                    >
-                        {orderItems.map((item, index) => (
-                            <View key={index} className="bg-primary-50 dark:bg-dark-50 p-4 rounded-lg mb-2">
-                                <View className="flex-row justify-between items-center">
-                                    <View className="flex-1">
-                                        <Text className="text-lg font-semibold text-primary-400 dark:text-dark-400">
-                                            {item.dish_name}
-                                        </Text>
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            ${item.price?.toFixed(2)} × {item.quantity}
-                                        </Text>
-                                    </View>
-                                    <View className="flex-row items-center">
-                                        <Button
-                                            title="-"
-                                            style="secondary"
-                                            customClasses="w-10 h-10 rounded-full mr-2"
-                                            customTextClasses="text-lg"
-                                            onPress={() => {
-                                                if (item.quantity > 1) {
-                                                    setOrderItems(orderItems.map(orderItem => 
-                                                        orderItem.id === item.id 
-                                                            ? { ...orderItem, quantity: orderItem.quantity - 1 }
+                    <>
+                        <View className="border-t-2 border-primary-400 dark:border-dark-400 mt-1 mb-4" />
+                        <Card
+                            title={`My Selection (${orderItems.length} ${orderItems.length === 1 ? 'item' : 'items'})`}
+                            customHeader='justify-center'
+                            customHeaderText='text-xl'
+                            isCollapsible={true}
+                            startExpanded={false}
+                        >
+                            {orderItems.map((item, index) => (
+                                <View key={index} className="bg-base-100 dark:bg-base-dark-100 p-4 rounded-lg mb-2 shadow-sm shadow-primary-500">
+                                    <View className="flex-row justify-between items-center">
+                                        <View className="flex-0 w-1/3">
+                                            <Text className="text-lg font-semibold text-primary-400 dark:text-dark-400">
+                                                {item.dish_name}
+                                            </Text>
+                                            <Text className="text-sm text-primary-400 dark:text-dark-400">
+                                                ${item.price?.toFixed(2)} × {item.quantity}
+                                            </Text>
+                                        </View>
+                                        <View className="flex-row items-center justify-center w-1/3">
+                                            <Button
+                                                icon="dash"
+                                                customClasses={`rounded-full m-1 h-12 w-12`}
+                                                base='icon'
+                                                onPress={() => {
+                                                    if (item.quantity > 1) {
+                                                        setOrderItems(orderItems.map(orderItem =>
+                                                            orderItem.id === item.id
+                                                                ? { ...orderItem, quantity: orderItem.quantity - 1 }
+                                                                : orderItem
+                                                        ));
+                                                    } else {
+                                                        setOrderItems(orderItems.filter(orderItem => orderItem.id !== item.id));
+                                                    }
+                                                }}
+                                            />
+                                            <View className={`flex items-center justify-center border-2 border-primary-300 rounded-lg bg-primary-100 shadow-sm shadow-primary-500 dark:border-dark-300 dark:bg-dark-100 h-12 w-12`}>
+                                                <Text className="text-xl font-bold text-primary-500">{item.quantity}</Text>
+                                            </View>
+
+                                            <Button
+                                                icon="plus"
+                                                customClasses={`rounded-full m-1 h-12 w-12`}
+                                                base='icon'
+                                                onPress={() => {
+                                                    setOrderItems(orderItems.map(orderItem =>
+                                                        orderItem.id === item.id
+                                                            ? { ...orderItem, quantity: orderItem.quantity + 1 }
                                                             : orderItem
                                                     ));
-                                                } else {
-                                                    setOrderItems(orderItems.filter(orderItem => orderItem.id !== item.id));
-                                                }
-                                            }}
-                                        />
-                                        <Text className="text-lg font-bold text-primary-400 dark:text-dark-400 mx-2">
-                                            {item.quantity}
+                                                }}
+                                            />
+                                        </View>
+                                        <Text className="text-right text-lg font-bold text-primary-400 dark:text-dark-400 w-1/4">
+                                            ${(item.price * item.quantity).toFixed(2)}
                                         </Text>
-                                        <Button
-                                            title="+"
-                                            style="primary"
-                                            customClasses="w-10 h-10 rounded-full ml-2"
-                                            customTextClasses="text-lg"
-                                            onPress={() => {
-                                                setOrderItems(orderItems.map(orderItem => 
-                                                    orderItem.id === item.id 
-                                                        ? { ...orderItem, quantity: orderItem.quantity + 1 }
-                                                        : orderItem
-                                                ));
-                                            }}
-                                        />
                                     </View>
                                 </View>
-                                <Text className="text-right text-lg font-bold text-primary-400 dark:text-dark-400 mt-2">
-                                    Subtotal: ${(item.price * item.quantity).toFixed(2)}
-                                </Text>
-                            </View>
-                        ))}
-                        <View className="border-t-2 border-primary-300 dark:border-dark-300 mt-4 pt-4">
-                            <View className="flex-row justify-between items-center mb-4">
+                            ))}
+                            <View className="flex-row justify-between items-center m-2">
                                 <Text className="text-xl font-bold text-primary-400 dark:text-dark-400">
                                     Total:
                                 </Text>
@@ -661,15 +661,15 @@ export default function ChefMenu() {
                                 customClasses="w-full"
                                 onPress={() => setShowOrderModal(true)}
                             />
-                        </View>
-                    </Card>
+                        </Card>
+                    </>
                 )}
 
                 {/* Booking Date/Time Selection Modal */}
                 <Modal
                     visible={showOrderModal}
                     transparent={true}
-                    animationType="slide"
+                    animationType="fade"
                     onRequestClose={() => setShowOrderModal(false)}
                 >
                     <View className="flex-1 justify-center items-center bg-black/50">
@@ -784,7 +784,7 @@ export default function ChefMenu() {
                                 <Text className="text-primary-400 dark:text-dark-400 font-semibold mb-2">
                                     Payment Method:
                                 </Text>
-                                
+
                                 {loadingPaymentMethods ? (
                                     <View className="py-4">
                                         <LoadingIcon />
@@ -806,13 +806,12 @@ export default function ChefMenu() {
                                 ) : (
                                     <View>
                                         {paymentMethods.map((method) => (
-                                            <View 
+                                            <View
                                                 key={method.id}
-                                                className={`flex-row items-center p-3 mb-2 rounded-lg ${
-                                                    selectedPaymentMethod === method.id 
-                                                        ? 'bg-primary-200 dark:bg-dark-200' 
-                                                        : 'bg-white dark:bg-gray-700'
-                                                }`}
+                                                className={`flex-row items-center p-3 mb-2 rounded-lg ${selectedPaymentMethod === method.id
+                                                    ? 'bg-primary-200 dark:bg-dark-200'
+                                                    : 'bg-white dark:bg-gray-700'
+                                                    }`}
                                                 onTouchEnd={() => setSelectedPaymentMethod(method.id)}
                                             >
                                                 <View className="flex-1">
@@ -830,11 +829,10 @@ export default function ChefMenu() {
                                                         Expires {method.exp_month}/{method.exp_year}
                                                     </Text>
                                                 </View>
-                                                <View className={`w-5 h-5 rounded-full border-2 ${
-                                                    selectedPaymentMethod === method.id
-                                                        ? 'border-primary-500 bg-primary-500'
-                                                        : 'border-primary-300 dark:border-dark-300'
-                                                }`}>
+                                                <View className={`w-5 h-5 rounded-full border-2 ${selectedPaymentMethod === method.id
+                                                    ? 'border-primary-500 bg-primary-500'
+                                                    : 'border-primary-300 dark:border-dark-300'
+                                                    }`}>
                                                     {selectedPaymentMethod === method.id && (
                                                         <View className="w-full h-full items-center justify-center">
                                                             <View className="w-2 h-2 bg-white rounded-full" />

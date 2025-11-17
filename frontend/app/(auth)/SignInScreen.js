@@ -1,6 +1,6 @@
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import getEnvVars from '../../config';
@@ -13,20 +13,6 @@ export default function Signin() {
 
   const { apiUrl } = getEnvVars();
   const { login } = useAuth();
-
-  const showAlert = (title, message, onPress = null) => {
-    const buttons = [
-      {
-        text: 'OK',
-        onPress: () => {
-          console.log('Alert pressed:', title);
-          if (onPress) onPress();
-        }
-      }
-    ];
-
-    Alert.alert(title, message, buttons, { cancelable: false });
-  };
 
   const tryFetch = async () => {
     try {
@@ -55,7 +41,7 @@ export default function Signin() {
       if (!result.response) {
         const errorMsg = result.error?.message || 'Unknown error';
         console.error('Connection error:', errorMsg);
-        showAlert('Error', `Could not connect to server: ${errorMsg}`);
+        Alert.alert('Error', `Could not connect to server: ${errorMsg}`);
         return;
       }
 
@@ -69,7 +55,7 @@ export default function Signin() {
         return;
       }
 
-      showAlert('Success', 'Signed in successfully!');
+      //Alert.alert('Success', 'Signed in successfully!');
 
       console.log('Token:', data.token);
       console.log('User type:', data.user_type);
@@ -86,7 +72,7 @@ export default function Signin() {
 
     } catch (error) {
       console.error('Error in handleSignin:', error);
-      showAlert('Error', 'Network error: ' + error.message);
+      Alert.alert('Error', 'Network error: ' + error.message);
     }
   };
 

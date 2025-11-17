@@ -419,7 +419,7 @@ export default function ProfileScreen() {
                         headerIcon="credit-card"
                     >
                         {loadingPaymentMethods ? (
-                            <LoadingIcon />
+                            <LoadingIcon icon="spinner" size={64} message=""/>
                         ) : paymentMethods.length > 0 ? (
                             <View>
                                 {paymentMethods.map((pm) => (
@@ -489,7 +489,7 @@ export default function ProfileScreen() {
                             </View>
                         )}
                         <Text className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-                            🔒 Powered by Stripe - PCI DSS compliant
+                            Powered by Stripe - PCI DSS compliant
                         </Text>
                     </Card>
 

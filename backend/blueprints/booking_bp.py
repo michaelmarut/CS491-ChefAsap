@@ -326,6 +326,81 @@ def get_customer_dashboard(customer_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@booking_bp.route('/customer/<int:customer_id>/bookings/finished', methods=['GET'])
+def get_finished_customer_bookings(customer_id):
+    """Get customer bookings that need reviewing"""
+    try:
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+        
+        # Base query for booking details
+        base_query = '''
+            SELECT 
+                b.id as booking_id,
+                b.chef_id,
+                b.booking_date,
+                b.booking_time,
+                --b.cuisine_type,
+                --b.meal_type,
+                --b.event_type,
+                --b.number_of_people,
+                b.special_notes,
+                --b.status,
+                b.total_cost,
+                --b.created_at,
+                c.first_name || ' ' || c.last_name as chef_name,
+                --c.email as chef_email,
+                --c.phone as chef_phone,
+                c.photo_url as chef_photo--,
+                --ca.address_line1 as chef_address_line1,
+                --ca.address_line2 as chef_address_line2,
+                --ca.city as chef_city,
+                --ca.state as chef_state,
+                --ca.zip_code as chef_zip_code,
+                --CASE WHEN cr.id IS NOT NULL THEN TRUE ELSE FALSE END as has_reviewed
+            FROM bookings b
+            LEFT JOIN chefs c ON b.chef_id = c.id
+            LEFT JOIN chef_addresses ca ON c.id = ca.chef_id AND ca.is_default = TRUE
+            LEFT JOIN chef_ratings cr ON b.id = cr.booking_id AND cr.customer_id = b.customer_id
+            WHERE b.status = 'completed' AND b.customer_id = 4 AND b.customer_review = FALSE 
+            ORDER BY b.booking_date ASC 
+        '''
+
+        cursor.execute(base_query, (customer_id))
+        finished_bookings = cursor.fetchall()
+        
+        # Convert datetime/date objects to strings for JSON serialization
+        def format_booking_data(bookings):
+            formatted = []
+            for booking in bookings:
+                formatted_booking = dict(booking)
+                # Convert date to string
+                if formatted_booking.get('booking_date'):
+                    formatted_booking['booking_date'] = str(formatted_booking['booking_date'])
+                # Convert time to string
+                if formatted_booking.get('booking_time'):
+                    formatted_booking['booking_time'] = str(formatted_booking['booking_time'])
+                # Convert datetime to string
+                if formatted_booking.get('created_at'):
+                    formatted_booking['created_at'] = formatted_booking['created_at'].isoformat()
+                # Convert decimal to float
+                if formatted_booking.get('total_cost'):
+                    formatted_booking['total_cost'] = float(formatted_booking['total_cost'])
+                formatted.append(formatted_booking)
+            return formatted
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'bookings': format_booking_data(finished_bookings),
+            'count': len(finished_bookings),
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @booking_bp.route('/customer/<int:customer_id>', methods=['GET'])
 def get_customer_bookings(customer_id):
@@ -347,6 +422,7 @@ def get_customer_bookings(customer_id):
                 b.status,
                 b.total_cost,
                 b.created_at,
+                b.customer_review,
                 c.first_name || ' ' || c.last_name as chef_name,
                 c.email as chef_email,
                 c.phone as chef_phone
@@ -675,6 +751,77 @@ def get_nearby_chefs(customer_id):
         return jsonify({'error': str(e)}), 500
 
 @booking_bp.route('/chef/<int:chef_id>/bookings', methods=['GET'])
+def get_finished_chef_bookings(chef_id):
+    """Get chef bookings that need confirmation"""
+    try:
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+        
+        # Base query
+        query = '''
+            SELECT 
+                b.id as booking_id,
+                b.booking_date,
+                b.booking_time,
+                b.cuisine_type,
+                b.meal_type,
+                b.event_type,
+                b.number_of_people,
+                b.special_notes,
+                b.status,
+                b.total_cost,
+                b.produce_supply,
+                b.created_at,
+                b.updated_at,
+                b.chef_review,
+                c.first_name || ' ' || c.last_name as customer_name,
+                c.email as customer_email,
+                c.phone as customer_phone,
+                ca.address_line1 as chef_address_line1,
+                ca.address_line2 as chef_address_line2,
+                ca.city as chef_city,
+                ca.state as chef_state,
+                ca.zip_code as chef_zip_code
+            FROM bookings b
+            JOIN customers c ON b.customer_id = c.id
+            JOIN chefs ch ON b.chef_id = ch.id
+            LEFT JOIN chef_addresses ca ON ch.id = ca.chef_id AND ca.is_default = TRUE
+            WHERE b.chef_id = %s and b.chef_review = FALSE
+        '''
+        
+        params = [chef_id]
+        
+        query += ' ORDER BY b.booking_date DESC, b.booking_time DESC'
+        
+        cursor.execute(query, tuple(params))
+        bookings = cursor.fetchall()
+        
+        # Format the results
+        formatted_bookings = []
+        for booking in bookings:
+            formatted_booking = dict(booking)
+            # Format date and time
+            if formatted_booking.get('booking_date'):
+                formatted_booking['booking_date'] = formatted_booking['booking_date'].strftime('%Y-%m-%d')
+            if formatted_booking.get('booking_time'):
+                formatted_booking['booking_time'] = str(formatted_booking['booking_time'])
+            if formatted_booking.get('total_cost'):
+                formatted_booking['total_cost'] = float(formatted_booking['total_cost'])
+            formatted_bookings.append(formatted_booking)
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'bookings': formatted_bookings,
+            'count': len(formatted_bookings)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@booking_bp.route('/chef/<int:chef_id>/bookings/finished', methods=['GET'])
 def get_chef_bookings(chef_id):
     """Get all bookings for a specific chef"""
     try:

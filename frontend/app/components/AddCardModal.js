@@ -105,7 +105,7 @@ const AddCardModal = ({ visible, onClose, onSuccess, customerId }) => {
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       onRequestClose={onClose}
     >
