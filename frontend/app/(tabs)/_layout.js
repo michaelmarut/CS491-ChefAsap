@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useTheme } from '../providers/ThemeProvider';
 import { getTailwindColor } from '../utils/getTailwindColor';
 import BookingReviewModal from "../components/BookingReviewModal";
+import OrderConfirmationModal from "../components/OrderConfirmationModal";
 import getEnvVars from "../../config";
 
 export default function TabLayout() {
@@ -26,7 +27,7 @@ export default function TabLayout() {
                 if (!profileId) return;
 
                 try {
-                    const url = `${apiUrl}/booking/customer/${profileId}/bookings/finished`;
+                    const url = `${apiUrl}/booking/${userType}/${profileId}/bookings/finished`;
 
                     const response = await fetch(url, {
                         method: 'GET',
@@ -37,7 +38,7 @@ export default function TabLayout() {
                     });
 
                     const data = await response.json();
-                    //console.log(data.bookings);
+                    console.log(data.bookings);
 
                     if (response.ok) {
                         setBookings(data.bookings);
@@ -79,6 +80,22 @@ export default function TabLayout() {
 
     if (userType === 'chef') return (
         <View className="bg-base-100 dark:bg-base-dark-100 flex-1">
+            <Modal
+                visible={bookings.length > 0}
+                animationType="fade"
+                transparent={true}
+            >
+                <View className='bg-black/50 h-full flex items-center justify-center'>
+                    {bookings.length > 0 &&
+                        <OrderConfirmationModal
+                            key={bookings[0].booking_id}
+                            onClose={() => setBookings(bookings.filter(b => b.booking_id !== bookings[0].booking_id))}
+                            booking={bookings[0]}
+                        />
+                    }
+                </View>
+            </Modal>
+
             <Tabs screenOptions={tabBarOptions}>
                 <Tabs.Screen
                     name="BookingsScreen"
@@ -138,14 +155,12 @@ export default function TabLayout() {
                     {bookings.length > 0 && 
                         <BookingReviewModal
                             key={bookings[0].booking_id}
-                            visible={true}
                             onClose={() => setBookings(bookings.filter(b => b.booking_id !== bookings[0].booking_id))}
                             customerId={profileId}
                             booking={bookings[0]}
                         />
                     }
                 </View>
-
             </Modal>
 
             <Tabs screenOptions={tabBarOptions}>
