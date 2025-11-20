@@ -6,7 +6,7 @@ import { getTailwindColor } from '../utils/getTailwindColor';
 
 export default function Button({
     title, // button text
-    style = 'primary', // button colors: primary, secondary, accent, transparent
+    style = 'primary', // button colors: primary, secondary, accent, transparent, delete
     base = 'basic', // base button structure: basic, link, icon
     href, // pass a href for navigation (not needed if using onPress)
     onPress, // pass an onPress for custom action (not needed if using href)
@@ -39,6 +39,11 @@ export default function Button({
             button: "bg-transparent border-transparent",
             text: "text-primary-400 dark:text-dark-400",
             icon: getTailwindColor('warm-gray')
+        },
+        delete: {
+            button: "bg-red-500 border-red-600 dark:bg-red-600 dark:border-red-400",
+            text: "text-base-100 dark:text-base-dark-100",
+            icon: manualTheme === 'light' ? getTailwindColor('primary.100') : getTailwindColor('dark.100')
         }
     };
 

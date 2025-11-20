@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Image, ScrollView, TouchableOpacity } from "react-native";
+import {Modal, View, Text, Image, ScrollView, TouchableOpacity } from "react-native";
 import { useAuth } from "./context/AuthContext";
 import getEnvVars from "../config";
 import * as ImagePicker from 'expo-image-picker';
@@ -95,6 +95,7 @@ export default function ProfileSettings() {
   const [error, setError] = useState(null);     // Holds error message
   const [editing, setEditing] = useState(false); // Edit mode
   const [uploading, setUploading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const { apiUrl } = getEnvVars();
 
@@ -163,6 +164,48 @@ export default function ProfileSettings() {
       })
       .catch(() => setError("Network error"));
   };
+
+  const handleAccountDelete = async () => {
+    const request_delete = await fetch(`${apiUrl}/deletion_request`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        user_id: profileId,
+        user_type: userType,
+        user_email: profile.email,
+        delete_type: 'hard_delete',
+        reason: "User requested account deletion"
+    })
+  });
+  
+  const request_data = await request_delete.json();
+
+  if(!request_delete.ok){
+    alert(request_data.error || "Failed to start deletion request.");
+    return;
+  }
+
+  const{request_id, confirmation_code} = request_data;
+
+  const confirm_request = await fetch(`${apiUrl}/confirm_deletion`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      request_id,
+      confirmation_code
+    })
+  });
+
+  const confirm_data = await confirm_request.json();
+  if(!confirm_request.ok){
+    alert(confirm_data.error || "Failed to confirm deletion request.");
+    return;
+  }
+
+  //if hard_delete
+  alert("Account deleted. You will be logged out.");
+  if(typeof logout === "function") logout();
+};
 
   const pickImage = async () => {
     // Request permission
@@ -365,6 +408,12 @@ export default function ProfileSettings() {
               customClasses="min-w-[50%]"
             />
             <Button
+              title="Delete Account"
+              onPress={() => setDeleteConfirm(true)}
+              style="delete"
+              customClasses="min-w-[50%]"
+            />
+            <Button
               title="Cancel"
               onPress={() => { setEditing(false); setForm(profile); }}
               style="secondary"
@@ -432,6 +481,43 @@ export default function ProfileSettings() {
           </>
         )}
         <View className="h-8" />
+        <Modal
+          visible={deleteConfirm}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDeleteConfirm(false)}
+        >
+          <View className="flex-1 items-center justify-center bg-black/50">
+            <View className="bg-white dark:bg-dark-200 p-6 rounded-2xl w-80">
+              <Text className="text-lg font-semibold mb-4 text-primary-400 dark:text-dark-400">
+                Delete your account?
+              </Text>
+
+              <Text className="mb-6 text-gray-700 dark:text-gray-300">
+                This action cannot be undone.
+              </Text>
+
+              <View className="flex-row justify-between mt-3">
+                <Button
+                  title="Cancel"
+                  style="secondary"
+                  onPress={() => setDeleteConfirm(false)}
+                  customClasses="min-w-[40%]"
+                />
+
+                <Button
+                  title="Delete"
+                  style="delete"
+                  onPress={() => {
+                    setDeleteConfirm(false);
+                    handleAccountDelete();
+                  }}
+                  customClasses="min-w-[40%]"
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </>
   );

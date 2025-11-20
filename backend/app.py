@@ -17,6 +17,7 @@ from blueprints.order_bp import order_bp
 from blueprints.rating_bp import rating_bp
 # from blueprints.payment_bp import payment_bp  # 已弃用 - 使用 Stripe 代替
 from blueprints.stripe_payment_bp import stripe_payment_bp
+from blueprints.account_deletion_bp import account_deletion_bp
 import socket
 import os
 
@@ -62,6 +63,8 @@ app.register_blueprint(rating_bp, url_prefix='/rating')
 # app.register_blueprint(payment_bp, url_prefix='/payment')  # 已弃用 - 使用 Stripe 代替
 
 app.register_blueprint(stripe_payment_bp, url_prefix='/stripe-payment')
+
+app.register_blueprint(account_deletion_bp)
 
 @app.route('/')
 def index():

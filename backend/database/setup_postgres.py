@@ -27,6 +27,7 @@ Total: 46 tables organized into the following categories:
    - chef_cuisine_photos: Portfolio photos
    - chef_menu_items: Dish catalog with pricing
    - chef_cancellation_records: Cancellation tracking for penalties
+   - chef_kitchen_tools: Kitchen equipment inventory
 
 3. CUSTOMERS (8 tables)
    - customers: Customer profiles (includes stripe_customer_id for Stripe integration)
@@ -960,6 +961,19 @@ def init_postgres_db():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_order_items_menu_item ON order_items(menu_item_id)')
 
+        cursor.execute('''
+                CREATE TABLE IF NOT EXISTS chef_kitchen_tools ( 
+                    id SERIAL PRIMARY KEY,
+                    customer_id INTEGER NOT NULL,
+                    tool_name VARCHAR(100) NOT NULL,
+                    tool_description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+                )
+        ''')
+
+
         # Add foreign key constraints for users table
         # Check if constraint exists before adding
         try:
@@ -1003,7 +1017,7 @@ def init_postgres_db():
         print("   - Chefs: chefs, chef_documents, chef_cuisines, chef_addresses, chef_payment_methods")
         print("            chef_bank_accounts, chef_paypal_accounts, chef_check_addresses, chef_payments")
         print("            chef_availability_days, chef_meal_availability, chef_service_areas, chef_pricing")
-        print("            chef_cuisine_photos, chef_menu_items, chef_cancellation_records")
+        print("            chef_cuisine_photos, chef_menu_items, chef_cancellation_records, chef_kitchen_tools")
         print("   - Customers: customers (with stripe_customer_id), customer_addresses, customer_favorite_chefs")
         print("                customer_search_locations, customer_recent_searches, customer_viewed_chefs")
         print("                customer_meeting_usage, customer_cancellation_fees")
