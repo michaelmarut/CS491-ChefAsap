@@ -38,7 +38,7 @@ const menuItemCard = ({ item, onAddToOrder, apiUrl, userType }) => (
             </View>
             <View className="flex w-1/2 justify-center">
                 {item?.photo_url ? (
-                    <Image 
+                    <Image
                         source={{ uri: `${apiUrl}${item.photo_url}` }}
                         className="h-[150px] w-[150px] rounded-xl shadow-sm shadow-primary-500 dark:shadow-dark-500 border border-primary-400 dark:border-dark-400"
                         resizeMode="cover"
@@ -52,16 +52,16 @@ const menuItemCard = ({ item, onAddToOrder, apiUrl, userType }) => (
         </View>
 
         <View className="flex-row justify-between items-center p-2">
-        {item?.prep_time && (
-            <Text className="text-primary-400 text-nd font-medium text-center text-justified dark:text-dark-400">
-                Prep time: {item.prep_time} min
-            </Text>
-        )}
-        {item?.price && (
-            <Text className="text-primary-400 text-xl font-medium text-center dark:text-dark-400 pr-2">
-                ${item.price.toFixed(2)}
-            </Text>
-        )}
+            {item?.prep_time && (
+                <Text className="text-primary-400 text-nd font-medium text-center text-justified dark:text-dark-400">
+                    Prep time: {item.prep_time} min
+                </Text>
+            )}
+            {item?.price && (
+                <Text className="text-primary-400 text-xl font-medium text-center dark:text-dark-400 pr-2">
+                    ${item.price.toFixed(2)}
+                </Text>
+            )}
         </View>
         <Button
             title={item?.is_available ? "Add to order" : "Not available"}
@@ -89,7 +89,7 @@ export default function ChefMenu() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [orderItems, setOrderItems] = useState([]);
-    
+
     // Date/Time selection states (using separate values instead of Date objects)
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedDay, setSelectedDay] = useState(new Date().getDate());
@@ -97,6 +97,12 @@ export default function ChefMenu() {
     const [selectedHour, setSelectedHour] = useState(12);
     const [selectedMinute, setSelectedMinute] = useState(0);
     const [showOrderModal, setShowOrderModal] = useState(false);
+
+    // Payment states
+    const [paymentMethods, setPaymentMethods] = useState([]);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+    const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+    const [paymentProcessing, setPaymentProcessing] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -209,7 +215,7 @@ export default function ChefMenu() {
     // Group items by category
     const itemsByCategory = useMemo(() => {
         const grouped = {};
-        
+
         // Add all categories
         categories.forEach(cat => {
             grouped[cat.id] = {
@@ -217,13 +223,13 @@ export default function ChefMenu() {
                 items: []
             };
         });
-        
+
         // Add uncategorized group
         grouped['uncategorized'] = {
             name: 'Other Dishes',
             items: []
         };
-        
+
         // Group menu items
         menuItems.forEach(item => {
             if (item.category_id && grouped[item.category_id]) {
@@ -232,7 +238,7 @@ export default function ChefMenu() {
                 grouped['uncategorized'].items.push(item);
             }
         });
-        
+
         return grouped;
     }, [menuItems, categories]);
 
@@ -245,11 +251,11 @@ export default function ChefMenu() {
 
         // Check if item already in order
         const existingItem = orderItems.find(orderItem => orderItem.id === item.id);
-        
+
         if (existingItem) {
             // Increase quantity
-            setOrderItems(orderItems.map(orderItem => 
-                orderItem.id === item.id 
+            setOrderItems(orderItems.map(orderItem =>
+                orderItem.id === item.id
                     ? { ...orderItem, quantity: orderItem.quantity + 1 }
                     : orderItem
             ));
@@ -267,9 +273,80 @@ export default function ChefMenu() {
         }
     };
 
+    // Fetch customer's payment methods
+    const fetchPaymentMethods = async () => {
+        console.log('=== Fetching payment methods ===');
+        console.log('User ID:', userId);
+        console.log('Profile ID:', profileId);
+        console.log('User Type:', userType);
+        console.log('Token:', token ? 'Present' : 'Missing');
+        console.log('API URL:', apiUrl);
+
+        // Use userId instead of profileId
+        const userIdToUse = userId || profileId;
+        console.log('Using user ID:', userIdToUse);
+
+        if (!userIdToUse) {
+            console.error('No user ID available!');
+            Alert.alert('Error', 'User not logged in');
+            return;
+        }
+
+        setLoadingPaymentMethods(true);
+        try {
+            const url = `${apiUrl}/stripe-payment/payment-methods?customer_id=${userIdToUse}`;
+            console.log('Fetching from:', url);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+            console.log('Payment methods response:', data);
+
+            if (response.ok) {
+                console.log('Payment methods count:', data.payment_methods?.length || 0);
+                setPaymentMethods(data.payment_methods || []);
+                // Auto-select default payment method if available
+                const defaultMethod = data.payment_methods?.find(pm => pm.is_default);
+                if (defaultMethod) {
+                    console.log('Auto-selecting default method:', defaultMethod.id);
+                    setSelectedPaymentMethod(defaultMethod.id);
+                }
+            } else {
+                console.error('Failed to fetch payment methods:', data.error);
+                setPaymentMethods([]);
+            }
+        } catch (error) {
+            console.error('Error fetching payment methods:', error);
+            setPaymentMethods([]);
+        } finally {
+            setLoadingPaymentMethods(false);
+        }
+    };
+
+    // Fetch payment methods when modal opens
+    useEffect(() => {
+        if (showOrderModal && userType === 'customer') {
+            fetchPaymentMethods();
+        }
+    }, [showOrderModal]);
+
     // Handle placing order with selected date/time
     const handlePlaceOrder = async () => {
         try {
+            // Validate payment method selected
+            if (!selectedPaymentMethod) {
+                Alert.alert('Payment Required', 'Please select a payment method to continue.');
+                return;
+            }
+
+            setPaymentProcessing(true);
+
             // Combine selected date and time components
             const deliveryDateTime = new Date(
                 selectedYear,
@@ -282,12 +359,34 @@ export default function ChefMenu() {
             // Calculate total
             const total = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-            // Prepare booking data - extract cuisine from first item or chef data
+            // Step 1: Create payment intent
+            const paymentResponse = await fetch(`${apiUrl}/stripe-payment/create-payment-intent`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    customer_id: profileId,
+                    amount: total,
+                    payment_method_id: selectedPaymentMethod,
+                    description: `Booking from Chef ${chefData?.full_name || 'Chef'} - ${orderItems.length} items`
+                }),
+            });
+
+            const paymentData = await paymentResponse.json();
+
+            if (!paymentResponse.ok) {
+                Alert.alert('Payment Failed', paymentData.error || 'Failed to process payment. Please try again.');
+                setPaymentProcessing(false);
+                return;
+            }
+
+            // Step 2: If payment successful, create booking
             const cuisineType = orderItems.length > 0 ? orderItems[0].cuisine_type || 'Mixed' : 'Mixed';
             const mealType = getMealType(selectedHour);
-            
-            // Create booking
-            const response = await fetch(`${apiUrl}/booking/create`, {
+
+            const bookingResponse = await fetch(`${apiUrl}/booking/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -302,58 +401,74 @@ export default function ChefMenu() {
                     booking_time: deliveryDateTime.toTimeString().split(' ')[0].substring(0, 5),
                     produce_supply: 'chef',
                     number_of_people: orderItems.reduce((sum, item) => sum + item.quantity, 0),
-                    special_notes: `Order items: ${orderItems.map(item => `${item.dish_name} (x${item.quantity})`).join(', ')}. Total: $${total.toFixed(2)}`
+                    special_notes: `Order items: ${orderItems.map(item => `${item.dish_name} (x${item.quantity})`).join(', ')}. Total: $${total.toFixed(2)}. Payment ID: ${paymentData.payment_intent_id}`
                 }),
             });
 
-            const result = await response.json();
+            const bookingResult = await bookingResponse.json();
 
-            if (response.ok) {
-                // Now book the chef for this booking
-                const bookChefResponse = await fetch(`${apiUrl}/booking/book-chef`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        booking_id: result.booking_id,
-                        chef_id: parseInt(id, 10)
-                    }),
-                });
-
-                const bookChefResult = await bookChefResponse.json();
-
-                if (bookChefResponse.ok) {
-                    setShowOrderModal(false);
-                    Alert.alert(
-                        'Booking Placed Successfully!',
-                        `Booking #${result.booking_id}\nTotal: $${total.toFixed(2)}\nDelivery: ${deliveryDateTime.toLocaleString('en-US')}\n\nYour booking has been sent to the chef for confirmation.`,
-                        [
-                            {
-                                text: 'OK',
-                                onPress: () => {
-                                    // Clear order items and reset date/time
-                                    setOrderItems([]);
-                                    const now = new Date();
-                                    setSelectedMonth(now.getMonth());
-                                    setSelectedDay(now.getDate());
-                                    setSelectedYear(now.getFullYear());
-                                    setSelectedHour(12);
-                                    setSelectedMinute(0);
-                                }
-                            }
-                        ]
-                    );
-                } else {
-                    Alert.alert('Error', bookChefResult.error || 'Failed to book chef');
-                }
-            } else {
-                Alert.alert('Error', result.error || 'Failed to place booking');
+            if (!bookingResponse.ok) {
+                Alert.alert('Booking Error', bookingResult.error || 'Payment processed but booking failed. Please contact support.');
+                setPaymentProcessing(false);
+                return;
             }
+
+            // Step 3: Book the chef for this booking
+            const bookChefResponse = await fetch(`${apiUrl}/booking/book-chef`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    booking_id: bookingResult.booking_id,
+                    chef_id: parseInt(id, 10)
+                }),
+            });
+
+            const bookChefResult = await bookChefResponse.json();
+
+            if (!bookChefResponse.ok) {
+                Alert.alert('Booking Error', bookChefResult.error || 'Payment processed but chef booking failed. Please contact support.');
+                setPaymentProcessing(false);
+                return;
+            }
+
+            // Success! Show confirmation
+            setShowOrderModal(false);
+            setPaymentProcessing(false);
+
+            // Get payment method details for confirmation
+            const selectedCard = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
+
+            Alert.alert(
+                'Booking Confirmed! 🎉',
+                `Booking #${bookingResult.booking_id}\n\n` +
+                `Amount Charged: $${total.toFixed(2)}\n` +
+                `Payment Method: ${selectedCard?.brand.toUpperCase()} •••• ${selectedCard?.last4}\n` +
+                `Delivery: ${deliveryDateTime.toLocaleString('en-US')}\n\n` +
+                `Your booking has been confirmed and sent to the chef!`,
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            // Clear order items and reset date/time
+                            setOrderItems([]);
+                            const now = new Date();
+                            setSelectedMonth(now.getMonth());
+                            setSelectedDay(now.getDate());
+                            setSelectedYear(now.getFullYear());
+                            setSelectedHour(12);
+                            setSelectedMinute(0);
+                            setSelectedPaymentMethod(null);
+                        }
+                    }
+                ]
+            );
         } catch (error) {
             console.error('Booking error:', error);
-            Alert.alert('Error', 'Network error. Could not place booking.');
+            Alert.alert('Error', 'Network error. Could not process booking.');
+            setPaymentProcessing(false);
         }
     };
 
@@ -431,7 +546,7 @@ export default function ChefMenu() {
                 {categories.map(category => {
                     const categoryItems = itemsByCategory[category.id]?.items || [];
                     if (categoryItems.length === 0) return null;
-                    
+
                     return (
                         <Card
                             key={category.id}
@@ -472,67 +587,67 @@ export default function ChefMenu() {
                 )}
 
                 {orderItems.length > 0 && (
-                    <Card
-                        title={`My Selection (${orderItems.length} ${orderItems.length === 1 ? 'item' : 'items'})`}
-                        customHeader='justify-center'
-                        customHeaderText='text-xl'
-                        isCollapsible={true}
-                        startExpanded={false}
-                    >
-                        {orderItems.map((item, index) => (
-                            <View key={index} className="bg-primary-50 dark:bg-dark-50 p-4 rounded-lg mb-2">
-                                <View className="flex-row justify-between items-center">
-                                    <View className="flex-1">
-                                        <Text className="text-lg font-semibold text-primary-400 dark:text-dark-400">
-                                            {item.dish_name}
-                                        </Text>
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            ${item.price?.toFixed(2)} × {item.quantity}
-                                        </Text>
-                                    </View>
-                                    <View className="flex-row items-center">
-                                        <Button
-                                            title="-"
-                                            style="secondary"
-                                            customClasses="w-10 h-10 rounded-full mr-2"
-                                            customTextClasses="text-lg"
-                                            onPress={() => {
-                                                if (item.quantity > 1) {
-                                                    setOrderItems(orderItems.map(orderItem => 
-                                                        orderItem.id === item.id 
-                                                            ? { ...orderItem, quantity: orderItem.quantity - 1 }
+                    <>
+                        <View className="border-t-2 border-primary-400 dark:border-dark-400 mt-1 mb-4" />
+                        <Card
+                            title={`My Selection (${orderItems.length} ${orderItems.length === 1 ? 'item' : 'items'})`}
+                            customHeader='justify-center'
+                            customHeaderText='text-xl'
+                            isCollapsible={true}
+                            startExpanded={false}
+                        >
+                            {orderItems.map((item, index) => (
+                                <View key={index} className="bg-base-100 dark:bg-base-dark-100 p-4 rounded-lg mb-2 shadow-sm shadow-primary-500">
+                                    <View className="flex-row justify-between items-center">
+                                        <View className="flex-0 w-1/3">
+                                            <Text className="text-lg font-semibold text-primary-400 dark:text-dark-400">
+                                                {item.dish_name}
+                                            </Text>
+                                            <Text className="text-sm text-primary-400 dark:text-dark-400">
+                                                ${item.price?.toFixed(2)} × {item.quantity}
+                                            </Text>
+                                        </View>
+                                        <View className="flex-row items-center justify-center w-1/3">
+                                            <Button
+                                                icon="dash"
+                                                customClasses={`rounded-full m-1 h-12 w-12`}
+                                                base='icon'
+                                                onPress={() => {
+                                                    if (item.quantity > 1) {
+                                                        setOrderItems(orderItems.map(orderItem =>
+                                                            orderItem.id === item.id
+                                                                ? { ...orderItem, quantity: orderItem.quantity - 1 }
+                                                                : orderItem
+                                                        ));
+                                                    } else {
+                                                        setOrderItems(orderItems.filter(orderItem => orderItem.id !== item.id));
+                                                    }
+                                                }}
+                                            />
+                                            <View className={`flex items-center justify-center border-2 border-primary-300 rounded-lg bg-primary-100 shadow-sm shadow-primary-500 dark:border-dark-300 dark:bg-dark-100 h-12 w-12`}>
+                                                <Text className="text-xl font-bold text-primary-500">{item.quantity}</Text>
+                                            </View>
+
+                                            <Button
+                                                icon="plus"
+                                                customClasses={`rounded-full m-1 h-12 w-12`}
+                                                base='icon'
+                                                onPress={() => {
+                                                    setOrderItems(orderItems.map(orderItem =>
+                                                        orderItem.id === item.id
+                                                            ? { ...orderItem, quantity: orderItem.quantity + 1 }
                                                             : orderItem
                                                     ));
-                                                } else {
-                                                    setOrderItems(orderItems.filter(orderItem => orderItem.id !== item.id));
-                                                }
-                                            }}
-                                        />
-                                        <Text className="text-lg font-bold text-primary-400 dark:text-dark-400 mx-2">
-                                            {item.quantity}
+                                                }}
+                                            />
+                                        </View>
+                                        <Text className="text-right text-lg font-bold text-primary-400 dark:text-dark-400 w-1/4">
+                                            ${(item.price * item.quantity).toFixed(2)}
                                         </Text>
-                                        <Button
-                                            title="+"
-                                            style="primary"
-                                            customClasses="w-10 h-10 rounded-full ml-2"
-                                            customTextClasses="text-lg"
-                                            onPress={() => {
-                                                setOrderItems(orderItems.map(orderItem => 
-                                                    orderItem.id === item.id 
-                                                        ? { ...orderItem, quantity: orderItem.quantity + 1 }
-                                                        : orderItem
-                                                ));
-                                            }}
-                                        />
                                     </View>
                                 </View>
-                                <Text className="text-right text-lg font-bold text-primary-400 dark:text-dark-400 mt-2">
-                                    Subtotal: ${(item.price * item.quantity).toFixed(2)}
-                                </Text>
-                            </View>
-                        ))}
-                        <View className="border-t-2 border-primary-300 dark:border-dark-300 mt-4 pt-4">
-                            <View className="flex-row justify-between items-center mb-4">
+                            ))}
+                            <View className="flex-row justify-between items-center m-2">
                                 <Text className="text-xl font-bold text-primary-400 dark:text-dark-400">
                                     Total:
                                 </Text>
@@ -546,21 +661,21 @@ export default function ChefMenu() {
                                 customClasses="w-full"
                                 onPress={() => setShowOrderModal(true)}
                             />
-                        </View>
-                    </Card>
+                        </Card>
+                    </>
                 )}
 
                 {/* Booking Date/Time Selection Modal */}
                 <Modal
                     visible={showOrderModal}
                     transparent={true}
-                    animationType="slide"
+                    animationType="fade"
                     onRequestClose={() => setShowOrderModal(false)}
                 >
                     <View className="flex-1 justify-center items-center bg-black/50">
                         <View className="bg-white dark:bg-gray-800 rounded-xl p-6 w-[90%] max-w-md">
                             <Text className="text-2xl font-bold text-primary-400 dark:text-dark-400 mb-4 text-center">
-                                Select Delivery Date & Time
+                                Select Booking Date & Time
                             </Text>
 
                             {/* Booking Summary */}
@@ -581,7 +696,7 @@ export default function ChefMenu() {
                             {/* Date Selection */}
                             <View className="bg-primary-100 dark:bg-dark-100 p-4 rounded-lg mb-3">
                                 <Text className="text-primary-400 dark:text-dark-400 font-semibold mb-2">
-                                    Delivery Date:
+                                    Booking Date:
                                 </Text>
                                 <View className="flex-row justify-between">
                                     <View className="flex-1 mr-2">
@@ -634,7 +749,7 @@ export default function ChefMenu() {
                             {/* Time Selection */}
                             <View className="bg-primary-100 dark:bg-dark-100 p-4 rounded-lg mb-4">
                                 <Text className="text-primary-400 dark:text-dark-400 font-semibold mb-2">
-                                    Delivery Time:
+                                    Time:
                                 </Text>
                                 <View className="flex-row justify-between">
                                     <View className="flex-1 mr-2">
@@ -664,6 +779,81 @@ export default function ChefMenu() {
                                 </View>
                             </View>
 
+                            {/* Payment Method Selection */}
+                            <View className="bg-primary-100 dark:bg-dark-100 p-4 rounded-lg mb-4">
+                                <Text className="text-primary-400 dark:text-dark-400 font-semibold mb-2">
+                                    Payment Method:
+                                </Text>
+
+                                {loadingPaymentMethods ? (
+                                    <View className="py-4">
+                                        <LoadingIcon />
+                                    </View>
+                                ) : paymentMethods.length === 0 ? (
+                                    <View>
+                                        <Text className="text-primary-400 dark:text-dark-400 text-center mb-3">
+                                            No payment methods available
+                                        </Text>
+                                        <Button
+                                            title="Add Card in Profile"
+                                            style="secondary"
+                                            onPress={() => {
+                                                setShowOrderModal(false);
+                                                router.push('/(tabs)/Profile');
+                                            }}
+                                        />
+                                    </View>
+                                ) : (
+                                    <View>
+                                        {paymentMethods.map((method) => (
+                                            <View
+                                                key={method.id}
+                                                className={`flex-row items-center p-3 mb-2 rounded-lg ${selectedPaymentMethod === method.id
+                                                    ? 'bg-primary-200 dark:bg-dark-200'
+                                                    : 'bg-white dark:bg-gray-700'
+                                                    }`}
+                                                onTouchEnd={() => setSelectedPaymentMethod(method.id)}
+                                            >
+                                                <View className="flex-1">
+                                                    <View className="flex-row items-center">
+                                                        <Text className="text-primary-400 dark:text-dark-400 font-semibold">
+                                                            {method.brand.toUpperCase()} •••• {method.last4}
+                                                        </Text>
+                                                        {method.is_default && (
+                                                            <View className="ml-2 bg-green-500 px-2 py-1 rounded">
+                                                                <Text className="text-white text-xs">Default</Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                    <Text className="text-primary-400 dark:text-dark-400 text-sm">
+                                                        Expires {method.exp_month}/{method.exp_year}
+                                                    </Text>
+                                                </View>
+                                                <View className={`w-5 h-5 rounded-full border-2 ${selectedPaymentMethod === method.id
+                                                    ? 'border-primary-500 bg-primary-500'
+                                                    : 'border-primary-300 dark:border-dark-300'
+                                                    }`}>
+                                                    {selectedPaymentMethod === method.id && (
+                                                        <View className="w-full h-full items-center justify-center">
+                                                            <View className="w-2 h-2 bg-white rounded-full" />
+                                                        </View>
+                                                    )}
+                                                </View>
+                                            </View>
+                                        ))}
+                                        <Button
+                                            title="Manage Cards"
+                                            style="secondary"
+                                            customClasses="mt-2"
+                                            onPress={() => {
+                                                setShowOrderModal(false);
+                                                router.push('/(tabs)/Profile');
+                                            }}
+                                        />
+                                    </View>
+                                )}
+                            </View>
+
                             {/* Action Buttons */}
                             <View className="flex-row space-x-3 mt-2">
                                 <View className="flex-1 mr-2">
@@ -671,13 +861,15 @@ export default function ChefMenu() {
                                         title="Cancel"
                                         style="secondary"
                                         onPress={() => setShowOrderModal(false)}
+                                        disabled={paymentProcessing}
                                     />
                                 </View>
                                 <View className="flex-1">
                                     <Button
-                                        title="Confirm Booking"
+                                        title={paymentProcessing ? "Processing..." : "Confirm & Pay"}
                                         style="primary"
                                         onPress={handlePlaceOrder}
+                                        disabled={paymentProcessing || paymentMethods.length === 0}
                                     />
                                 </View>
                             </View>
@@ -696,7 +888,7 @@ export default function ChefMenu() {
                 <Button
                     title="← Return"
                     style="secondary"
-                    href={userType === 'customer' ? `/ChefProfileScreen/${id}` : "/ChefMenuScreen"}
+                    onPress={() => router.back()}
                     customClasses="min-w-[60%]"
                 />
                 <View className="h-8" />

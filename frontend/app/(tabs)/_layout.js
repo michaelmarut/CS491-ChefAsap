@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { View, Modal } from "react-native";
 import { Tabs, useGlobalSearchParams, useRouter } from 'expo-router';
 import Octicons from '@expo/vector-icons/Octicons';
 import { TransitionPresets } from '@react-navigation/bottom-tabs';
@@ -6,15 +6,51 @@ import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 import { useTheme } from '../providers/ThemeProvider';
 import { getTailwindColor } from '../utils/getTailwindColor';
+import BookingReviewModal from "../components/BookingReviewModal";
+import OrderConfirmationModal from "../components/OrderConfirmationModal";
+import getEnvVars from "../../config";
 
 export default function TabLayout() {
-    const { isAuthenticated, userType, isLoading } = useAuth();
+    const { isAuthenticated, userType, isLoading, profileId, token } = useAuth();
+    const { apiUrl } = getEnvVars();
     const router = useRouter();
-    const { manualTheme } = useTheme();
+    const { manualTheme, /*setIsOnAuthPage*/ } = useTheme();
+    //setIsOnAuthPage(false);
+    const [bookings, setBookings] = useState([]);
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
             router.replace('/(auth)');
+        }
+        if (!isLoading && isAuthenticated) {
+            const fetchBookings = async () => {
+                if (!profileId) return;
+
+                try {
+                    const url = `${apiUrl}/booking/${userType}/${profileId}/bookings/finished`;
+
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+
+                    const data = await response.json();
+                    console.log(data.bookings);
+
+                    if (response.ok) {
+                        setBookings(data.bookings);
+                    } else {
+                        alert('Error', data.error || 'Failed to load bookings.');
+                    }
+                } catch (err) {
+                    alert('Error: ' + (err.message || 'Network error. Could not connect to API.'));
+                }
+            };
+
+            fetchBookings();
         }
     }, [isLoading, isAuthenticated, router]);
 
@@ -41,9 +77,25 @@ export default function TabLayout() {
             animation: 'shift', //doesnt seem to work
         },
     };
-    
+
     if (userType === 'chef') return (
         <View className="bg-base-100 dark:bg-base-dark-100 flex-1">
+            <Modal
+                visible={bookings.length > 0}
+                animationType="fade"
+                transparent={true}
+            >
+                <View className='bg-black/50 h-full flex items-center justify-center'>
+                    {bookings.length > 0 &&
+                        <OrderConfirmationModal
+                            key={bookings[0].booking_id}
+                            onClose={() => setBookings(bookings.filter(b => b.booking_id !== bookings[0].booking_id))}
+                            booking={bookings[0]}
+                        />
+                    }
+                </View>
+            </Modal>
+
             <Tabs screenOptions={tabBarOptions}>
                 <Tabs.Screen
                     name="BookingsScreen"
@@ -62,6 +114,12 @@ export default function TabLayout() {
                         title: 'Messages',
                         tabBarIcon: ({ color }) =>
                             <Octicons name="comment-discussion" size={iconSize} color={color} />,
+                        tabBarBadge: 5,
+                        tabBarBadgeStyle: {
+                            backgroundColor: 'red',
+                            color: manualTheme === 'light' ? getTailwindColor('primary.300') : getTailwindColor('primary.400'),
+                            fontSize: 10,
+                        },
                         ...TransitionPresets.ShiftTransition,
                     }}
                 />
@@ -88,8 +146,24 @@ export default function TabLayout() {
 
     return (
         <View className="bg-base-100 dark:bg-base-dark-100 flex-1">
-            <Tabs screenOptions={tabBarOptions}>
+            <Modal
+                visible={bookings.length > 0}
+                animationType="fade"
+                transparent={true}
+            >
+                <View className='bg-black/50 h-full flex items-center justify-center'>
+                    {bookings.length > 0 && 
+                        <BookingReviewModal
+                            key={bookings[0].booking_id}
+                            onClose={() => setBookings(bookings.filter(b => b.booking_id !== bookings[0].booking_id))}
+                            customerId={profileId}
+                            booking={bookings[0]}
+                        />
+                    }
+                </View>
+            </Modal>
 
+            <Tabs screenOptions={tabBarOptions}>
                 <Tabs.Screen
                     name="SearchScreen"
                     options={{
@@ -118,7 +192,13 @@ export default function TabLayout() {
                     options={{
                         title: 'Messages',
                         tabBarIcon: ({ color }) =>
-                            <Octicons name="comment" size={iconSize} color={color} />,
+                            <Octicons name="comment-discussion" size={iconSize} color={color} />,
+                        tabBarBadge: 5,
+                        tabBarBadgeStyle: {
+                            backgroundColor: 'red',
+                            color: manualTheme === 'light' ? getTailwindColor('primary.500') : getTailwindColor('dark.500'),
+                            fontSize: 10,
+                        },
                         ...TransitionPresets.ShiftTransition,
                     }}
                 />

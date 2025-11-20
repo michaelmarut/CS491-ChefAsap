@@ -12,6 +12,8 @@ import ThemeButton from "../components/ThemeButton";
 import RatingsDisplay from "../components/RatingsDisplay";
 import TagsBox from "../components/TagsBox";
 import Input from "../components/Input";
+import AddCardModal from "../components/AddCardModal";
+import TestPaymentButton from "../components/TestPaymentButton";
 
 import { Octicons } from '@expo/vector-icons';
 
@@ -30,6 +32,11 @@ export default function ProfileScreen() {
     const [selectedCuisines, setSelectedCuisines] = useState([]);
     const [selectedMealTimings, setSelectedMealTimings] = useState(['Lunch', 'Dinner']);
     const [savingDetails, setSavingDetails] = useState(false);
+    
+    // Stripe payment methods state
+    const [showAddCardModal, setShowAddCardModal] = useState(false);
+    const [paymentMethods, setPaymentMethods] = useState([]);
+    const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -40,6 +47,7 @@ export default function ProfileScreen() {
 
             try {
                 const url = `${apiUrl}/profile/${userType}/${profileId}`;
+                console.log('Fetching profile from:', url);
 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -61,8 +69,10 @@ export default function ProfileScreen() {
                     Alert.alert('Error', data.error || 'Failed to load profile.');
                 }
             } catch (err) {
-                setError('Network error. Could not connect to API.');
-                Alert.alert('Error', 'Network error. Could not connect to API.');
+                console.error('Profile fetch error:', err);
+                const errorMsg = `Network error. Could not connect to API.\n\nURL: ${apiUrl}\nError: ${err.message}`;
+                setError(errorMsg);
+                Alert.alert('Connection Error', errorMsg);
             } finally {
                 setLoading(false);
             }
@@ -96,6 +106,126 @@ export default function ProfileScreen() {
 
         fetchCuisines();
     }, [userType, apiUrl, token]);
+
+    // Fetch payment methods for customers
+    useEffect(() => {
+        const fetchPaymentMethods = async () => {
+            if (userType !== 'customer' || !userId) return;
+
+            setLoadingPaymentMethods(true);
+            try {
+                const response = await fetch(`${apiUrl}/stripe-payment/payment-methods?customer_id=${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    setPaymentMethods(data.payment_methods || []);
+                } else {
+                    console.error('Failed to fetch payment methods:', data.error);
+                }
+            } catch (error) {
+                console.error('Error fetching payment methods:', error);
+            } finally {
+                setLoadingPaymentMethods(false);
+            }
+        };
+
+        fetchPaymentMethods();
+    }, [userType, userId, apiUrl, token]);
+
+    const handleDeleteCard = async (paymentMethodId) => {
+        Alert.alert(
+            'Delete Card',
+            'Are you sure you want to delete this card?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const response = await fetch(`${apiUrl}/stripe-payment/payment-methods/${paymentMethodId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ customer_id: userId }),
+                            });
+
+                            const data = await response.json();
+                            if (response.ok) {
+                                Alert.alert('Success', 'Card deleted successfully');
+                                // Refresh payment methods
+                                setPaymentMethods(paymentMethods.filter(pm => pm.id !== paymentMethodId));
+                            } else {
+                                Alert.alert('Error', data.error || 'Failed to delete card');
+                            }
+                        } catch (error) {
+                            console.error('Delete card error:', error);
+                            Alert.alert('Error', 'An error occurred while deleting card');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleSetDefaultCard = async (paymentMethodId) => {
+        try {
+            const response = await fetch(`${apiUrl}/stripe-payment/payment-methods/${paymentMethodId}/set-default`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ customer_id: userId }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                Alert.alert('Success', 'Default payment method updated');
+                // Refresh payment methods to update default status
+                const updatedMethods = paymentMethods.map(pm => ({
+                    ...pm,
+                    is_default: pm.id === paymentMethodId,
+                }));
+                setPaymentMethods(updatedMethods);
+            } else {
+                Alert.alert('Error', data.error || 'Failed to set default payment method');
+            }
+        } catch (error) {
+            console.error('Set default card error:', error);
+            Alert.alert('Error', 'An error occurred while setting default payment method');
+        }
+    };
+
+    const refreshPaymentMethods = async () => {
+        setLoadingPaymentMethods(true);
+        try {
+            const response = await fetch(`${apiUrl}/stripe-payment/payment-methods?customer_id=${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                setPaymentMethods(data.payment_methods || []);
+            }
+        } catch (error) {
+            console.error('Error refreshing payment methods:', error);
+        } finally {
+            setLoadingPaymentMethods(false);
+        }
+    };
 
     const handleSaveAbout = async () => {
         if (aboutText.length > 500) {
@@ -284,6 +414,93 @@ export default function ProfileScreen() {
 
             {userType === "customer" ? (
                 <>
+                    <Card
+                        title="Payment Methods"
+                        headerIcon="credit-card"
+                    >
+                        {loadingPaymentMethods ? (
+                            <LoadingIcon icon="spinner" size={64} message=""/>
+                        ) : paymentMethods.length > 0 ? (
+                            <View>
+                                {paymentMethods.map((pm) => (
+                                    <View
+                                        key={pm.id}
+                                        className="flex-row items-center justify-between p-3 mb-2 border border-gray-200 dark:border-gray-600 rounded-lg"
+                                    >
+                                        <View className="flex-row items-center flex-1">
+                                            <Text className="text-2xl mr-3">💳</Text>
+                                            <View className="flex-1">
+                                                <Text className="text-base font-semibold text-primary-400 dark:text-dark-400">
+                                                    •••• {pm.last4}
+                                                </Text>
+                                                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {pm.brand.toUpperCase()} • Expires {pm.exp_month}/{pm.exp_year}
+                                                </Text>
+                                                {pm.is_default && (
+                                                    <Text className="text-xs text-lime-600 dark:text-lime-400 mt-1">
+                                                        ✓ Default
+                                                    </Text>
+                                                )}
+                                            </View>
+                                        </View>
+                                        <View className="flex-row gap-2">
+                                            {!pm.is_default && (
+                                                <TouchableOpacity
+                                                    onPress={() => handleSetDefaultCard(pm.id)}
+                                                    className="px-3 py-1 bg-lime-100 dark:bg-lime-900 rounded"
+                                                >
+                                                    <Text className="text-xs text-lime-700 dark:text-lime-300">
+                                                        Set Default
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            )}
+                                            <TestPaymentButton
+                                                customerId={userId}
+                                                paymentMethodId={pm.id}
+                                            />
+                                            <TouchableOpacity
+                                                onPress={() => handleDeleteCard(pm.id)}
+                                                className="p-2"
+                                            >
+                                                <Octicons name="trash" size={18} color="#EF4444" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                ))}
+                                <Button
+                                    title="Add New Card"
+                                    icon="plus"
+                                    style="secondary"
+                                    onPress={() => setShowAddCardModal(true)}
+                                    customClasses="mt-2"
+                                />
+                            </View>
+                        ) : (
+                            <View>
+                                <Text className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+                                    No saved cards yet
+                                </Text>
+                                <Button
+                                    title="Add Bank Card"
+                                    icon="plus"
+                                    style="secondary"
+                                    onPress={() => setShowAddCardModal(true)}
+                                />
+                            </View>
+                        )}
+                        <Text className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
+                            Powered by Stripe - PCI DSS compliant
+                        </Text>
+                    </Card>
+
+                    {/* Add Card Modal */}
+                    <AddCardModal
+                        visible={showAddCardModal}
+                        onClose={() => setShowAddCardModal(false)}
+                        onSuccess={refreshPaymentMethods}
+                        customerId={userId}
+                    />
+
                     <Card
                         title="Help & Policies"
                         headerIcon="info"

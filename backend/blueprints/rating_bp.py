@@ -27,11 +27,20 @@ def add_chef_rating(chef_id):
         cursor = conn.cursor()
 
         cursor.execute('''
-            INSERT INTO chef_ratings (chef_id, customer_id, booking_id, rating, review_text)
+            INSERT INTO chef_rating (chef_id, customer_id, booking_id, rating, comment)
             VALUES (%s, %s, %s, %s, %s)
         ''', (chef_id, customer_id, booking_id, rating, review))
         
         conn.commit()
+
+        cursor.execute('''
+            UPDATE bookings
+            SET customer_review = TRUE
+            WHERE id = %s;
+        ''', (booking_id,))
+
+        conn.commit()
+
         cursor.close()
         conn.close()
         

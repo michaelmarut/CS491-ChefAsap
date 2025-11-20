@@ -9,11 +9,12 @@ export default function CustomPicker({
     onValueChange, // function when value is selected
     items, // array of picker options
     labelStyle = '', // optional label styles
+    customClass = '', // optional custom class
 }) {
     return (
         <View className="flex-1 mr-3">
             {label && <Text className={`text-sm font-semibold mb-1 mt-2 text-primary-400 dark:text-dark-400 ${labelStyle}`}>{label}</Text>}
-            <View className="border border-primary-200 bg-white dark:bg-black rounded-full shadow-sm shadow-primary-500 dark:border-dark-200">
+            <View className={`border border-primary-200 bg-white dark:bg-black rounded-full shadow-sm shadow-primary-500 dark:border-dark-200 ${customClass}`}>
                 <Picker
                     selectedValue={selectedValue}
                     onValueChange={onValueChange}

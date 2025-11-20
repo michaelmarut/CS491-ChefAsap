@@ -6,8 +6,8 @@ import { getTailwindColor } from '../utils/getTailwindColor';
 
 export default function Button({
     title, // button text
-    style = 'primary', // button colors: primary, secondary, accent, transparent
-    base = 'basic', // base button structure: basic, link
+    style = 'primary', // button colors: primary, secondary, accent, transparent, delete
+    base = 'basic', // base button structure: basic, link, icon
     href, // pass a href for navigation (not needed if using onPress)
     onPress, // pass an onPress for custom action (not needed if using href)
     customClasses = "", // custom button style overrides
@@ -15,6 +15,7 @@ export default function Button({
     disabled = false, // disable button interaction
     icon = "", // optional Octicons icon name
     iconGap = 5, // if title and icon, this is space between
+    iconSize,
 }) {
     const { manualTheme } = useTheme();
 
@@ -36,14 +37,23 @@ export default function Button({
         },
         transparent: {
             button: "bg-transparent border-transparent",
-            text: "text-transparent",
+            text: "text-primary-400 dark:text-dark-400",
             icon: getTailwindColor('warm-gray')
+        },
+        delete: {
+            button: "bg-red-500 border-red-600 dark:bg-red-600 dark:border-red-400",
+            text: "text-base-100 dark:text-base-dark-100",
+            icon: manualTheme === 'light' ? getTailwindColor('primary.100') : getTailwindColor('dark.100')
         }
     };
 
     const BUTTON_CLASSES = {
         basic: {
             button: "py-3 rounded-full mb-2 border-2 shadow-sm shadow-primary-500 dark:shadow-dark-500",
+            text: "text-center font-bold text-lg",
+        },
+        icon: {
+            button: "rounded-full border-2 shadow-sm shadow-primary-500 dark:shadow-dark-500",
             text: "text-center font-bold text-lg",
         },
         link: {
@@ -70,7 +80,7 @@ export default function Button({
             {icon ? (
                 <Octicons
                     name={icon}
-                    size={title ? 24 : 16}
+                    size={ iconSize ? iconSize : title ? 24 : 16}
                     color={styles.icon}
                 />
             ) : null}

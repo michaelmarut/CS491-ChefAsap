@@ -1,6 +1,100 @@
 """
 PostgreSQL setup script for ChefAsap database
 Uses psycopg2 to connect to PostgreSQL database and create all necessary tables
+
+=== DATABASE SCHEMA OVERVIEW ===
+
+This script creates the complete database schema for the ChefAsap platform.
+Total: 46 tables organized into the following categories:
+
+1. AUTHENTICATION & USERS
+   - users: Main authentication table linking to chefs/customers
+
+2. CHEFS (13 tables)
+   - chefs: Chef profiles
+   - chef_documents: Food handler permits, licenses
+   - chef_cuisines: Chef-cuisine many-to-many relationship
+   - chef_addresses: Chef business addresses with geolocation
+   - chef_payment_methods: Payment preferences (direct deposit, PayPal, check)
+   - chef_bank_accounts: Bank account details for direct deposit
+   - chef_paypal_accounts: PayPal account information
+   - chef_check_addresses: Mailing addresses for checks
+   - chef_payments: Payment history
+   - chef_availability_days: Recurring weekly availability
+   - chef_meal_availability: Meal type availability (breakfast/lunch/dinner)
+   - chef_service_areas: Geographic service coverage
+   - chef_pricing: Base rates and pricing structure
+   - chef_cuisine_photos: Portfolio photos
+   - chef_menu_items: Dish catalog with pricing
+   - chef_cancellation_records: Cancellation tracking for penalties
+   - chef_kitchen_tools: Kitchen equipment inventory
+
+3. CUSTOMERS (8 tables)
+   - customers: Customer profiles (includes stripe_customer_id for Stripe integration)
+   - customer_addresses: Delivery/service addresses with geolocation
+   - customer_favorite_chefs: Saved favorite chefs
+   - customer_search_locations: Recent search locations
+   - customer_recent_searches: Search history with filters
+   - customer_viewed_chefs: Chef profile view tracking
+   - customer_meeting_usage: Video meeting quota tracking
+   - customer_cancellation_fees: Cancellation penalty records
+
+4. PAYMENT (3 tables + Stripe integration)
+   - payment_methods: Customer payment method types
+   - credit_cards: Credit card information
+   - paypal_accounts: PayPal account information
+   
+   STRIPE INTEGRATION:
+   - customers.stripe_customer_id: Links to Stripe customer
+   - Card data stored securely via Stripe (NOT in database)
+   - Payment processing handled by stripe_payment_bp.py
+
+5. BOOKINGS & ORDERS (4 tables)
+   - bookings: Chef service bookings
+   - booking_status_history: Status change audit trail
+   - orders: Customer orders from chef menus
+   - order_items: Individual dishes in orders
+
+6. RATINGS & REVIEWS (4 tables)
+   - chef_ratings: Detailed customer ratings of chefs
+   - chef_rating: Alternative rating system with reviews
+   - chef_rating_summary: Aggregated rating statistics
+   - customer_ratings: Chef ratings of customers
+
+7. COMMUNICATION (4 tables)
+   - chats: Chat sessions between customers and chefs
+   - chat_messages: Individual chat messages
+   - online_meetings: Video consultation scheduling
+   - meeting_feedback: Meeting quality ratings
+
+8. SYSTEM & ADMIN (4 tables)
+   - notifications: Push/email/SMS notifications
+   - agreements: Terms of service, privacy policies
+   - user_agreement_acceptances: User consent tracking
+   - user_deletion_requests: GDPR deletion workflow
+
+9. REFERENCE DATA (1 table)
+   - cuisine_types: Master list of cuisine categories
+
+=== INDEXES ===
+All tables include appropriate indexes for:
+- Foreign keys
+- Geographic queries (latitude/longitude)
+- Time-based queries (created_at, booking_date)
+- Status fields
+- User lookups
+
+=== SECURITY NOTES ===
+- Passwords stored hashed (never plain text)
+- Payment card data managed by Stripe (PCI compliant)
+- Only stripe_customer_id stored in database
+- Personal data deletable per GDPR requirements
+
+=== USAGE ===
+Run this script to initialize or reset the database:
+    python setup_postgres.py
+
+Database connection configured in database/config.py
 """
 
 import psycopg2
@@ -205,10 +299,12 @@ def init_postgres_db():
                 phone VARCHAR(20),
                 photo_url VARCHAR(255),
                 allergy_notes TEXT,
+                stripe_customer_id VARCHAR(255) UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_customers_stripe_id ON customers(stripe_customer_id)')
 
         # Customer addresses
         cursor.execute('''
@@ -267,6 +363,9 @@ def init_postgres_db():
             )
         ''')
 
+        # NOTE: payment_cards table removed - we use Stripe for secure card storage
+        # Stripe handles all sensitive card data - we only store stripe_customer_id
+
         # Bookings
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS bookings (
@@ -283,6 +382,8 @@ def init_postgres_db():
                 special_notes TEXT,
                 status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'completed', 'cancelled')),
                 total_cost DECIMAL(10,2),
+                chef_review BOOLEAN DEFAULT FALSE,
+                customer_review BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
@@ -860,6 +961,19 @@ def init_postgres_db():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_order_items_menu_item ON order_items(menu_item_id)')
 
+        cursor.execute('''
+                CREATE TABLE IF NOT EXISTS chef_kitchen_tools ( 
+                    id SERIAL PRIMARY KEY,
+                    customer_id INTEGER NOT NULL,
+                    tool_name VARCHAR(100) NOT NULL,
+                    tool_description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (chef_id) REFERENCES chefs(id) ON DELETE CASCADE
+                )
+        ''')
+
+
         # Add foreign key constraints for users table
         # Check if constraint exists before adding
         try:
@@ -895,9 +1009,30 @@ def init_postgres_db():
             print(f"Note: customer_id constraint - {e}")
 
         conn.commit()
-        print("\n All tables created successfully in PostgreSQL!")
-        print(f"\nDatabase: {db_config['database']}")
-        print(f"Total tables created: 46")  # Updated from 45 to 46 (added customer_viewed_chefs)
+        print("\n✅ All tables created successfully in PostgreSQL!")
+        print(f"\n📊 Database: {db_config['database']}")
+        print(f"📋 Total tables created: 46")
+        print("\n📝 Table Summary:")
+        print("   - Authentication: users")
+        print("   - Chefs: chefs, chef_documents, chef_cuisines, chef_addresses, chef_payment_methods")
+        print("            chef_bank_accounts, chef_paypal_accounts, chef_check_addresses, chef_payments")
+        print("            chef_availability_days, chef_meal_availability, chef_service_areas, chef_pricing")
+        print("            chef_cuisine_photos, chef_menu_items, chef_cancellation_records, chef_kitchen_tools")
+        print("   - Customers: customers (with stripe_customer_id), customer_addresses, customer_favorite_chefs")
+        print("                customer_search_locations, customer_recent_searches, customer_viewed_chefs")
+        print("                customer_meeting_usage, customer_cancellation_fees")
+        print("   - Payment: payment_methods, credit_cards, paypal_accounts")
+        print("              ⚠️  NOTE: Card data stored securely via Stripe - stripe_customer_id in customers table")
+        print("   - Bookings: bookings, booking_status_history")
+        print("   - Orders: orders, order_items")
+        print("   - Ratings: chef_ratings, chef_rating, chef_rating_summary, customer_ratings")
+        print("   - Communication: chats, chat_messages, online_meetings, meeting_feedback")
+        print("   - System: notifications, agreements, user_agreement_acceptances, user_deletion_requests")
+        print("   - References: cuisine_types")
+        print("\n💳 Stripe Integration:")
+        print("   - customers.stripe_customer_id stores Stripe customer reference")
+        print("   - All card data securely managed by Stripe")
+        print("   - Payment intents created via stripe_payment_bp.py blueprint")
         
     except Error as e:
         print(f"\n Error creating tables: {e}")

@@ -5,7 +5,7 @@ import getEnvVars from '../../config';
 import Button from '../components/Button';
 
 const START_HOUR = 6;
-const END_HOUR = 22;
+const END_HOUR = 23;
 const STEP_MIN = 30;
 const SLOT_HEIGHT = 40;
 const PX_PER_MIN = SLOT_HEIGHT / STEP_MIN;
@@ -14,7 +14,7 @@ const PX_PER_MIN = SLOT_HEIGHT / STEP_MIN;
 const TIME_COL_WIDTH = 68;
 const DAY_COLUMN_WIDTH = 100;
 const HEADER_HEIGHT = 50;
-const FOOTER_PADDING = 12;
+const FOOTER_PADDING = 0;
 const DATE_HEADER_TEXT_STYLE = { fontSize: 13, fontWeight: '600' };
 const DEV_MOCK_BOOKINGS = false;
 
@@ -372,7 +372,7 @@ export default function BookingsScreen() {
 
                   {/* Hour labels overlay on the hour lines */}
                   <View style={{ position: 'absolute', top: 8, left: 0, right: 0, height: gridHeight, pointerEvents: 'none' }}>
-                    {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => {
+                    {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => {
                       const hour = START_HOUR + i;
                       if (hour > END_HOUR) return null;
                       const labelDate = new Date(weekDays[0]);
@@ -511,7 +511,6 @@ export default function BookingsScreen() {
             </View>
           </ScrollView>
         </View>
-        <View className="h-8" />
       </ScrollView>
 
       {/* Footer actions */}

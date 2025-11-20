@@ -45,7 +45,7 @@ export default function Card({
                 <Octicons
                     name={headerIcon}
                     size={20}
-                    color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.100')}
+                    color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('dark.400')}
                     style={{ marginRight: 8 }}
                 />
             )}
@@ -68,7 +68,7 @@ export default function Card({
                         <Octicons
                             name={isExpanded ? 'chevron-up' : 'chevron-down'}
                             size={20}
-                            color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.100')}
+                            color={manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('dark.400')}
                             style={{ position: 'absolute', right: 20 }}
                         />
                         
