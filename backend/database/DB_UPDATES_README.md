@@ -9,11 +9,11 @@ cd backend/database
 
 Run file to apply updates
 ```bash
-python db_updates.py
+python migrations.py
 ```
 
 **To add an update:**
-In db_updates.py, add a new function of format:
+In migrations.py, add a new function of format:
 
 ```bash
 def update_name():

@@ -113,16 +113,12 @@ def request_account_deletion():
     
     confirmation_code = generate_deletion_code()
 
-    #set deletion to 30 days from time of request
-    scheduled_deletion_date = datetime.now() +timedelta(days=30)
-
     if deletion_type == 'hard_delete':
-        #scheduled_deletion_date = datetime.now() + timedelta(days=7)
         cursor.execute('''
         INSERT INTO user_deletion_requests
         (user_id, user_type, user_email, request_reason, status, deletion_type, 
-        scheduled_deletion_date, deletion_confirmation_code, requested_at)
-        VALUES(%s, %s, %s, %s, 'completed', %s, now(), %s, now())
+        deletion_confirmation_code, requested_at)
+        VALUES(%s, %s, %s, %s, 'completed', %s, %s, now())
         RETURNING id
     ''', (user_id, user_type, user_email, request_reason, deletion_type, confirmation_code))
         
@@ -143,17 +139,7 @@ def request_account_deletion():
             'message': 'Account deletion submitted successfully',
             'request_id': request_id,
             'confirmation_code': confirmation_code,
-            'scheduled_deletion_date': datetime.now().strftime('%Y-%m-%d'),
-            #'grace_period_days': 7,
         }), 201
-    else:
-        cursor.execute('''
-            INSERT INTO user_deletion_requests
-            (user_id, user_type, user_email, request_reason, status, deletion_type, 
-            scheduled_deletion_date, deletion_confirmation_code, requested_at)
-            VALUES(%s, %s, %s, %s, 'pending', %s, %s, %s, now())
-            RETURNING id
-        ''', (user_id, user_type, user_email, request_reason, deletion_type, scheduled_deletion_date, confirmation_code))
 
         request_id = cursor.fetchone()[0]
         conn.commit()

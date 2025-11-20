@@ -964,7 +964,7 @@ def init_postgres_db():
         cursor.execute('''
                 CREATE TABLE IF NOT EXISTS chef_kitchen_tools ( 
                     id SERIAL PRIMARY KEY,
-                    chef_id INTEGER NOT NULL,
+                    customer_id INTEGER NOT NULL,
                     tool_name VARCHAR(100) NOT NULL,
                     tool_description TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
