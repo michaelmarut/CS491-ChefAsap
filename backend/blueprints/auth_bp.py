@@ -50,10 +50,15 @@ def signup():
         city = data.get('city')
         state = data.get('state')
         zip_code = data.get('zip')
+        agreed_to_terms = data.get('agreedToTerms', False)
 
         # Validate input
         if not all([first_name, last_name, email, password, user_type, phone, address, city, state, zip_code]):
             return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Validate terms agreement
+        if not agreed_to_terms:
+            return jsonify({'error': 'You must agree to the Terms of Service and Privacy Policy'}), 400
             
         if not validate_email(email):
             return jsonify({'error': 'Invalid email format'}), 400
@@ -141,6 +146,35 @@ def signup():
                 INSERT INTO customer_addresses (customer_id, address_line1, address_line2, city, state, zip_code, latitude, longitude, is_default)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (customer_id, address, address2, city, state, zip_code, latitude, longitude, True))
+        
+        # Record agreement acceptance
+        # Get the active Terms of Service agreement
+        cursor.execute('''
+            SELECT id FROM agreements 
+            WHERE agreement_type = 'terms_of_service'
+            AND is_active = TRUE 
+            AND is_required = TRUE 
+            AND (applicable_to = %s OR applicable_to = 'all')
+            AND effective_date <= CURRENT_DATE 
+            AND (expiry_date IS NULL OR expiry_date > CURRENT_DATE)
+            ORDER BY created_at DESC 
+            LIMIT 1
+        ''', (user_type,))
+        
+        agreement = cursor.fetchone()
+        if agreement:
+            agreement_id = agreement['id']
+            profile_id = chef_id if user_type == 'chef' else customer_id
+            
+            # Get IP address from request
+            ip_address = request.remote_addr
+            user_agent = request.headers.get('User-Agent', '')
+            
+            cursor.execute('''
+                INSERT INTO user_agreement_acceptances 
+                (agreement_id, user_type, user_id, user_email, ip_address, user_agent, acceptance_method)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ''', (agreement_id, user_type, profile_id, email, ip_address, user_agent, 'signup'))
         
         conn.commit()
         

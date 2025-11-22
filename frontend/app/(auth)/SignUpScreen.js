@@ -1,6 +1,6 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View, Pressable } from 'react-native';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Card from '../components/Card';
@@ -60,6 +60,7 @@ export default function Signup() {
   const [zip, setZip] = useState('');
   const [userType, setUserType] = useState('customer');
   const [passwordRequirements, setPasswordRequirements] = useState([]);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
   const { apiUrl } = getEnvVars();
 
@@ -150,6 +151,7 @@ export default function Signup() {
           city,
           state,
           zip,
+          agreedToTerms: true,
         }),
       });
       return { response, error: null };
@@ -159,6 +161,12 @@ export default function Signup() {
   };
 
   const handleSignup = async () => {
+    // Check if user agreed to terms
+    if (!agreedToTerms) {
+      showAlert('Error', 'You must agree to the Terms of Service and Privacy Policy to create an account');
+      return;
+    }
+
     // Check if all password requirements are met
     const allRequirementsMet = passwordRequirements.every(req => req.met);
     if (!allRequirementsMet) {
@@ -400,6 +408,61 @@ export default function Signup() {
             </Text>
             <Text className="text-xs text-center text-warm-gray">Offering services</Text>
           </TouchableOpacity>
+        </View>
+      </Card>
+
+      <Card title="Terms & Conditions" headerIcon="document">
+        <View className="mt-2">
+          <TouchableOpacity 
+            className="flex-row items-start mb-3"
+            onPress={() => setAgreedToTerms(!agreedToTerms)}
+            activeOpacity={0.7}
+          >
+            <View className={`w-6 h-6 rounded border-2 mr-3 items-center justify-center ${
+              agreedToTerms 
+                ? 'bg-primary-400 border-primary-400 dark:bg-dark-400 dark:border-dark-400' 
+                : 'bg-base-100 border-warm-gray dark:bg-base-dark-100'
+            }`}>
+              {agreedToTerms && (
+                <Text className="text-white text-sm font-bold">✓</Text>
+              )}
+            </View>
+            <View className="flex-1">
+              <View className="flex-row flex-wrap items-center">
+                <Text className="text-sm text-primary-500 dark:text-dark-500">
+                  I agree to the{' '}
+                </Text>
+                <Link href="/TermsOfService" asChild>
+                  <Pressable onPress={(e) => e.stopPropagation()}>
+                    <Text className="text-sm font-bold underline text-primary-500 dark:text-dark-500">
+                      Terms of Service
+                    </Text>
+                  </Pressable>
+                </Link>
+                <Text className="text-sm text-primary-500 dark:text-dark-500">
+                  {' '}and{' '}
+                </Text>
+                <Link href="/PrivacyPolicy" asChild>
+                  <Pressable onPress={(e) => e.stopPropagation()}>
+                    <Text className="text-sm font-bold underline text-primary-500 dark:text-dark-500">
+                      Privacy Policy
+                    </Text>
+                  </Pressable>
+                </Link>
+              </View>
+              <Text className="text-xs text-warm-gray mt-1">
+                By creating an account, you agree to our terms and conditions, including how we handle your personal information.
+              </Text>
+            </View>
+          </TouchableOpacity>
+          
+          <Button
+            title="📄 View Full Terms of Service"
+            style="transparent"
+            base="link"
+            customTextClasses="text-sm"
+            href="/TermsOfService"
+          />
         </View>
       </Card>
 

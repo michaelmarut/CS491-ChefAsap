@@ -196,14 +196,16 @@ export default function CustomerBookingsScreen() {
                             day: 'numeric',
                             year: 'numeric'
                         });
-                        const displayTitle = booking.chef_name 
+                        const statusText = booking.status ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1) : '';
+                        const displayTitle = booking.chef_name && booking.booking_date
                             ? `${booking.chef_name} - ${formattedDate}`
                             : `Booking #${booking.booking_id}`;
+                        const titleWithStatus = `${displayTitle} - ${statusText}`;
 
                         return (
                         <Card
                             key={booking.booking_id}
-                            title={displayTitle}
+                            title={titleWithStatus}
                             isCollapsible={true}
                             startExpanded={false}
                         >
@@ -315,6 +317,16 @@ export default function CustomerBookingsScreen() {
                                             ✓ You have already reviewed this booking
                                         </Text>
                                     </View>
+                                )}
+
+                                {/* Rebook Button for Completed Bookings */}
+                                {booking.status === 'completed' && (
+                                    <Button
+                                        title=" Book This Chef Again"
+                                        style="secondary"
+                                        href={`/ChefProfileScreen/${booking.chef_id}`}
+                                        customClasses="mt-2"
+                                    />
                                 )}
                             </View>
                         </Card>
