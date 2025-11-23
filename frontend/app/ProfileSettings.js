@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import {Modal, View, Text, Image, ScrollView, TouchableOpacity } from "react-native";
+import {Modal, View, Text, Image, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { useAuth } from "./context/AuthContext";
 import getEnvVars from "../config";
 import * as ImagePicker from 'expo-image-picker';
@@ -89,13 +89,15 @@ const US_STATES = [
 
 // ProfileSettings component displays and edits user profile information
 export default function ProfileSettings() {
-  const { profileId, userType } = useAuth(); // Get profileId from AuthContext
+  const { logout, profileId, userType } = useAuth(); // Get profileId from AuthContext
   const [profile, setProfile] = useState(null); // Holds profile data
   const [form, setForm] = useState(null);       // Holds editable form data
   const [error, setError] = useState(null);     // Holds error message
   const [editing, setEditing] = useState(false); // Edit mode
   const [uploading, setUploading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("delete"); //delete or input to change modal view
+  const [reasonText, setReason] = useState("");
 
   const { apiUrl } = getEnvVars();
 
@@ -173,8 +175,7 @@ export default function ProfileSettings() {
         user_id: profileId,
         user_type: userType,
         user_email: profile.email,
-        delete_type: 'hard_delete',
-        reason: "User requested account deletion"
+        reason: reasonText,
     })
   });
   
@@ -187,24 +188,6 @@ export default function ProfileSettings() {
 
   const{request_id, confirmation_code} = request_data;
 
-  const confirm_request = await fetch(`${apiUrl}/confirm_deletion`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      request_id,
-      confirmation_code
-    })
-  });
-
-  const confirm_data = await confirm_request.json();
-  if(!confirm_request.ok){
-    alert(confirm_data.error || "Failed to confirm deletion request.");
-    return;
-  }
-
-  //if hard_delete
-  alert("Account deleted. You will be logged out.");
-  if(typeof logout === "function") logout();
 };
 
   const pickImage = async () => {
@@ -489,32 +472,75 @@ export default function ProfileSettings() {
         >
           <View className="flex-1 items-center justify-center bg-black/50">
             <View className="bg-white dark:bg-dark-200 p-6 rounded-2xl w-80">
-              <Text className="text-lg font-semibold mb-4 text-primary-400 dark:text-dark-400">
-                Delete your account?
-              </Text>
+              {deleteReason === "delete" && (
+                <>
+                  <Text className="text-lg text-center font-semibold mb-4 text-primary-400 dark:text-dark-400">
+                    Delete your account?
+                  </Text>
 
-              <Text className="mb-6 text-gray-700 dark:text-gray-300">
-                This action cannot be undone.
-              </Text>
+                  <Text className="mb-6 text-center text-gray-700 dark:text-gray-300">
+                    This action cannot be undone.
+                  </Text>
 
-              <View className="flex-row justify-between mt-3">
-                <Button
-                  title="Cancel"
-                  style="secondary"
-                  onPress={() => setDeleteConfirm(false)}
-                  customClasses="min-w-[40%]"
-                />
+                  <View className="flex-row justify-between mt-3">
+                    <Button
+                      title="Cancel"
+                      style="secondary"
+                      onPress={() => setDeleteConfirm(false)}
+                      customClasses="min-w-[40%]"
+                    />
 
-                <Button
-                  title="Delete"
-                  style="delete"
-                  onPress={() => {
-                    setDeleteConfirm(false);
-                    handleAccountDelete();
-                  }}
-                  customClasses="min-w-[40%]"
-                />
-              </View>
+                    <Button
+                      title="Delete"
+                      style="delete"
+                      onPress={() => {
+                        setDeleteReason("input");
+                      }}
+                      customClasses="min-w-[40%]"
+                    />
+                  </View>
+                </>
+              )}
+              {deleteReason === "input" && (
+                <>
+                  <Text className="mb-6 text-center text-gray-700 dark:text-gray-300">
+                    Please Enter Account Deletion Reason
+                  </Text>
+
+                  <TextInput
+                    placeholder="Type here..."
+                    multiline
+                    className="border border-gray-300 bg-white rounded-lg py-3 px-4 text-base text-gray-700 mb-4"
+                    value={reasonText}
+                    onChangeText={setReason}
+                    style={{ height: 100, textAlignVertical: 'top' }}
+                  />
+
+                  <Button
+                    title="Submit"
+                    style="primary"
+                    onPress={() => {
+                      setDeleteReason("confirm");
+                      handleAccountDelete();
+                    }}
+                    customClasses="min-w-[50%]"
+                  />
+                </>
+              )}
+              {deleteReason === "confirm" && (
+                <>
+                  <Text className="mb-6 text-center text-gray-700 dark:text-gray-300">
+                    Account Deleted Successfully. You will be logged out.
+                  </Text>
+
+                  <Button
+                    title="OK"
+                    style="primary"
+                    onPress={logout}
+                    customClasses="min-w-[50%]"
+                  />
+                </>
+              )}
             </View>
           </View>
         </Modal>
