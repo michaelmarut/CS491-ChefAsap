@@ -370,7 +370,7 @@ export default function ChefMenu() {
                     customer_id: profileId,
                     amount: total,
                     payment_method_id: selectedPaymentMethod,
-                    description: `Booking from Chef ${chefData?.full_name || 'Chef'} - ${orderItems.length} items`
+                    description: `Booking from Chef ${chefData?.first_name} ${chefData?.last_name} - ${orderItems.length} items`
                 }),
             });
 
