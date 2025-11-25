@@ -787,7 +787,7 @@ export default function ChefMenu() {
 
                                 {loadingPaymentMethods ? (
                                     <View className="py-4">
-                                        <LoadingIcon />
+                                        <LoadingIcon icon="spinner" size={64} message=""/>
                                     </View>
                                 ) : paymentMethods.length === 0 ? (
                                     <View>

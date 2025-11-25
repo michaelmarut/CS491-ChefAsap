@@ -12,17 +12,19 @@ import getEnvVars from "../../config";
 
 export default function TabLayout() {
     const { isAuthenticated, userType, isLoading, profileId, token } = useAuth();
-    const { apiUrl } = getEnvVars();
     const router = useRouter();
+
+    const { apiUrl } = getEnvVars();
     const { manualTheme, /*setIsOnAuthPage*/ } = useTheme();
     //setIsOnAuthPage(false);
     const [bookings, setBookings] = useState([]);
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            router.replace('/(auth)');
-        }
-        if (!isLoading && isAuthenticated) {
+        if (!isLoading && !isAuthenticated && router) router.replace('/(auth)');
+    }, [isLoading, isAuthenticated]);
+
+    useEffect(() => {
+        if (isAuthenticated) {
             const fetchBookings = async () => {
                 if (!profileId) return;
 
@@ -52,7 +54,7 @@ export default function TabLayout() {
 
             fetchBookings();
         }
-    }, [isLoading, isAuthenticated, router]);
+    }, [isAuthenticated]);
 
     const iconSize = 24;
 

@@ -1,7 +1,5 @@
 import { Stack } from 'expo-router';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { View } from 'react-native';
-import LoadingIcon from './components/LoadingIcon';
 import ThemeProvider from './providers/ThemeProvider'; 
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
@@ -34,7 +32,7 @@ export default function RootLayout() {
 }
 
 function RootStack() {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isLoading, isAuthenticated } = useAuth();
 
     useEffect(() => {
         if (!isLoading) {
@@ -42,24 +40,13 @@ function RootStack() {
         }
     }, [isLoading]);
 
-    if (isLoading) {
-        return null;
-    }
-
     return (
-        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}> 
-            <Stack>
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
-                {/*!isAuthenticated ? (
-                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                ) : (
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                )*/}
-                
-                <Stack.Screen name="ChefProfileScreen/[id]" options={{ headerShown: false }} />
-                <Stack.Screen name="ChefMenu/[id]" options={{ headerShown: false }} />
+        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+            <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="ChefProfileScreen/[id]" />
+                <Stack.Screen name="ChefMenu/[id]" />
             </Stack>
         </SafeAreaView>
     );
