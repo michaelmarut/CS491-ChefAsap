@@ -36,7 +36,7 @@ export default function Stepper({
                     base='icon'
                 />
                 <View className={`flex items-center justify-center border-2 border-primary-300 rounded-lg bg-primary-100 shadow-sm shadow-primary-500 dark:border-dark-300 dark:bg-dark-100 h-${size} w-${size}`}>
-                    <Text className="text-xl font-bold text-primary-500">{numericValue}</Text>
+                    <Text className="text-xl font-bold text-primary-500 dark:text-dark-500">{numericValue}</Text>
                 </View>
                 <Button
                     icon="plus"

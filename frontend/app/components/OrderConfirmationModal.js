@@ -69,7 +69,7 @@ export default function OrderConfirmationModal({
     return (
 
         <View className='h-full flex items-center justify-center px-4'>
-            <View className='bg-base-100 dark:bg-base-dark-100 border-4 border-primary-400 darK:border-dark-400 rounded-xl p-4'>
+            <View className='bg-base-100 dark:bg-base-dark-100 border-4 border-primary-400 dark:border-dark-400 rounded-xl p-4'>
                 <Text className='text-center text-3xl font-semibold text-primary-400 dark:text-dark-400 mb-2'>Confirming Booking With</Text>
                 <Text className='text-center text-2xl font-medium text-primary-400 dark:text-dark-400 mb-2'>{booking.customer_name}</Text>
                 <ProfilePicture photoUrl={booking.customer_photo} firstName={booking.customer_name.split(" ")[0]} lastName={booking.customer_name.split(" ")[-1]} />

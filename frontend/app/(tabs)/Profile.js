@@ -37,6 +37,7 @@ export default function ProfileScreen() {
     const [showAddCardModal, setShowAddCardModal] = useState(false);
     const [paymentMethods, setPaymentMethods] = useState([]);
     const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+    const [refreshingPaymentMethods, setRefreshingPaymentMethods] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -160,7 +161,7 @@ export default function ProfileScreen() {
 
                             const data = await response.json();
                             if (response.ok) {
-                                Alert.alert('Success', 'Card deleted successfully');
+                                //Alert.alert('Success', 'Card deleted successfully');
                                 // Refresh payment methods
                                 setPaymentMethods(paymentMethods.filter(pm => pm.id !== paymentMethodId));
                             } else {
@@ -178,6 +179,7 @@ export default function ProfileScreen() {
 
     const handleSetDefaultCard = async (paymentMethodId) => {
         try {
+            setRefreshingPaymentMethods(true);
             const response = await fetch(`${apiUrl}/stripe-payment/payment-methods/${paymentMethodId}/set-default`, {
                 method: 'POST',
                 headers: {
@@ -189,7 +191,7 @@ export default function ProfileScreen() {
 
             const data = await response.json();
             if (response.ok) {
-                Alert.alert('Success', 'Default payment method updated');
+                //Alert.alert('Success', 'Default payment method updated');
                 // Refresh payment methods to update default status
                 const updatedMethods = paymentMethods.map(pm => ({
                     ...pm,
@@ -199,6 +201,7 @@ export default function ProfileScreen() {
             } else {
                 Alert.alert('Error', data.error || 'Failed to set default payment method');
             }
+            setRefreshingPaymentMethods(false);
         } catch (error) {
             console.error('Set default card error:', error);
             Alert.alert('Error', 'An error occurred while setting default payment method');
@@ -247,7 +250,7 @@ export default function ProfileScreen() {
             const result = await response.json();
 
             if (response.ok) {
-                Alert.alert('Success', 'About section updated successfully');
+                //Alert.alert('Success', 'About section updated successfully');
                 setProfileData({ ...profileData, description: aboutText });
                 setEditingAbout(false);
             } else {
@@ -300,7 +303,7 @@ export default function ProfileScreen() {
             const timingsResult = await timingsResponse.json();
 
             if (timingsResponse.ok) {
-                Alert.alert('Success', 'Chef details updated successfully');
+                //Alert.alert('Success', 'Chef details updated successfully');
                 setProfileData({
                     ...profileData,
                     cuisines: selectedCuisines,
@@ -390,23 +393,24 @@ export default function ProfileScreen() {
 
                 <ProfilePicture photoUrl={profileData?.photo_url} firstName={profileData?.first_name} lastName={profileData?.last_name} />
                 <Text className="text-xl font-bold text-wrap text-center mb-1 mt-2 text-primary-400 dark:text-dark-400">{profileData?.first_name} {profileData?.last_name} </Text>
-                <Text className="text-lg text-wrap text-center text-primary-400 dark:text-dark-400">{userType?.charAt(0).toUpperCase() + userType?.slice(1)}</Text>
+                <Text className="text-lg text-wrap text-center text-primary-400 dark:text-dark-400 mb-1">{userType?.charAt(0).toUpperCase() + userType?.slice(1)}</Text>
                 {userType === 'chef' && (
                     <>
-                        <RatingsDisplay rating={profileData?.avg_rating} />
-                        <View className='flex-row items-center justify-center'>
-                            <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
-                                {profileData?.total_reviews} Total Reviews
-
-                            </Text>
-                            <Button
-                                icon='cross-reference'
-                                base='link'
-                                style='transparent'
-                                customClasses='m-0 px-0 py-0 pl-2 pb-4'
-                                onPress={() => alert("Reviews Placeholder")}
-                            />
-                        </View>
+                        <RatingsDisplay rating={profileData?.avg_rating} totalRatings={profileData?.total_reviews}/>
+                        {profileData?.total_reviews && 
+                            <View className='flex-row items-center justify-center'>
+                                <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
+                                    {profileData?.total_reviews} Total Reviews
+                                </Text>
+                                <Button
+                                    icon='cross-reference'
+                                    base='link'
+                                    style='transparent'
+                                    customClasses='m-0 px-0 py-0 pl-2 pb-4'
+                                    onPress={() => alert("Reviews Placeholder")}
+                                />
+                            </View>
+                        }
                     </>
                 )}
                 <Text className="text-sm text-center text-primary-400 pt-2 border-t border-primary-200 dark:text-dark-400 dark:border-dark-200">Member Since: {profileData?.member_since}</Text>
@@ -419,13 +423,13 @@ export default function ProfileScreen() {
                         headerIcon="credit-card"
                     >
                         {loadingPaymentMethods ? (
-                            <LoadingIcon icon="spinner" size={64} message=""/>
+                            <LoadingIcon icon="spinner" size={48} message=""/>
                         ) : paymentMethods.length > 0 ? (
                             <View>
                                 {paymentMethods.map((pm) => (
                                     <View
                                         key={pm.id}
-                                        className="flex-row items-center justify-between p-3 mb-2 border border-gray-200 dark:border-gray-600 rounded-lg"
+                                        className="flex-row items-center justify-between p-3 mb-2 border border-primary-100 dark:border-dark-100 rounded-lg"
                                     >
                                         <View className="flex-row items-center flex-1">
                                             <Text className="text-2xl mr-3">💳</Text>
@@ -434,30 +438,36 @@ export default function ProfileScreen() {
                                                     •••• {pm.last4}
                                                 </Text>
                                                 <Text className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {pm.brand.toUpperCase()} • Expires {pm.exp_month}/{pm.exp_year}
+                                                    {pm.brand.toUpperCase()}
                                                 </Text>
-                                                {pm.is_default && (
-                                                    <Text className="text-xs text-lime-600 dark:text-lime-400 mt-1">
-                                                        ✓ Default
-                                                    </Text>
-                                                )}
+                                                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                                                    Expires {pm.exp_month}/{pm.exp_year}
+                                                </Text>
                                             </View>
                                         </View>
                                         <View className="flex-row gap-2">
+                                            {pm.is_default && (
+                                                <View className="px-4 py-1 bg-primary-100/50 dark:bg-dark-100/70 rounded items-center justify-center">
+                                                    <Text className="text-xs text-primary-400 dark:text-dark-400 text-center">
+                                                        ✓ Default
+                                                    </Text>
+                                                </View>
+                                            )}
                                             {!pm.is_default && (
                                                 <TouchableOpacity
                                                     onPress={() => handleSetDefaultCard(pm.id)}
-                                                    className="px-3 py-1 bg-lime-100 dark:bg-lime-900 rounded"
+                                                    className="px-3 py-1 bg-primary-100 dark:bg-dark-100 rounded items-center justify-center"
+                                                    disabled={refreshingPaymentMethods}
                                                 >
-                                                    <Text className="text-xs text-lime-700 dark:text-lime-300">
+                                                    <Text className="text-xs text-primary-400 dark:text-dark-400 text-center">
                                                         Set Default
                                                     </Text>
                                                 </TouchableOpacity>
                                             )}
-                                            <TestPaymentButton
+                                            {/*<TestPaymentButton
                                                 customerId={userId}
                                                 paymentMethodId={pm.id}
-                                            />
+                                            />*/}
                                             <TouchableOpacity
                                                 onPress={() => handleDeleteCard(pm.id)}
                                                 className="p-2"
@@ -469,7 +479,6 @@ export default function ProfileScreen() {
                                 ))}
                                 <Button
                                     title="Add New Card"
-                                    icon="plus"
                                     style="secondary"
                                     onPress={() => setShowAddCardModal(true)}
                                     customClasses="mt-2"

@@ -8,7 +8,7 @@ export default function ThemeButton() {
     const getNextTheme = () => {
         switch (manualTheme) {
             case 'light': return 'dark';
-            case 'dark': return 'system';
+            case 'dark': return 'light'//'system';
             case 'system': return 'light';
             default: return 'system';
         }

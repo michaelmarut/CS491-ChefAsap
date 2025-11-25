@@ -5,9 +5,14 @@ import getTailwindColor from '../utils/getTailwindColor';
 
 export default function RatingsDisplay({
     rating,
+    totalRatings,
     color
 }) {
-    rating = Math.round(rating);
+    if (totalRatings === 0 || totalRatings == null || rating == null) {
+        rating = 5;
+    } else {
+        rating = Math.round(rating);
+    }
     return (
         <View className="flex-row justify-center items-center pt-2">
             {Array.from({ length: rating }, (_, i) => i).map((index) =>

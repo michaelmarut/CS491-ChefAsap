@@ -259,17 +259,11 @@ export default function ChefMenu() {
                     ? { ...orderItem, quantity: orderItem.quantity + 1 }
                     : orderItem
             ));
-            Alert.alert(
-                'Added to Order',
-                `${item.dish_name} quantity increased to ${existingItem.quantity + 1}`
-            );
+            Alert.alert('Added to Order', `${item.dish_name} quantity increased to ${existingItem.quantity + 1}`);
         } else {
             // Add new item with quantity 1
             setOrderItems([...orderItems, { ...item, quantity: 1 }]);
-            Alert.alert(
-                'Added to Order',
-                `${item.dish_name} added to your order!`
-            );
+            Alert.alert('Added to Order', `${item.dish_name} added to your order!`);
         }
     };
 
@@ -357,7 +351,7 @@ export default function ChefMenu() {
             );
 
             // Calculate total
-            const total = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const total = (orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 1.15).toFixed(2);
 
             // Step 1: Create payment intent
             const paymentResponse = await fetch(`${apiUrl}/stripe-payment/create-payment-intent`, {
@@ -401,7 +395,7 @@ export default function ChefMenu() {
                     booking_time: deliveryDateTime.toTimeString().split(' ')[0].substring(0, 5),
                     produce_supply: 'chef',
                     number_of_people: orderItems.reduce((sum, item) => sum + item.quantity, 0),
-                    special_notes: `Order items: ${orderItems.map(item => `${item.dish_name} (x${item.quantity})`).join(', ')}. Total: $${total.toFixed(2)}. Payment ID: ${paymentData.payment_intent_id}`
+                    special_notes: `Order items: ${orderItems.map(item => `${item.dish_name} (x${item.quantity})`).join(', ')}. Total: $${total}. Payment ID: ${paymentData.payment_intent_id}`
                 }),
             });
 
@@ -444,7 +438,7 @@ export default function ChefMenu() {
             Alert.alert(
                 'Booking Confirmed! 🎉',
                 `Booking #${bookingResult.booking_id}\n\n` +
-                `Amount Charged: $${total.toFixed(2)}\n` +
+                `Amount Charged: $${total}\n` +
                 `Payment Method: ${selectedCard?.brand.toUpperCase()} •••• ${selectedCard?.last4}\n` +
                 `Delivery: ${deliveryDateTime.toLocaleString('en-US')}\n\n` +
                 `Your booking has been confirmed and sent to the chef!`,
@@ -479,7 +473,7 @@ export default function ChefMenu() {
         return 'dinner';
     };
 
-    if (loading) {
+    /*if (loading) {
         return (
             <>
                 <Stack.Screen options={{ headerShown: false }} />
@@ -488,7 +482,7 @@ export default function ChefMenu() {
                 </View>
             </>
         );
-    }
+    }*/
 
     return (
         <>
@@ -505,20 +499,20 @@ export default function ChefMenu() {
 
 
                     <View className="flex-row w-full justify-between bg-base-100 dark:bg-base-dark-100 border-t-2 border-primary-300 dark:border-dark-300">
-                        <View className="flex justify-center items-center w-1/2 bg-primary-100 pt-2 pl-4 pr-4 dark:bg-dark-100">
+                        <View className="flex justify-center items-center w-1/2 bg-primary-100 pt-2 pl-4 pr-4 dark:bg-dark-100 gap-4">
                             {chefData?.cuisines && chefData.cuisines.length > 0 && (
                                 <TagsBox words={chefData.cuisines} />
                             )}
                             {chefData?.meal_timings && chefData.meal_timings.length > 0 && (
-                                <>
-                                    <Text className="text-md text-primary-400 pt-2 dark:text-dark-400">Available:</Text>
-                                    <Text className="text-md text-primary-400 pb-2 dark:text-dark-400">{chefData.meal_timings.join(', ')}</Text>
-                                </>
+                                <View>
+                                    <Text className="text-md text-primary-400 pt-2 dark:text-dark-400 text-center">Available:</Text>
+                                    <Text className="text-sm text-primary-400 pb-2 dark:text-dark-400 text-center text-wrap">{chefData.meal_timings.join(', ')}</Text>
+                                </View>
                             )}
                         </View>
                         <View className="flex justify-center items-center w-1/2 p-4 rounded-br-3xl">
                             <ProfilePicture photoUrl={chefData?.photo_url} firstName={chefData?.first_name} lastName={chefData?.last_name} size={28} />
-                            <RatingsDisplay rating={chefData?.average_rating} />
+                            <RatingsDisplay rating={chefData?.average_rating} totalRatings={chefData?.total_reviews} />
                         </View>
                     </View>
                     <Text className="text-sm text-center text-primary-400 dark:text-dark-400 py-2 border-t-2 border-primary-300 dark:border-dark-300 w-full">Last Updated: {chefData?.member_since}</Text>
@@ -647,12 +641,28 @@ export default function ChefMenu() {
                                     </View>
                                 </View>
                             ))}
-                            <View className="flex-row justify-between items-center m-2">
+                            <View className="flex-row justify-between items-center m-2 mb-0 mt-1">
+                                <Text className="text-md font-bold text-primary-400 dark:text-dark-400">
+                                    Subtotal:
+                                </Text>
+                                <Text className="text-lg font-bold text-primary-400 dark:text-dark-400">
+                                    ${orderItems.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)}
+                                </Text>
+                            </View>
+                            <View className="flex-row justify-between items-center m-2 mt-0">
+                                <Text className="text-xs font-bold text-primary-400 dark:text-dark-400">
+                                    Service Fee (15%):
+                                </Text>
+                                <Text className="text-sm font-bold text-primary-400 dark:text-dark-400">
+                                    + ${(orderItems.reduce((total, item) => total + (item.price * item.quantity), 0) * 0.15).toFixed(2)}
+                                </Text>
+                            </View>
+                            <View className="flex-row justify-between items-center m-2 mt-0 border-t-2 border-primary-400 dark:border-dark-400 pt-2">
                                 <Text className="text-xl font-bold text-primary-400 dark:text-dark-400">
                                     Total:
                                 </Text>
                                 <Text className="text-2xl font-bold text-primary-400 dark:text-dark-400">
-                                    ${orderItems.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)}
+                                    ${(orderItems.reduce((total, item) => total + (item.price * item.quantity), 0) * 1.15).toFixed(2)}
                                 </Text>
                             </View>
                             <Button
@@ -673,13 +683,13 @@ export default function ChefMenu() {
                     onRequestClose={() => setShowOrderModal(false)}
                 >
                     <View className="flex-1 justify-center items-center bg-black/50">
-                        <View className="bg-white dark:bg-gray-800 rounded-xl p-6 w-[90%] max-w-md">
+                        <View className="bg-base-100 dark:bg-base-dark-100 border-4 border-primary-400 dark:border-dark-400 rounded-xl p-4 w-11/12 max-h-[90%]">
                             <Text className="text-2xl font-bold text-primary-400 dark:text-dark-400 mb-4 text-center">
                                 Select Booking Date & Time
                             </Text>
 
                             {/* Booking Summary */}
-                            <View className="bg-primary-50 dark:bg-dark-50 p-4 rounded-lg mb-4">
+                            <View className="bg-white dark:bg-black p-4 rounded-lg mb-4 shadow-sm shadow-primary-500 dark:shadow-dark-500">
                                 <Text className="text-lg font-semibold text-primary-400 dark:text-dark-400 mb-2">
                                     Booking Summary
                                 </Text>
@@ -687,8 +697,8 @@ export default function ChefMenu() {
                                     <Text className="text-primary-400 dark:text-dark-400">
                                         Items: {orderItems.length}
                                     </Text>
-                                    <Text className="text-xl font-bold text-primary-400 dark:text-dark-400">
-                                        ${orderItems.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)}
+                                    <Text className="text-primary-400 dark:text-dark-400">
+                                        Total: ${(orderItems.reduce((total, item) => total + (item.price * item.quantity), 0) * 1.15).toFixed(2)}
                                     </Text>
                                 </View>
                             </View>
@@ -699,49 +709,46 @@ export default function ChefMenu() {
                                     Booking Date:
                                 </Text>
                                 <View className="flex-row justify-between">
-                                    <View className="flex-1 mr-2">
+                                    <View className="flex-1 mr-1">
                                         <Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Month</Text>
-                                        <Picker
-                                            selectedValue={selectedMonth}
-                                            onValueChange={(value) => setSelectedMonth(value)}
-                                            style={{ backgroundColor: '#f0f0f0' }}
-                                        >
-                                            <Picker.Item label="January" value={0} />
-                                            <Picker.Item label="February" value={1} />
-                                            <Picker.Item label="March" value={2} />
-                                            <Picker.Item label="April" value={3} />
-                                            <Picker.Item label="May" value={4} />
-                                            <Picker.Item label="June" value={5} />
-                                            <Picker.Item label="July" value={6} />
-                                            <Picker.Item label="August" value={7} />
-                                            <Picker.Item label="September" value={8} />
-                                            <Picker.Item label="October" value={9} />
-                                            <Picker.Item label="November" value={10} />
-                                            <Picker.Item label="December" value={11} />
-                                        </Picker>
+                                        <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
+                                            <Picker
+                                                selectedValue={selectedMonth}
+                                                onValueChange={(value) => setSelectedMonth(value)}
+                                            >
+                                                {Array.from({ length: 12 }, (_, i) => i).map(month => (
+                                                    <Picker.Item key={month} label={String(month + 1)} value={month} />
+                                                ))}
+                                            </Picker>
+                                        </View>
                                     </View>
+                                    <Text className="text-primary-400 dark:text-dark-400 text-xl font-bold pt-10">/</Text>
                                     <View className="flex-1 mx-1">
                                         <Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Day</Text>
-                                        <Picker
-                                            selectedValue={selectedDay}
-                                            onValueChange={(value) => setSelectedDay(value)}
-                                            style={{ backgroundColor: '#f0f0f0' }}
-                                        >
-                                            {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                                                <Picker.Item key={day} label={String(day)} value={day} />
-                                            ))}
-                                        </Picker>
+                                        <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
+                                            <Picker
+                                                selectedValue={selectedDay}
+                                                onValueChange={(value) => setSelectedDay(value)}
+                                            >
+                                                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                                    <Picker.Item key={day} label={String(day)} value={day} />
+                                                ))}
+                                            </Picker>
+                                        </View>
                                     </View>
-                                    <View className="flex-1 ml-2">
+                                    <Text className="text-primary-400 dark:text-dark-400 text-xl font-bold pt-10">/</Text>
+                                    <View className="flex-1 ml-1">
                                         <Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Year</Text>
-                                        <Picker
-                                            selectedValue={selectedYear}
-                                            onValueChange={(value) => setSelectedYear(value)}
-                                            style={{ backgroundColor: '#f0f0f0' }}
-                                        >
-                                            <Picker.Item label="2025" value={2025} />
-                                            <Picker.Item label="2026" value={2026} />
-                                        </Picker>
+                                        <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
+                                            <Picker
+                                                selectedValue={selectedYear}
+                                                onValueChange={(value) => setSelectedYear(value)}
+                                            >
+                                                {Array.from({ length: 10 }, (_, i) => i + 25).map(year => (
+                                                    <Picker.Item key={year} label={String(year)} value={2000 + year} />
+                                                ))}
+                                            </Picker>
+                                        </View>
                                     </View>
                                 </View>
                             </View>
@@ -751,30 +758,33 @@ export default function ChefMenu() {
                                 <Text className="text-primary-400 dark:text-dark-400 font-semibold mb-2">
                                     Time:
                                 </Text>
-                                <View className="flex-row justify-between">
+                                <View className="flex-row justify-between items-center">
                                     <View className="flex-1 mr-2">
-                                        <Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Hour</Text>
-                                        <Picker
-                                            selectedValue={selectedHour}
-                                            onValueChange={(value) => setSelectedHour(value)}
-                                            style={{ backgroundColor: '#f0f0f0' }}
-                                        >
-                                            {Array.from({ length: 24 }, (_, i) => i).map(hour => (
-                                                <Picker.Item key={hour} label={String(hour).padStart(2, '0')} value={hour} />
-                                            ))}
-                                        </Picker>
+                                        {/*<Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Hour</Text>*/}
+                                        <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
+                                            <Picker
+                                                selectedValue={selectedHour}
+                                                onValueChange={(value) => setSelectedHour(value)}
+                                            >
+                                                {Array.from({ length: 24 }, (_, i) => i).map(hour => (
+                                                    <Picker.Item key={hour} label={String(hour).padStart(2, '0')} value={hour} />
+                                                ))}
+                                            </Picker>
+                                        </View>
                                     </View>
+                                    <Text className="text-primary-400 dark:text-dark-400 text-xl font-bold">:</Text>
                                     <View className="flex-1 ml-2">
-                                        <Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Minute</Text>
-                                        <Picker
-                                            selectedValue={selectedMinute}
-                                            onValueChange={(value) => setSelectedMinute(value)}
-                                            style={{ backgroundColor: '#f0f0f0' }}
-                                        >
-                                            {[0, 15, 30, 45].map(minute => (
-                                                <Picker.Item key={minute} label={String(minute).padStart(2, '0')} value={minute} />
-                                            ))}
-                                        </Picker>
+                                        {/*<Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Minute</Text>*/}
+                                        <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
+                                            <Picker
+                                                selectedValue={selectedMinute}
+                                                onValueChange={(value) => setSelectedMinute(value)}
+                                            >
+                                                {[0, 15, 30, 45].map(minute => (
+                                                    <Picker.Item key={minute} label={String(minute).padStart(2, '0')} value={minute} />
+                                                ))}
+                                            </Picker>
+                                        </View>
                                     </View>
                                 </View>
                             </View>
@@ -787,7 +797,7 @@ export default function ChefMenu() {
 
                                 {loadingPaymentMethods ? (
                                     <View className="py-4">
-                                        <LoadingIcon icon="spinner" size={64} message=""/>
+                                        <LoadingIcon icon="spinner" size={48} message="" />
                                     </View>
                                 ) : paymentMethods.length === 0 ? (
                                     <View>
@@ -808,29 +818,28 @@ export default function ChefMenu() {
                                         {paymentMethods.map((method) => (
                                             <View
                                                 key={method.id}
-                                                className={`flex-row items-center p-3 mb-2 rounded-lg ${selectedPaymentMethod === method.id
-                                                    ? 'bg-primary-200 dark:bg-dark-200'
-                                                    : 'bg-white dark:bg-gray-700'
+                                                className={`flex-row items-center justify-between p-3 mb-2 rounded-lg border bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500
+                                                    ${selectedPaymentMethod === method.id
+                                                        ? 'border-primary-400 dark:border-dark-400'
+                                                        : 'border-primary-200 dark:border-dark-200'
                                                     }`}
                                                 onTouchEnd={() => setSelectedPaymentMethod(method.id)}
                                             >
-                                                <View className="flex-1">
-                                                    <View className="flex-row items-center">
-                                                        <Text className="text-primary-400 dark:text-dark-400 font-semibold">
-                                                            {method.brand.toUpperCase()} •••• {method.last4}
-                                                        </Text>
-                                                        {method.is_default && (
-                                                            <View className="ml-2 bg-green-500 px-2 py-1 rounded">
-                                                                <Text className="text-white text-xs">Default</Text>
-                                                            </View>
-                                                        )}
-                                                    </View>
+                                                <View className="flex-0">
+                                                    <Text className="text-primary-400 dark:text-dark-400 font-semibold">
+                                                        {method.brand.toUpperCase()} •••• {method.last4}
+                                                    </Text>
                                                     <Text className="text-primary-400 dark:text-dark-400 text-sm">
                                                         Expires {method.exp_month}/{method.exp_year}
                                                     </Text>
                                                 </View>
+                                                {method.is_default && (
+                                                    <View className="px-4 py-1 bg-primary-100 dark:bg-dark-100 rounded items-center justify-center">
+                                                        <Text className="text-xs text-primary-400 dark:text-dark-400 text-center">Default</Text>
+                                                    </View>
+                                                )}
                                                 <View className={`w-5 h-5 rounded-full border-2 ${selectedPaymentMethod === method.id
-                                                    ? 'border-primary-500 bg-primary-500'
+                                                    ? 'border-primary-500 bg-primary-500 dark:border-dark-500 dark:bg-dark-500'
                                                     : 'border-primary-300 dark:border-dark-300'
                                                     }`}>
                                                     {selectedPaymentMethod === method.id && (
@@ -843,7 +852,7 @@ export default function ChefMenu() {
                                         ))}
                                         <Button
                                             title="Manage Cards"
-                                            style="secondary"
+                                            style="accent"
                                             customClasses="mt-2"
                                             onPress={() => {
                                                 setShowOrderModal(false);

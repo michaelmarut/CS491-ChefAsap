@@ -20,6 +20,7 @@ export default function SearchResultCard({
     cuisine,
     timing,
     rating,
+    totalRatings
 }) {
     const [photoData, setPhotoData] = useState(null);
     const { token } = useAuth();
@@ -107,7 +108,7 @@ export default function SearchResultCard({
                     </View>
                     <View className="flex justify-center items-center w-1/2 p-4 rounded-br-3xl">
                         <ProfilePicture photoUrl={photoData} firstName={first_name} lastName={last_name} size={28} />
-                        <RatingsDisplay rating={rating} />
+                        <RatingsDisplay rating={rating} totalRatings={totalRatings}/>
                     </View>
                 </View>
             }

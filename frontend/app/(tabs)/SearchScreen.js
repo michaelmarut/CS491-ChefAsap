@@ -250,7 +250,8 @@ export default function SearchScreen() {
                     distance: chef.distance_miles,
                     cuisine: chef.cuisines || [],
                     timing: chef.meal_timings || [],
-                    rating: Math.round(chef.rating?.average_rating || 0)
+                    rating: Math.round(chef.rating?.average_rating || 0),
+                    totalRatings: chef.rating?.total_reviews || 0
                 }));
                 setSearchResults(transformedResults);
                 setError(null);
@@ -381,6 +382,7 @@ export default function SearchScreen() {
                         cuisine={result["cuisine"]}
                         timing={result["timing"]}
                         rating={result["rating"]}
+                        totalRatings={result["totalRatings"]}
                     />)
                     :
                     <LoadingIcon icon='food' size={64} message='Fetching Nearby Chefs...' />

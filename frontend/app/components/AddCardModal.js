@@ -3,14 +3,15 @@ import {
   Modal,
   View,
   Text,
-  TouchableOpacity,
-  ActivityIndicator,
   Alert,
-  Platform,
   StyleSheet
 } from 'react-native';
 import { CardField, useStripe } from '@stripe/stripe-react-native';
 import getEnvVars from '../../config';
+
+import getTailwindColor from '../utils/getTailwindColor';
+import Button from './Button';
+import { useTheme } from '../providers/ThemeProvider';
 
 const { apiUrl } = getEnvVars();
 
@@ -18,6 +19,7 @@ const AddCardModal = ({ visible, onClose, onSuccess, customerId }) => {
   const { createToken } = useStripe();
   const [loading, setLoading] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
+  const { manualTheme } = useTheme();
 
   const handleAddCard = async () => {
     if (!cardComplete) {
@@ -51,7 +53,7 @@ const AddCardModal = ({ visible, onClose, onSuccess, customerId }) => {
       const url = `${apiUrl}/stripe-payment/attach-payment-method`;
       console.log('Sending request to:', url);
       console.log('Request body:', { customer_id: customerId, token_id: token.id });
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -65,11 +67,11 @@ const AddCardModal = ({ visible, onClose, onSuccess, customerId }) => {
 
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
-      
+
       // Get response text first to see what we're getting
       const responseText = await response.text();
       console.log('Response text:', responseText);
-      
+
       // Try to parse as JSON
       let data;
       try {
@@ -109,159 +111,58 @@ const AddCardModal = ({ visible, onClose, onSuccess, customerId }) => {
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <View className='bg-black/50 h-full flex items-center justify-center'>
+        <View className='bg-base-100 dark:bg-base-dark-100 border-4 border-primary-400 dark:border-dark-400 rounded-xl p-4'>
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Add Bank Card</Text>
-            <TouchableOpacity onPress={onClose} disabled={loading}>
-              <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
-          </View>
+          <Text className='text-2xl font-bold text-primary-400 dark:text-dark-400 text-center mb-6'>Add Bank Card</Text>
 
           {/* Card Input */}
-          <View style={styles.cardFieldContainer}>
+          <View className='mb-6'>
             <CardField
               postalCodeEnabled={false}
-              placeholder={{
-                number: '4242 4242 4242 4242',
-              }}
+
+              placeholder={{ number: 'XXXX XXXX XXXX XXXX', expiration: 'MM/YY', cvc: 'CVC' }}
               cardStyle={{
-                backgroundColor: '#FFFFFF',
-                textColor: '#000000',
+                backgroundColor: manualTheme === 'dark' ? 'black' : 'white',
+                placeholderColor: manualTheme === 'dark' ? getTailwindColor('dark.200') : getTailwindColor('primary.200'),
+                textColor: manualTheme === 'dark' ? getTailwindColor('dark.400') : getTailwindColor('primary.400'),
                 borderWidth: 1,
-                borderColor: '#CCCCCC',
+                borderColor: manualTheme === 'dark' ? getTailwindColor('dark.300') : getTailwindColor('primary.300'),
                 borderRadius: 8,
               }}
-              style={styles.cardField}
+              style={{
+                width: '100%',
+                height: 50,
+                marginVertical: 10,
+              }}
               onCardChange={(cardDetails) => {
                 console.log('Card details:', cardDetails);
                 setCardComplete(cardDetails.complete);
               }}
             />
-            <Text style={styles.helperText}>
-              Test card: 4242 4242 4242 4242 | Any future date | Any CVC
-            </Text>
+
           </View>
 
           {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
+          <View className='flex-row justify-center gap-[4%]'>
+            <Button
+              title={'Cancel'}
+              style='secondary'
               onPress={onClose}
               disabled={loading}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.button,
-                styles.addButton,
-                (!cardComplete || loading) && styles.disabledButton,
-              ]}
+              customClasses='w-[48%]'
+            />
+            <Button
+              title={'Add Card'}
               onPress={handleAddCard}
               disabled={!cardComplete || loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.addButtonText}>Add Card</Text>
-              )}
-            </TouchableOpacity>
+              customClasses='w-[48%]'
+            />
           </View>
         </View>
       </View>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    width: '90%',
-    maxWidth: 500,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  closeButton: {
-    fontSize: 24,
-    color: '#6B7280',
-    fontWeight: '300',
-  },
-  cardFieldContainer: {
-    marginBottom: 24,
-  },
-  cardField: {
-    width: '100%',
-    height: 50,
-    marginVertical: 10,
-  },
-  helperText: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#F3F4F6',
-  },
-  cancelButtonText: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  addButton: {
-    backgroundColor: '#3B82F6',
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    backgroundColor: '#9CA3AF',
-  },
-});
 
 export default AddCardModal;

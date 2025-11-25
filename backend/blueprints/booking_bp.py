@@ -968,8 +968,10 @@ def calendar_for_customer(customer_id: int):
               b.special_notes,
               b.cuisine_type,
               b.meal_type,
-              COALESCE(MAX(cmi.prep_time), 60) AS duration_minutes
+              COALESCE(MAX(cmi.prep_time), 60) AS duration_minutes,
+              ch.first_name || ' ' || ch.last_name as chef_name
             FROM bookings b
+            LEFT JOIN chefs ch ON b.chef_id = ch.id
             LEFT JOIN chef_menu_items cmi
               ON cmi.chef_id = b.chef_id
              AND (b.cuisine_type IS NULL OR cmi.cuisine_type = b.cuisine_type)
@@ -977,7 +979,7 @@ def calendar_for_customer(customer_id: int):
               AND b.booking_date BETWEEN %s AND %s
             GROUP BY
               b.id, b.customer_id, b.chef_id, b.booking_date, b.booking_time, b.status,
-              b.special_notes, b.cuisine_type, b.meal_type
+              b.special_notes, b.cuisine_type, b.meal_type, ch.first_name, ch.last_name
             ORDER BY b.booking_date, b.booking_time
             """,
             (customer_id, start_d, end_d),
@@ -1005,6 +1007,7 @@ def calendar_for_customer(customer_id: int):
                 "cuisine_type": r.get("cuisine_type"),
                 "meal_type": r.get("meal_type"),
                 "duration_minutes": int(r.get("duration_minutes") or 60),
+                "chef_name": r.get("chef_name"),
             })
 
         return jsonify({"success": True, "data": data})

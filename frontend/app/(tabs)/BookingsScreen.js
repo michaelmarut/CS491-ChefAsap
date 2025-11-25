@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Pressable, RefreshControl } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import getEnvVars from '../../config';
 import Button from '../components/Button';
@@ -7,12 +7,12 @@ import Button from '../components/Button';
 const START_HOUR = 6;
 const END_HOUR = 23;
 const STEP_MIN = 30;
-const SLOT_HEIGHT = 40;
+const SLOT_HEIGHT = 55;
 const PX_PER_MIN = SLOT_HEIGHT / STEP_MIN;
 
 // sizing for wide day columns + fixed time column
 const TIME_COL_WIDTH = 68;
-const DAY_COLUMN_WIDTH = 100;
+const DAY_COLUMN_WIDTH = 140;
 const HEADER_HEIGHT = 50;
 const FOOTER_PADDING = 0;
 const DATE_HEADER_TEXT_STYLE = { fontSize: 13, fontWeight: '600' };
@@ -119,6 +119,7 @@ export default function BookingsScreen() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   const weekDays = useMemo(() => buildWeekDays(baseDate), [baseDate]);
 
@@ -140,6 +141,7 @@ export default function BookingsScreen() {
 
   // Refresh trigger (footer action)
   const triggerRefresh = useCallback(() => {
+    setRefreshing(true);
     setLoading(true);
     setRefreshKey((k) => k + 1);
   }, []);
@@ -152,6 +154,7 @@ export default function BookingsScreen() {
         if (!cancelled) {
           setEvents(buildMockEvents(baseDate));
           setLoading(false);
+          setRefreshing(false);
         }
         return;
       }
@@ -211,6 +214,7 @@ export default function BookingsScreen() {
                 chef_id: b.chef_id,
                 customer_id: b.customer_id,
                 title: b.cuisine_type ? `${b.cuisine_type}${b.meal_type ? ` (${b.meal_type})` : ''}` : 'Booking',
+                chef_name: b.chef_name || null,
               };
             })
             .filter((e) => e.startDate >= weekStart && e.startDate <= weekEnd)
@@ -223,7 +227,7 @@ export default function BookingsScreen() {
       } catch {
         if (!cancelled) setEvents([]);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoading(false); setRefreshing(false);
       }
     })();
     return () => { cancelled = true; };
@@ -270,8 +274,8 @@ export default function BookingsScreen() {
   return (
     <View className='flex-1 bg-base-100 dark:bg-base-dark-100'>
       {/* Week controls */}
-      <View className='bg-base-100 dark:bg-dark-100 flex-row items-center justify-between px-3 py-2 border-b border-[#e5e7eb] dark:border-gray-500'>
-        <Text className="text-primary-400 dark:text-dark-400 text-lg font-bold">
+      <View className='bg-base-100 dark:bg-dark-100 flex-row items-center justify-between px-3 pt-2 border-b border-[#e5e7eb] dark:border-gray-500'>
+        <Text className="text-primary-400 dark:text-dark-400 text-lg font-bold pb-2">
           Week of {formatHeader(weekDays[0])}
         </Text>
         <View className='flex-row'>
@@ -344,6 +348,9 @@ export default function BookingsScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator
         contentContainerStyle={{ paddingBottom: FOOTER_PADDING }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={triggerRefresh} />
+        }
       >
         <View className='flex-row'>
           {/* LEFT: fixed time column */}
@@ -490,16 +497,24 @@ export default function BookingsScreen() {
                                 top,
                                 height,
                               }}
-                              className={`left-1 right-1 ${bg} border-l-3 ${border} rounded-lg px-2 py-1 overflow-hidden`}
+                              className={`left-1 right-1 mt-1 ${bg} border-l-3 ${border} rounded-lg overflow-hidden justify-center items-center`}
                             >
-                              <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold'>
-                                {formatTime(clippedStart)}–{formatTime(clippedEnd)} {evt.title || 'Booking'}
+                              <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
+                                {formatTime(clippedStart)} – {formatTime(clippedEnd)}
                               </Text>
-                              {!!evt.notes && (
+                              {evt.chef_name &&
+                                <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
+                                  {evt.chef_name}
+                                </Text>
+                              }
+                              <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
+                                {evt.title || 'Booking'}
+                              </Text>
+                              {/*!!evt.notes && (
                                 <Text numberOfLines={1} className='text-primary-100 dark:text-primary-100 text-xs mt-0.5'>
                                   {evt.notes}
                                 </Text>
-                              )}
+                              )*/}
                             </TouchableOpacity>
                           );
                         })}
@@ -515,11 +530,11 @@ export default function BookingsScreen() {
 
       {/* Footer actions */}
       <View className="bg-base-100 dark:bg-dark-100 p-3 border-t border-gray-200 dark:border-gray-700 gap-2">
-        <Button
+        {/*<Button
           title={loading ? 'Refreshing…' : 'Refresh'}
           style="primary"
           onPress={triggerRefresh}
-        />
+        />*/}
         {userType === 'customer' && (
           <Button
             title="View My Bookings"

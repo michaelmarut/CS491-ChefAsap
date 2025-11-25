@@ -246,19 +246,21 @@ export default function ChefProfileScreen() {
                     customHeaderText='text-3xl'
                 >
                     <ProfilePicture photoUrl={chefData?.photo_url} firstName={chefData?.first_name} lastName={chefData?.last_name} />
-                    <RatingsDisplay rating={chefData?.average_rating} />
-                    <View className='flex-row items-center justify-center'>
-                        <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
-                            {chefData?.total_reviews} Total Reviews
-                        </Text>
-                        <Button
-                            icon='cross-reference'
-                            base='link'
-                            style='transparent'
-                            customClasses='m-0 px-0 py-0 pl-2 pb-4'
-                            onPress={() => alert("Reviews Placeholder")}
-                        />
-                    </View>
+                    <RatingsDisplay rating={chefData?.average_rating} totalRatings={chefData?.total_reviews}/>
+                    {chefData?.total_reviews ?
+                        <View className='flex-row items-center justify-center'>
+                            <Text className="text-lg text-center text-primary-400 pb-2 dark:text-dark-400">
+                                {chefData?.total_reviews} Total Reviews
+                            </Text>
+                            <Button
+                                icon='cross-reference'
+                                base='link'
+                                style='transparent'
+                                customClasses='m-0 px-0 py-0 pl-2 pb-4'
+                                onPress={() => alert("Reviews Placeholder")}
+                            />
+                        </View> : <View className='mb-2'/>
+                    }
                     <Text className="text-sm text-center text-primary-400 pt-2 border-t border-primary-200 dark:text-dark-400 dark:border-dark-200">Serving Since: {chefData.member_since}</Text>
 
                     <Button
