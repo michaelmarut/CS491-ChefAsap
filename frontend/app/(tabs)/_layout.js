@@ -18,10 +18,38 @@ export default function TabLayout() {
     const { manualTheme, /*setIsOnAuthPage*/ } = useTheme();
     //setIsOnAuthPage(false);
     const [bookings, setBookings] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated && router) router.replace('/(auth)');
     }, [isLoading, isAuthenticated]);
+
+    const fetchUnreadCount = async () => {
+        if (!profileId || !isAuthenticated) return;
+
+        try {
+            const url = `${apiUrl}/api/chat/unread/${userType}/${profileId}`;
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+            //console.log("unread fetch: ", data);
+
+            if (response.ok) {
+                setUnreadCount(data);
+            } else {
+                alert('Error', data.error || 'Failed to load unread count.');
+            }
+        } catch (err) {
+            alert('Error: ' + (err.message || 'Network error. Could not connect to API.'));
+        }
+    };
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -40,7 +68,7 @@ export default function TabLayout() {
                     });
 
                     const data = await response.json();
-                    console.log(data.bookings);
+                    //console.log(data.bookings);
 
                     if (response.ok) {
                         setBookings(data.bookings);
@@ -53,8 +81,11 @@ export default function TabLayout() {
             };
 
             fetchBookings();
+            fetchUnreadCount(); const intervalId = setInterval(fetchUnreadCount, 30000); ; // 30 seconds
+
+            return () => clearInterval(intervalId);
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, profileId, userType, token]);
 
     const iconSize = 24;
 
@@ -80,10 +111,27 @@ export default function TabLayout() {
         },
     };
 
-    if (userType === 'chef') return (
+    return (
         <View className="bg-base-100 dark:bg-base-dark-100 flex-1">
             <Modal
-                visible={bookings.length > 0}
+                visible={userType === 'customer' && bookings.length > 0}
+                animationType="fade"
+                transparent={true}
+            >
+                <View className='bg-black/50 h-full flex items-center justify-center'>
+                    {bookings.length > 0 &&
+                        <BookingReviewModal
+                            key={bookings[0].booking_id}
+                            onClose={() => setBookings(bookings.filter(b => b.booking_id !== bookings[0].booking_id))}
+                            customerId={profileId}
+                            booking={bookings[0]}
+                        />
+                    }
+                </View>
+            </Modal>
+
+            <Modal
+                visible={userType === 'chef' && bookings.length > 0}
                 animationType="fade"
                 transparent={true}
             >
@@ -100,75 +148,10 @@ export default function TabLayout() {
 
             <Tabs screenOptions={tabBarOptions}>
                 <Tabs.Screen
-                    name="BookingsScreen"
-                    options={{
-                        title: 'Bookings',
-                        tabBarIcon: ({ color }) =>
-                            <Octicons name="calendar" size={iconSize} color={color} />,
-                        ...TransitionPresets.ShiftTransition,
-
-                    }}
-                />
-
-                <Tabs.Screen
-                    name="Messages"
-                    options={{
-                        title: 'Messages',
-                        tabBarIcon: ({ color }) =>
-                            <Octicons name="comment-discussion" size={iconSize} color={color} />,
-                        tabBarBadge: 5,
-                        tabBarBadgeStyle: {
-                            backgroundColor: 'red',
-                            color: manualTheme === 'light' ? getTailwindColor('primary.300') : getTailwindColor('primary.400'),
-                            fontSize: 10,
-                        },
-                        ...TransitionPresets.ShiftTransition,
-                    }}
-                />
-
-                <Tabs.Screen
-                    name="Profile"
-                    options={{
-                        title: 'Profile',
-                        tabBarIcon: ({ color }) =>
-                            <Octicons name="person" size={iconSize} color={color} />,
-                        ...TransitionPresets.ShiftTransition,
-                    }}
-                />
-
-                <Tabs.Screen
                     name="SearchScreen"
-                    options={{
+                    options={userType === 'chef' ? {
                         href: null,
-                    }}
-                />
-            </Tabs>
-        </View>
-    );
-
-    return (
-        <View className="bg-base-100 dark:bg-base-dark-100 flex-1">
-            <Modal
-                visible={bookings.length > 0}
-                animationType="fade"
-                transparent={true}
-            >
-                <View className='bg-black/50 h-full flex items-center justify-center'>
-                    {bookings.length > 0 && 
-                        <BookingReviewModal
-                            key={bookings[0].booking_id}
-                            onClose={() => setBookings(bookings.filter(b => b.booking_id !== bookings[0].booking_id))}
-                            customerId={profileId}
-                            booking={bookings[0]}
-                        />
-                    }
-                </View>
-            </Modal>
-
-            <Tabs screenOptions={tabBarOptions}>
-                <Tabs.Screen
-                    name="SearchScreen"
-                    options={{
+                    } : {
                         href: 'SearchScreen',
                         title: 'Search',
                         tabBarIcon: ({ color }) =>
@@ -195,10 +178,10 @@ export default function TabLayout() {
                         title: 'Messages',
                         tabBarIcon: ({ color }) =>
                             <Octicons name="comment-discussion" size={iconSize} color={color} />,
-                        tabBarBadge: 5,
+                        tabBarBadge: unreadCount > 0 ? unreadCount : null,
                         tabBarBadgeStyle: {
-                            backgroundColor: 'red',
-                            color: manualTheme === 'light' ? getTailwindColor('primary.500') : getTailwindColor('dark.500'),
+                            backgroundColor: 'white',
+                            color: manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('primary.300'),
                             fontSize: 10,
                         },
                         ...TransitionPresets.ShiftTransition,
@@ -212,7 +195,6 @@ export default function TabLayout() {
                         tabBarIcon: ({ color }) =>
                             <Octicons name="person" size={iconSize} color={color} />,
                         ...TransitionPresets.ShiftTransition,
-
                     }}
                 />
             </Tabs>

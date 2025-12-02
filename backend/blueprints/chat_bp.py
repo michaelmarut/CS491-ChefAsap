@@ -392,3 +392,37 @@ def mark_messages_read():
     finally:
         cursor.close()
         conn.close()
+
+@chat_bp.route('/unread/<string:user_type>/<int:profile_id>', methods=['GET'])
+def get_unread_count(user_type, profile_id):    
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(f"""
+            select count(cm.id) from chat_messages cm
+            left join chats c
+            on cm.chat_id = c.id
+            where is_read = false and {user_type}_id = {profile_id} and sender_type != '{user_type}'
+            group by {user_type}_id
+        """)
+        
+        print("Executed unread count query")
+        print(f"Query: {cursor.query}")
+
+        unread_count = cursor.fetchone()
+        
+        final_count = unread_count[0] if unread_count else 0
+                
+        return jsonify(final_count), 200
+
+    except Exception as e:
+        print("Error fetching unread count:", e)
+        return jsonify(error="Internal server error"), 500
+
+    finally:
+        cursor.close()
+        conn.close()
