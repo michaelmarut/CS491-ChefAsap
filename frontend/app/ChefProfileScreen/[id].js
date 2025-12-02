@@ -12,7 +12,10 @@ import ProfilePicture from "../components/ProfilePicture";
 import Card from "../components/Card";
 import RatingsDisplay from '../components/RatingsDisplay';
 import TagsBox from '../components/TagsBox';
+import WeeklyAvailability from '../components/WeeklyAvailability';
+import AvailabilityChart from '../components/AvailabilityChart';
 import { useRouter } from 'expo-router';
+import { onBookedBlockAdded } from '../utils/bookingEvents';
 
 const featuredDishComponent = (item, apiUrl) => (
     <View key={item.id} className="bg-base-100 dark:bg-base-dark-100 flex p-4 pb-2 rounded-xl shadow-sm shadow-primary-500 mr-4" >
@@ -65,6 +68,9 @@ export default function ChefProfileScreen() {
     const [mealTimings, setMealTimings] = useState([]);
     const [isFavorited, setIsFavorited] = useState(false);
     const [updatingFavoriteStatus, setUpdatingFavoriteStatus] = useState(false);
+    const [weeklyAvailability, setWeeklyAvailability] = useState({});
+    const [loadingAvailability, setLoadingAvailability] = useState(false);
+    const [bookedBlocks, setBookedBlocks] = useState([]);
 
     const router = useRouter();
 
@@ -157,6 +163,57 @@ export default function ChefProfileScreen() {
                     }
                 }
 
+                // Fetch chef weekly availability
+                try {
+                    const availabilityUrl = `${apiUrl}/profile/chef/${chefId}/weekly-availability`;
+                    const availabilityResponse = await fetch(availabilityUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+
+                    const availabilityData = await availabilityResponse.json();
+                    if (availabilityResponse.ok) {
+                        setWeeklyAvailability(availabilityData.weekly_schedule || {});
+                    }
+                } catch (availErr) {
+                    console.error('Failed to fetch availability:', availErr);
+                    // Don't show error, just log it
+                }
+
+                // Fetch bookings for next 7 days to overlay on availability (show booked slots in red)
+                try {
+                    const today = new Date();
+                    const start = today.toISOString().slice(0,10);
+                    const endDate = new Date(today.getTime() + 6*24*60*60*1000);
+                    const end = endDate.toISOString().slice(0,10);
+
+                    const bookingsUrl = `${apiUrl}/booking/bookings/chef/${chefId}?start=${start}&end=${end}`;
+                    const bookingsResp = await fetch(bookingsUrl, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+                    });
+                    const bookingsData = await bookingsResp.json();
+                    if (bookingsResp.ok && bookingsData.bookings) {
+                        const blocks = [];
+                        bookingsData.bookings.forEach(b => {
+                            try {
+                                const d = new Date(b.booking_date);
+                                const dayKey = (d.getDay()) % 7; // 0=Sun..6=Sat, matches our mapping
+                                const hour = parseInt((b.booking_time || '00:00').split(':')[0], 10);
+                                blocks.push(`${dayKey}-${hour}`);
+                            } catch (e) {
+                                // ignore parse errors
+                            }
+                        });
+                        setBookedBlocks(blocks);
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch chef bookings:', e);
+                }
+
             } catch (err) {
                 setError('Network error. Could not connect to API.');
                 console.error('Fetch error:', err);
@@ -168,6 +225,19 @@ export default function ChefProfileScreen() {
         fetchData();
 
     }, [id, apiUrl, token]);
+
+    
+
+    // Subscribe to optimistic booked-block additions
+    useEffect(() => {
+        const unsubscribe = onBookedBlockAdded((blockId) => {
+            setBookedBlocks(prev => {
+                if (prev.includes(blockId)) return prev;
+                return [...prev, blockId];
+            });
+        });
+        return unsubscribe;
+    }, []);
 
     const handleFavoriting = async () => {
         const chefId = parseInt(id, 10);
@@ -336,6 +406,14 @@ export default function ChefProfileScreen() {
                     )}
                 </Card>
 
+                <Card
+                    title="Weekly Availability"
+                    customHeader='justify-center'
+                    customHeaderText='text-xl'
+                >
+                    <AvailabilityChart weeklySchedule={weeklyAvailability} bookedBlocks={bookedBlocks} />
+                </Card>
+
                 <Button
                     title="View Menu"
                     style="primary"
@@ -356,6 +434,8 @@ export default function ChefProfileScreen() {
                     customClasses="min-w-[60%]"
                 />
                 <View className="h-8" />
+
+                
             </ScrollView>
         </>
     );

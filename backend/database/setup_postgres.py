@@ -1008,11 +1008,56 @@ def init_postgres_db():
         except Exception as e:
             print(f"Note: customer_id constraint - {e}")
 
+        # Detailed per-hour/week availability table for chefs
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chef_availability (
+                id SERIAL PRIMARY KEY,
+                chef_id INTEGER NOT NULL REFERENCES chefs(id) ON DELETE CASCADE,
+                day_of_week INTEGER NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 6),
+                start_time TIME NOT NULL,
+                end_time TIME NOT NULL,
+                is_available BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(chef_id, day_of_week, start_time),
+                CHECK (end_time > start_time)
+            )
+        ''')
+
+        # Index to accelerate lookups by chef and day
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_chef_availability_chef_day 
+            ON chef_availability(chef_id, day_of_week)
+        ''')
+
+        # Trigger function to update updated_at on changes
+        cursor.execute('''
+            CREATE OR REPLACE FUNCTION update_chef_availability_updated_at()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                NEW.updated_at = CURRENT_TIMESTAMP;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql
+        ''')
+
+        cursor.execute('''
+            DROP TRIGGER IF EXISTS trigger_update_chef_availability_updated_at 
+            ON chef_availability
+        ''')
+
+        cursor.execute('''
+            CREATE TRIGGER trigger_update_chef_availability_updated_at
+            BEFORE UPDATE ON chef_availability
+            FOR EACH ROW
+            EXECUTE FUNCTION update_chef_availability_updated_at()
+        ''')
+
         conn.commit()
-        print("\n✅ All tables created successfully in PostgreSQL!")
-        print(f"\n📊 Database: {db_config['database']}")
-        print(f"📋 Total tables created: 46")
-        print("\n📝 Table Summary:")
+        print("\n All tables created successfully in PostgreSQL!")
+        print(f"\n Database: {db_config['database']}")
+        print(f" Total tables created: 46")
+        print("\n Table Summary:")
         print("   - Authentication: users")
         print("   - Chefs: chefs, chef_documents, chef_cuisines, chef_addresses, chef_payment_methods")
         print("            chef_bank_accounts, chef_paypal_accounts, chef_check_addresses, chef_payments")
@@ -1029,7 +1074,7 @@ def init_postgres_db():
         print("   - Communication: chats, chat_messages, online_meetings, meeting_feedback")
         print("   - System: notifications, agreements, user_agreement_acceptances, user_deletion_requests")
         print("   - References: cuisine_types")
-        print("\n💳 Stripe Integration:")
+        print("\n Stripe Integration:")
         print("   - customers.stripe_customer_id stores Stripe customer reference")
         print("   - All card data securely managed by Stripe")
         print("   - Payment intents created via stripe_payment_bp.py blueprint")

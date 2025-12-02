@@ -1606,3 +1606,228 @@ def update_chef_availability(chef_id):
     except Exception as e:
         print(f"Error updating availability for chef {chef_id}: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+# New endpoints for weekly availability schedule
+@profile_bp.route('/chef/<int:chef_id>/weekly-availability', methods=['GET'])
+def get_chef_weekly_availability(chef_id):
+    """Get chef's weekly availability schedule
+    Returns a structured schedule showing available time slots for each day of the week
+    day_of_week: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+    """
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True, buffered=True)
+        
+        # Get all availability slots for this chef
+        cursor.execute('''
+            SELECT 
+                id,
+                day_of_week,
+                start_time,
+                end_time,
+                is_available,
+                created_at,
+                updated_at
+            FROM chef_availability
+            WHERE chef_id = %s
+            ORDER BY day_of_week, start_time
+        ''', (chef_id,))
+        
+        availability_slots = cursor.fetchall()
+        
+        # Organize by day of week
+        weekly_schedule = {
+            0: [],  # Sunday
+            1: [],  # Monday
+            2: [],  # Tuesday
+            3: [],  # Wednesday
+            4: [],  # Thursday
+            5: [],  # Friday
+            6: []   # Saturday
+        }
+        
+        for slot in availability_slots:
+            day = slot['day_of_week']
+            weekly_schedule[day].append({
+                'id': slot['id'],
+                'start_time': str(slot['start_time']),
+                'end_time': str(slot['end_time']),
+                'is_available': slot['is_available']
+            })
+        
+        return jsonify({
+            'success': True,
+            'chef_id': chef_id,
+            'weekly_schedule': weekly_schedule
+        }), 200
+        
+    except Exception as e:
+        print(f"Error getting weekly availability for chef {chef_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+@profile_bp.route('/chef/<int:chef_id>/weekly-availability', methods=['PUT'])
+def update_chef_weekly_availability(chef_id):
+    """Update chef's weekly availability schedule
+    Expects data in format:
+    {
+        "availability": {
+            "0": [{"start_time": "09:00", "end_time": "12:00"}, ...],
+            "1": [{"start_time": "09:00", "end_time": "17:00"}, ...],
+            ...
+        }
+    }
+    """
+    conn = None
+    cursor = None
+    try:
+        data = request.get_json()
+        
+        if not data or 'availability' not in data:
+            return jsonify({'error': 'Availability data required'}), 400
+        
+        availability = data['availability']
+        
+        conn = get_db_connection()
+        cursor = get_cursor(conn)
+        
+        # Delete existing availability for this chef
+        cursor.execute('DELETE FROM chef_availability WHERE chef_id = %s', (chef_id,))
+        
+        # Insert new availability slots
+        insert_count = 0
+        for day_str, time_slots in availability.items():
+            try:
+                day_of_week = int(day_str)
+                if day_of_week < 0 or day_of_week > 6:
+                    continue  # Skip invalid days
+                
+                for slot in time_slots:
+                    start_time = slot.get('start_time')
+                    end_time = slot.get('end_time')
+                    is_available = slot.get('is_available', True)
+                    
+                    if not start_time or not end_time:
+                        continue  # Skip incomplete slots
+                    
+                    cursor.execute('''
+                        INSERT INTO chef_availability 
+                        (chef_id, day_of_week, start_time, end_time, is_available)
+                        VALUES (%s, %s, %s, %s, %s)
+                    ''', (chef_id, day_of_week, start_time, end_time, is_available))
+                    insert_count += 1
+                    
+            except (ValueError, KeyError) as e:
+                print(f"Skipping invalid day or slot: {e}")
+                continue
+        
+        conn.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Weekly availability updated successfully',
+            'chef_id': chef_id,
+            'slots_created': insert_count
+        }), 200
+        
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error updating weekly availability for chef {chef_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@profile_bp.route('/chef/<int:chef_id>/check-availability', methods=['POST'])
+def check_chef_availability(chef_id):
+    """
+    Check if chef is available at a specific date and time
+    Validates against both chef_availability settings and existing bookings
+    """
+    try:
+        data = request.get_json()
+        booking_date = data.get('booking_date')
+        booking_time = data.get('booking_time')
+        
+        if not booking_date or not booking_time:
+            return jsonify({'error': 'booking_date and booking_time are required'}), 400
+        
+        from datetime import datetime
+        
+        # Parse the date and time
+        try:
+            date_obj = datetime.strptime(booking_date, '%Y-%m-%d')
+            time_obj = datetime.strptime(booking_time, '%H:%M').time()
+        except ValueError as e:
+            return jsonify({'error': f'Invalid date or time format: {str(e)}'}), 400
+        
+        # Get day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+        day_of_week = (date_obj.weekday() + 1) % 7
+        
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+        
+        # Step 1: Check if the time is within chef's general availability
+        cursor.execute('''
+            SELECT * FROM chef_availability
+            WHERE chef_id = %s 
+            AND day_of_week = %s
+            AND is_available = TRUE
+            AND start_time <= %s
+            AND end_time > %s
+        ''', (chef_id, day_of_week, time_obj, time_obj))
+        
+        availability_slot = cursor.fetchone()
+        
+        if not availability_slot:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'available': False,
+                'reason': 'Chef is not available at this time based on their schedule'
+            }), 200
+        
+        # Step 2: Check if there's already a booking at this time
+        cursor.execute('''
+            SELECT id, status FROM bookings
+            WHERE chef_id = %s 
+            AND booking_date = %s
+            AND booking_time = %s
+            AND status NOT IN ('cancelled', 'declined')
+        ''', (chef_id, booking_date, booking_time))
+        
+        existing_booking = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        if existing_booking:
+            return jsonify({
+                'available': False,
+                'reason': f'Chef already has a booking at this time'
+            }), 200
+        
+        # Chef is available!
+        return jsonify({
+            'available': True,
+            'reason': 'Chef is available at this time'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error checking chef availability: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500

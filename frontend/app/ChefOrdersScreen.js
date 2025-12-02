@@ -221,7 +221,12 @@ export default function ChefOrdersScreen() {
                 ) : (
                     bookings.map((booking) => {
                         // Format the title as "Customer Name - Date"
-                        const bookingDate = new Date(booking.booking_date);
+                        // Parse date as local time to avoid timezone issues
+                        const parts = booking.booking_date.split('-');
+                        const year = parseInt(parts[0], 10);
+                        const month = parseInt(parts[1], 10) - 1;
+                        const day = parseInt(parts[2], 10);
+                        const bookingDate = new Date(year, month, day);
                         const formattedDate = bookingDate.toLocaleDateString('en-US', { 
                             month: 'short', 
                             day: 'numeric',
@@ -298,7 +303,7 @@ export default function ChefOrdersScreen() {
                                             Special Notes:
                                         </Text>
                                         <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            {booking.special_notes}
+                                            {booking.special_notes.split('Payment ID:')[0].trim()}
                                         </Text>
                                     </View>
                                 )}

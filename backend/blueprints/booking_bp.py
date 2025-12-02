@@ -82,6 +82,57 @@ def create_booking():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@booking_bp.route('/bookings/chef/<int:chef_id>', methods=['GET'])
+def get_bookings_for_chef(chef_id):
+    """Return bookings for a chef between start and end dates (inclusive).
+    Query params: start=YYYY-MM-DD, end=YYYY-MM-DD
+    """
+    try:
+        start = request.args.get('start')
+        end = request.args.get('end')
+
+        if not start or not end:
+            return jsonify({'error': 'start and end query parameters are required (YYYY-MM-DD)'}), 400
+
+        conn = get_db_connection()
+        cursor = get_cursor(conn, dictionary=True)
+
+        cursor.execute('''
+            SELECT id, customer_id, booking_date, booking_time, status
+            FROM bookings
+            WHERE chef_id = %s
+              AND booking_date BETWEEN %s AND %s
+              AND status NOT IN ('cancelled', 'declined')
+            ORDER BY booking_date, booking_time
+        ''', (chef_id, start, end))
+
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        # Format the results to ensure JSON serialization
+        formatted_bookings = []
+        for booking in rows:
+            formatted_booking = dict(booking)
+            # Format date
+            if formatted_booking.get('booking_date'):
+                formatted_booking['booking_date'] = formatted_booking['booking_date'].strftime('%Y-%m-%d')
+            # Format time
+            if formatted_booking.get('booking_time'):
+                booking_time = formatted_booking['booking_time']
+                if hasattr(booking_time, 'total_seconds'):  # timedelta
+                    hours = int(booking_time.total_seconds() // 3600)
+                    minutes = int((booking_time.total_seconds() % 3600) // 60)
+                    formatted_booking['booking_time'] = f"{hours:02d}:{minutes:02d}:00"
+                else:  # time object
+                    formatted_booking['booking_time'] = str(booking_time)
+            formatted_bookings.append(formatted_booking)
+
+        return jsonify({'bookings': formatted_bookings}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @booking_bp.route('/search-chefs', methods=['POST'])
 def search_chefs():
     """Search for available chefs based on booking criteria"""
@@ -137,14 +188,33 @@ def search_chefs():
         
         chefs = cursor.fetchall()
         
-      
+        # Parse booking date to get day of week
+        from datetime import datetime
+        date_obj = datetime.strptime(booking_date, '%Y-%m-%d')
+        day_of_week = (date_obj.weekday() + 1) % 7
+        time_obj = datetime.strptime(booking_time, '%H:%M').time()
+        
         available_chefs = []
         for chef in chefs:
-      
+            # Check chef's availability for this day/time
+            cursor.execute('''
+                SELECT * FROM chef_availability
+                WHERE chef_id = %s 
+                AND day_of_week = %s
+                AND is_available = TRUE
+                AND start_time <= %s
+                AND end_time > %s
+            ''', (chef['chef_id'], day_of_week, time_obj, time_obj))
+            
+            has_availability = cursor.fetchone()
+            
+            # Skip chef if not available at this time
+            if not has_availability:
+                continue
+            
             chef_lat, chef_lon = get_zip_coordinates(chef['zip_code'])
             distance = calculate_distance(customer_lat, customer_lon, chef_lat, chef_lon)
             
-          
             service_radius = chef['service_radius_miles'] or 10
             if distance <= service_radius:
 
@@ -207,17 +277,71 @@ def book_chef():
             return jsonify({'error': 'Missing booking_id or chef_id'}), 400
         
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = get_cursor(conn, dictionary=True)
         
-      
+        # Get booking details first
+        cursor.execute('''
+            SELECT booking_date, booking_time FROM bookings WHERE id = %s
+        ''', (booking_id,))
+        
+        booking = cursor.fetchone()
+        if not booking:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Booking not found'}), 404
+        
+        # Check chef availability
+        booking_date = booking['booking_date']
+        booking_time = booking['booking_time']
+        
+        from datetime import datetime
+        date_obj = datetime.strptime(str(booking_date), '%Y-%m-%d')
+        day_of_week = (date_obj.weekday() + 1) % 7
+        
+        # Check if time is in chef's availability
+        cursor.execute('''
+            SELECT * FROM chef_availability
+            WHERE chef_id = %s 
+            AND day_of_week = %s
+            AND is_available = TRUE
+            AND start_time <= %s
+            AND end_time > %s
+        ''', (chef_id, day_of_week, booking_time, booking_time))
+        
+        availability = cursor.fetchone()
+        
+        if not availability:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'error': 'Chef is not available at this time based on their schedule'
+            }), 400
+        
+        # Check for existing bookings at the same time
+        cursor.execute('''
+            SELECT id FROM bookings
+            WHERE chef_id = %s 
+            AND booking_date = %s
+            AND booking_time = %s
+            AND status NOT IN ('cancelled', 'declined')
+            AND id != %s
+        ''', (chef_id, booking_date, booking_time, booking_id))
+        
+        existing = cursor.fetchone()
+        
+        if existing:
+            cursor.close()
+            conn.close()
+            return jsonify({
+                'error': 'Chef already has a booking at this time'
+            }), 400
+        
+        # Update booking with chef
         cursor.execute('''
             UPDATE bookings 
             SET chef_id = %s, status = 'pending'
             WHERE id = %s
         ''', (chef_id, booking_id))
-        
-        if cursor.rowcount == 0:
-            return jsonify({'error': 'Booking not found'}), 404
         
         conn.commit()
         cursor.close()
@@ -754,8 +878,12 @@ def get_nearby_chefs(customer_id):
 def get_finished_chef_bookings(chef_id):
     """Get chef bookings that need confirmation"""
     try:
+        from flask import request
         conn = get_db_connection()
         cursor = get_cursor(conn, dictionary=True)
+        
+        # Get status filter from query params
+        status_filter = request.args.get('status')
         
         # Base query
         query = '''
@@ -791,6 +919,11 @@ def get_finished_chef_bookings(chef_id):
         
         params = [chef_id]
         
+        # Add status filter if provided
+        if status_filter and status_filter != 'all':
+            query += ' AND b.status = %s'
+            params.append(status_filter)
+        
         query += ' ORDER BY b.booking_date DESC, b.booking_time DESC'
         
         cursor.execute(query, tuple(params))
@@ -804,9 +937,21 @@ def get_finished_chef_bookings(chef_id):
             if formatted_booking.get('booking_date'):
                 formatted_booking['booking_date'] = formatted_booking['booking_date'].strftime('%Y-%m-%d')
             if formatted_booking.get('booking_time'):
-                formatted_booking['booking_time'] = str(formatted_booking['booking_time'])
+                # Handle both time and timedelta objects
+                booking_time = formatted_booking['booking_time']
+                if hasattr(booking_time, 'total_seconds'):  # timedelta
+                    hours = int(booking_time.total_seconds() // 3600)
+                    minutes = int((booking_time.total_seconds() % 3600) // 60)
+                    formatted_booking['booking_time'] = f"{hours:02d}:{minutes:02d}:00"
+                else:  # time object
+                    formatted_booking['booking_time'] = str(booking_time)
             if formatted_booking.get('total_cost'):
                 formatted_booking['total_cost'] = float(formatted_booking['total_cost'])
+            # Format datetime fields
+            if formatted_booking.get('created_at'):
+                formatted_booking['created_at'] = formatted_booking['created_at'].isoformat() if hasattr(formatted_booking['created_at'], 'isoformat') else str(formatted_booking['created_at'])
+            if formatted_booking.get('updated_at'):
+                formatted_booking['updated_at'] = formatted_booking['updated_at'].isoformat() if hasattr(formatted_booking['updated_at'], 'isoformat') else str(formatted_booking['updated_at'])
             formatted_bookings.append(formatted_booking)
         
         cursor.close()

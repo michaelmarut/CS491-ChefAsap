@@ -117,10 +117,17 @@ const AddCardModal = ({ visible, onClose, onSuccess, customerId }) => {
           <Text className='text-2xl font-bold text-primary-400 dark:text-dark-400 text-center mb-6'>Add Bank Card</Text>
 
           {/* Card Input */}
-          <View className='mb-6'>
+          <View className='mb-2'>
+            <View className='flex-row justify-between mb-2'>
+              <Text className='text-sm text-primary-400 dark:text-dark-400'>Card number</Text>
+              <Text className='text-sm text-primary-400 dark:text-dark-400'>Expiry (MM/YY)</Text>
+            </View>
             <CardField
               postalCodeEnabled={false}
 
+              // Try to override the native expiration placeholder with an English token.
+              // Some platforms/Stripe native views may still localize the field; if
+              // this doesn't remove the localized text, see fallback below.
               placeholder={{ number: 'XXXX XXXX XXXX XXXX', expiration: 'MM/YY', cvc: 'CVC' }}
               cardStyle={{
                 backgroundColor: manualTheme === 'dark' ? 'black' : 'white',

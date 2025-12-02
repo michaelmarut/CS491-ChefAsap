@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ScrollView, Text, View, Alert, TouchableOpacity, TextInput, Modal } from "react-native";
 
 import getEnvVars from "../../config";
@@ -14,12 +14,17 @@ import TagsBox from "../components/TagsBox";
 import Input from "../components/Input";
 import AddCardModal from "../components/AddCardModal";
 import TestPaymentButton from "../components/TestPaymentButton";
+import AvailabilityChart from "../components/AvailabilityChart";
+import WeeklyAvailability from "../components/WeeklyAvailability";
+import { onBookedBlockAdded } from "../utils/bookingEvents";
 
 import { Octicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
     const { logout, token, userType, userId, profileId } = useAuth();
     const { apiUrl } = getEnvVars();
+
+
 
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -32,6 +37,14 @@ export default function ProfileScreen() {
     const [selectedCuisines, setSelectedCuisines] = useState([]);
     const [selectedMealTimings, setSelectedMealTimings] = useState(['Lunch', 'Dinner']);
     const [savingDetails, setSavingDetails] = useState(false);
+    
+    // Weekly availability state
+    const [weeklyAvailability, setWeeklyAvailability] = useState({});
+    const [loadingAvailability, setLoadingAvailability] = useState(false);
+    const [editingAvailability, setEditingAvailability] = useState(false);
+    const [savingAvailability, setSavingAvailability] = useState(false);
+    const availabilityRef = useRef(null);
+    const [bookedBlocks, setBookedBlocks] = useState([]);
     
     // Stripe payment methods state
     const [showAddCardModal, setShowAddCardModal] = useState(false);
@@ -107,6 +120,96 @@ export default function ProfileScreen() {
 
         fetchCuisines();
     }, [userType, apiUrl, token]);
+
+    // Fetch weekly availability for chefs
+    useEffect(() => {
+        const fetchWeeklyAvailability = async () => {
+            if (userType !== 'chef' || !profileId) return;
+
+            setLoadingAvailability(true);
+            try {
+                const response = await fetch(`${apiUrl}/profile/chef/${profileId}/weekly-availability`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    setWeeklyAvailability(data.weekly_schedule || {});
+                } else {
+                    console.error('Failed to fetch weekly availability:', data.error);
+                }
+            } catch (error) {
+                console.error('Error fetching weekly availability:', error);
+            } finally {
+                setLoadingAvailability(false);
+            }
+            // Also fetch bookings for next 7 days to overlay booked slots (red blocks)
+            try {
+                if (userType === 'chef' && profileId) {
+                    const today = new Date();
+                    const start = today.toISOString().slice(0,10);
+                    const endDate = new Date(today.getTime() + 6*24*60*60*1000);
+                    const end = endDate.toISOString().slice(0,10);
+
+                    const bookingsUrl = `${apiUrl}/booking/bookings/chef/${profileId}?start=${start}&end=${end}`;
+                    const bookingsResp = await fetch(bookingsUrl, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+                    });
+                    // Guard: ensure response is JSON before parsing to avoid HTML error pages
+                    const contentType = bookingsResp.headers.get && bookingsResp.headers.get('content-type');
+                    let bookingsData = null;
+                    if (contentType && contentType.indexOf('application/json') === -1) {
+                        console.error('Bookings endpoint did not return JSON. Status:', bookingsResp.status, 'Content-Type:', contentType);
+                    } else {
+                        try {
+                            bookingsData = await bookingsResp.json();
+                        } catch (parseErr) {
+                            console.error('Failed to parse bookings JSON:', parseErr);
+                        }
+                    }
+
+                    if (bookingsResp.ok && bookingsData && bookingsData.bookings) {
+                        const blocks = [];
+                        bookingsData.bookings.forEach(b => {
+                            try {
+                                // Parse date as local time to avoid timezone issues
+                                const parts = b.booking_date.split('-');
+                                const year = parseInt(parts[0], 10);
+                                const month = parseInt(parts[1], 10) - 1;
+                                const day = parseInt(parts[2], 10);
+                                const d = new Date(year, month, day);
+                                const dayKey = (d.getDay()) % 7; // 0=Sun..6=Sat
+                                const hour = parseInt((b.booking_time || '00:00').split(':')[0], 10);
+                                blocks.push(`${dayKey}-${hour}`);
+                            } catch (e) {
+                                // ignore parse errors
+                            }
+                        });
+                        setBookedBlocks(blocks);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to fetch bookings for availability overlay:', e);
+            }
+        };
+
+        fetchWeeklyAvailability();
+    }, [userType, profileId, apiUrl, token]);
+
+    useEffect(() => {
+        const unsubscribe = onBookedBlockAdded((blockId) => {
+            setBookedBlocks(prev => {
+                if (prev.includes(blockId)) return prev;
+                return [...prev, blockId];
+            });
+        });
+        return unsubscribe;
+    }, []);
 
     // Fetch payment methods for customers
     useEffect(() => {
@@ -345,6 +448,39 @@ export default function ProfileScreen() {
                 return [...prev, timing];
             }
         });
+    };
+
+    const handleSaveAvailability = async (newAvailability) => {
+        setSavingAvailability(true);
+        try {
+            const response = await fetch(`${apiUrl}/profile/chef/${profileId}/weekly-availability`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ availability: newAvailability }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                setWeeklyAvailability(newAvailability);
+                setEditingAvailability(false);
+                Alert.alert('Success', 'Weekly availability updated successfully!');
+            } else {
+                Alert.alert('Error', result.error || 'Failed to update availability');
+            }
+        } catch (error) {
+            console.error('Failed to save availability:', error);
+            Alert.alert('Error', 'Network error. Please try again.');
+        } finally {
+            setSavingAvailability(false);
+        }
+    };
+
+    const handleCancelAvailabilityEdit = () => {
+        setEditingAvailability(false);
     };
 
     if (loading) {
@@ -665,6 +801,65 @@ export default function ProfileScreen() {
                             </Text>
                         )}
                     </Card>
+
+                    <Card
+                        title="Weekly Availability"
+                        customHeader='justify-center'
+                        customHeaderText='text-xl'
+                    >
+                        {!editingAvailability && (
+                            <Button
+                                onPress={() => setEditingAvailability(true)}
+                                icon="pencil"
+                                style="accent"
+                                customClasses="absolute -top-[62px] -right-2 z-10 p-3 rounded-full pl-3"
+                            />
+                        )}
+
+                        {editingAvailability ? (
+                            <View className="min-h-[500px]">
+                                <WeeklyAvailability
+                                    ref={availabilityRef}
+                                    initialAvailability={weeklyAvailability}
+                                     editable={true}
+                                     bookedBlocks={Array.isArray(bookedBlocks) ? bookedBlocks : []}
+                                />
+                                <View className="flex-row gap-2 mt-4">
+                                    <Button
+                                        onPress={handleCancelAvailabilityEdit}
+                                        icon="x"
+                                        title="Cancel"
+                                        style="secondary"
+                                        customClasses="flex-1"
+                                    />
+                                    <Button
+                                        onPress={() => {
+                                            if (availabilityRef.current) {
+                                                const currentAvailability = availabilityRef.current.getAvailability();
+                                                handleSaveAvailability(currentAvailability);
+                                            }
+                                        }}
+                                        icon={savingAvailability ? 'sync' : 'check'}
+                                        title="Save"
+                                        style="accent"
+                                        customClasses="flex-1"
+                                        disabled={savingAvailability}
+                                    />
+                                </View>
+                            </View>
+                        ) : (
+                            <View>
+                                {loadingAvailability ? (
+                                    <Text className="text-center text-primary-400 dark:text-dark-400">
+                                        Loading availability...
+                                    </Text>
+                                ) : (
+                                    <AvailabilityChart weeklySchedule={weeklyAvailability} bookedBlocks={Array.isArray(bookedBlocks) ? bookedBlocks : []} />
+                                )}
+                            </View>
+                        )}
+                    </Card>
+
                     <View className="flex-row w-full justify-between" >
                     <Button
                         title="Manage Menu"

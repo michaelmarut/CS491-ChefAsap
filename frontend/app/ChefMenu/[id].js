@@ -104,6 +104,17 @@ export default function ChefMenu() {
     const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
     const [paymentProcessing, setPaymentProcessing] = useState(false);
 
+    // Weekly availability and bookings
+    const [weeklyAvailability, setWeeklyAvailability] = useState({});
+    const [bookedBlocks, setBookedBlocks] = useState([]);
+
+    // Auto-adjust selected hour when date changes or available hours change
+    useEffect(() => {
+        if (getAvailableHours.length > 0 && !getAvailableHours.includes(selectedHour)) {
+            setSelectedHour(getAvailableHours[0]);
+        }
+    }, [selectedMonth, selectedDay, selectedYear, getAvailableHours]);
+
     useEffect(() => {
         if (!id) return;
 
@@ -198,6 +209,80 @@ export default function ChefMenu() {
                 } else {
                     console.log('Categories fetch error:', categoriesData.error);
                     setCategories([]);
+                }
+
+                // Fetch weekly availability
+                try {
+                    const availUrl = `${apiUrl}/profile/chef/${chefId}/weekly-availability`;
+                    console.log('Fetching weekly availability from:', availUrl);
+                    const availResp = await fetch(availUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+                    const availData = await availResp.json();
+                    console.log('Weekly availability response:', availResp.status, availData);
+                    if (availResp.ok) {
+                        const schedule = availData.weekly_schedule || {};
+                        setWeeklyAvailability(schedule);
+                        console.log('Weekly availability set to:', schedule);
+                        
+                        // Check if chef has set any availability
+                        const hasAnyAvailability = Object.values(schedule).some(day => day && day.length > 0);
+                        if (!hasAnyAvailability) {
+                            console.warn('⚠️ Chef has not set weekly availability yet');
+                        }
+                    } else {
+                        console.error('Failed to fetch weekly availability:', availData);
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch weekly availability:', e);
+                }
+
+                // Fetch bookings for next 30 days to exclude booked times
+                try {
+                    const today = new Date();
+                    const futureDate = new Date(today);
+                    futureDate.setDate(today.getDate() + 30);
+                    const start = today.toISOString().split('T')[0];
+                    const end = futureDate.toISOString().split('T')[0];
+                    const bookingsUrl = `${apiUrl}/booking/bookings/chef/${chefId}?start=${start}&end=${end}`;
+                    console.log('Fetching bookings from:', bookingsUrl);
+                    const bookingsResp = await fetch(bookingsUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+                    const bookingsData = await bookingsResp.json();
+                    console.log('Bookings response:', bookingsResp.status, bookingsData);
+                    if (bookingsResp.ok && bookingsData.bookings) {
+                        const blocks = [];
+                        bookingsData.bookings.forEach(b => {
+                            try {
+                                // Parse date as local time to avoid timezone issues
+                                const parts = b.booking_date.split('-');
+                                const year = parseInt(parts[0], 10);
+                                const month = parseInt(parts[1], 10) - 1;
+                                const day = parseInt(parts[2], 10);
+                                const d = new Date(year, month, day);
+                                const dayKey = d.getDay();
+                                const hour = parseInt((b.booking_time || '00:00').split(':')[0], 10);
+                                blocks.push(`${dayKey}-${hour}`);
+                            } catch (e) {
+                                console.error('Error parsing booking:', e);
+                            }
+                        });
+                        setBookedBlocks(blocks);
+                        console.log('Booked blocks loaded:', blocks);
+                    } else {
+                        console.error('Failed to fetch bookings:', bookingsData);
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch bookings:', e);
                 }
 
             } catch (err) {
@@ -330,6 +415,53 @@ export default function ChefMenu() {
         }
     }, [showOrderModal]);
 
+    // Get available hours for the selected date
+    const getAvailableHours = useMemo(() => {
+        const selectedDate = new Date(selectedYear, selectedMonth, selectedDay);
+        const dayKey = selectedDate.getDay(); // 0=Sunday, 1=Monday, etc.
+        
+        console.log('=== Computing Available Hours ===');
+        console.log('Selected date:', selectedDate.toDateString());
+        console.log('Day of week:', dayKey);
+        console.log('Weekly availability:', weeklyAvailability);
+        console.log('Booked blocks:', bookedBlocks);
+        
+        // Get weekly availability for this day
+        const dayAvailability = weeklyAvailability[dayKey] || [];
+        console.log('Day availability:', dayAvailability);
+        
+        // Extract available hours from time slots
+        const availableHoursSet = new Set();
+        dayAvailability.forEach(slot => {
+            if (slot.is_available) {
+                const startHour = parseInt(slot.start_time.split(':')[0], 10);
+                const endHour = parseInt(slot.end_time.split(':')[0], 10);
+                for (let h = startHour; h < endHour; h++) {
+                    availableHoursSet.add(h);
+                }
+            }
+        });
+        console.log('Available hours from schedule:', Array.from(availableHoursSet));
+        
+        // Filter out booked hours for this specific date
+        const bookedHoursForDay = new Set();
+        bookedBlocks.forEach(block => {
+            const [blockDayKey, blockHour] = block.split('-').map(Number);
+            if (blockDayKey === dayKey) {
+                bookedHoursForDay.add(blockHour);
+            }
+        });
+        console.log('Booked hours for this day:', Array.from(bookedHoursForDay));
+        
+        // Return hours that are available and not booked
+        const availableHours = Array.from(availableHoursSet)
+            .filter(hour => !bookedHoursForDay.has(hour))
+            .sort((a, b) => a - b);
+        
+        console.log('Final available hours:', availableHours);
+        return availableHours;
+    }, [selectedYear, selectedMonth, selectedDay, weeklyAvailability, bookedBlocks]);
+
     // Handle placing order with selected date/time
     const handlePlaceOrder = async () => {
         try {
@@ -380,6 +512,10 @@ export default function ChefMenu() {
             const cuisineType = orderItems.length > 0 ? orderItems[0].cuisine_type || 'Mixed' : 'Mixed';
             const mealType = getMealType(selectedHour);
 
+            // Format date and time using local timezone (not UTC)
+            const bookingDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+            const bookingTime = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+
             const bookingResponse = await fetch(`${apiUrl}/booking/create`, {
                 method: 'POST',
                 headers: {
@@ -391,11 +527,11 @@ export default function ChefMenu() {
                     cuisine_type: cuisineType,
                     meal_type: mealType,
                     event_type: 'dinner',
-                    booking_date: deliveryDateTime.toISOString().split('T')[0],
-                    booking_time: deliveryDateTime.toTimeString().split(' ')[0].substring(0, 5),
+                    booking_date: bookingDate,
+                    booking_time: bookingTime,
                     produce_supply: 'chef',
                     number_of_people: orderItems.reduce((sum, item) => sum + item.quantity, 0),
-                    special_notes: `Order items: ${orderItems.map(item => `${item.dish_name} (x${item.quantity})`).join(', ')}. Total: $${total}. Payment ID: ${paymentData.payment_intent_id}`
+                    special_notes: `Order items: ${orderItems.map(item => `${item.dish_name} (x${item.quantity})`).join(', ')}. Total: $${total}`
                 }),
             });
 
@@ -434,13 +570,20 @@ export default function ChefMenu() {
 
             // Get payment method details for confirmation
             const selectedCard = paymentMethods.find(pm => pm.id === selectedPaymentMethod);
+            
+            // Format delivery date and time for display
+            // Add 1 day to compensate for timezone display issue
+            const displayDate = new Date(selectedYear, selectedMonth, selectedDay);
+            displayDate.setDate(displayDate.getDate() + 1);
+            const deliveryDateFormatted = `${displayDate.getMonth() + 1}/${displayDate.getDate()}/${displayDate.getFullYear()}`;
+            const deliveryTimeFormatted = `${selectedHour % 12 || 12}:${String(selectedMinute).padStart(2, '0')} ${selectedHour >= 12 ? 'PM' : 'AM'}`;
 
             Alert.alert(
                 'Booking Confirmed! 🎉',
                 `Booking #${bookingResult.booking_id}\n\n` +
                 `Amount Charged: $${total}\n` +
                 `Payment Method: ${selectedCard?.brand.toUpperCase()} •••• ${selectedCard?.last4}\n` +
-                `Delivery: ${deliveryDateTime.toLocaleString('en-US')}\n\n` +
+                `Booking: ${deliveryDateFormatted}, ${deliveryTimeFormatted}\n\n` +
                 `Your booking has been confirmed and sent to the chef!`,
                 [
                     {
@@ -758,35 +901,48 @@ export default function ChefMenu() {
                                 <Text className="text-primary-400 dark:text-dark-400 font-semibold mb-2">
                                     Time:
                                 </Text>
-                                <View className="flex-row justify-between items-center">
-                                    <View className="flex-1 mr-2">
-                                        {/*<Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Hour</Text>*/}
-                                        <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
-                                            <Picker
-                                                selectedValue={selectedHour}
-                                                onValueChange={(value) => setSelectedHour(value)}
-                                            >
-                                                {Array.from({ length: 24 }, (_, i) => i).map(hour => (
-                                                    <Picker.Item key={hour} label={String(hour).padStart(2, '0')} value={hour} />
-                                                ))}
-                                            </Picker>
+                                {getAvailableHours.length === 0 ? (
+                                    <View className="bg-white dark:bg-black p-4 rounded-lg">
+                                        <Text className="text-primary-400 dark:text-dark-400 text-center font-semibold mb-2">
+                                            No available time slots for this date
+                                        </Text>
+                                        {Object.values(weeklyAvailability).every(day => !day || day.length === 0) && (
+                                            <Text className="text-primary-400 dark:text-dark-400 text-center text-sm">
+                                                This chef has not set their weekly availability yet.
+                                            </Text>
+                                        )}
+                                    </View>
+                                ) : (
+                                    <View className="flex-row justify-between items-center">
+                                        <View className="flex-1 mr-2">
+                                            {/*<Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Hour</Text>*/}
+                                            <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
+                                                <Picker
+                                                    selectedValue={selectedHour}
+                                                    onValueChange={(value) => setSelectedHour(value)}
+                                                >
+                                                    {getAvailableHours.map(hour => (
+                                                        <Picker.Item key={hour} label={String(hour).padStart(2, '0')} value={hour} />
+                                                    ))}
+                                                </Picker>
+                                            </View>
+                                        </View>
+                                        <Text className="text-primary-400 dark:text-dark-400 text-xl font-bold">:</Text>
+                                        <View className="flex-1 ml-2">
+                                            {/*<Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Minute</Text>*/}
+                                            <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
+                                                <Picker
+                                                    selectedValue={selectedMinute}
+                                                    onValueChange={(value) => setSelectedMinute(value)}
+                                                >
+                                                    {[0, 15, 30, 45].map(minute => (
+                                                        <Picker.Item key={minute} label={String(minute).padStart(2, '0')} value={minute} />
+                                                    ))}
+                                                </Picker>
+                                            </View>
                                         </View>
                                     </View>
-                                    <Text className="text-primary-400 dark:text-dark-400 text-xl font-bold">:</Text>
-                                    <View className="flex-1 ml-2">
-                                        {/*<Text className="text-xs text-primary-400 dark:text-dark-400 mb-1">Minute</Text>*/}
-                                        <View className='border border-primary-200 bg-white dark:bg-black rounded-lg shadow-sm shadow-primary-500 dark:border-dark-200'>
-                                            <Picker
-                                                selectedValue={selectedMinute}
-                                                onValueChange={(value) => setSelectedMinute(value)}
-                                            >
-                                                {[0, 15, 30, 45].map(minute => (
-                                                    <Picker.Item key={minute} label={String(minute).padStart(2, '0')} value={minute} />
-                                                ))}
-                                            </Picker>
-                                        </View>
-                                    </View>
-                                </View>
+                                )}
                             </View>
 
                             {/* Payment Method Selection */}
@@ -878,7 +1034,7 @@ export default function ChefMenu() {
                                         title={paymentProcessing ? "Processing..." : "Confirm & Pay"}
                                         style="primary"
                                         onPress={handlePlaceOrder}
-                                        disabled={paymentProcessing || paymentMethods.length === 0}
+                                        disabled={paymentProcessing || paymentMethods.length === 0 || getAvailableHours.length === 0}
                                     />
                                 </View>
                             </View>
