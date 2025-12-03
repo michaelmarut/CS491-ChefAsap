@@ -11,6 +11,7 @@ import Button from "./components/Button";
 import Card from "./components/Card";
 import CalendarConnectButton from "./components/CalendarConnectButton";
 import CalendarIcsUploadButton from "./components/CalendarIcsUploadButton";
+import BookingCard from "./components/BookingCard";
 
 export default function ChefOrdersScreen() {
     const { token, profileId, userType } = useAuth();
@@ -28,10 +29,10 @@ export default function ChefOrdersScreen() {
             console.log('[ChefOrdersScreen] profileId:', profileId);
             console.log('[ChefOrdersScreen] userType:', userType);
             console.log('[ChefOrdersScreen] selectedStatus:', selectedStatus);
-            
+
             setLoading(true);
-            
-            const url = selectedStatus === 'all' 
+
+            const url = selectedStatus === 'all'
                 ? `${apiUrl}/booking/chef/${profileId}/bookings`
                 : `${apiUrl}/booking/chef/${profileId}/bookings?status=${selectedStatus}`;
 
@@ -94,8 +95,8 @@ export default function ChefOrdersScreen() {
             const data = await response.json();
 
             if (response.ok) {
-                Alert.alert('Success', `Booking ${newStatus}`);
-                fetchBookings(); // Refresh the list
+                //Alert.alert('Success', `Booking ${newStatus}`);
+                onRefresh(); // Refresh the list
             } else {
                 Alert.alert('Error', data.error || 'Failed to update booking');
             }
@@ -108,9 +109,9 @@ export default function ChefOrdersScreen() {
     const getStatusColor = (status) => {
         switch (status) {
             case 'pending': return 'bg-yellow-500';
-            case 'accepted': return 'bg-blue-500';
+            case 'accepted': return 'bg-green-500';
             case 'declined': return 'bg-red-500';
-            case 'completed': return 'bg-gray-500';
+            case 'completed': return 'bg-blue-500';
             case 'cancelled': return 'bg-red-500';
             default: return 'bg-gray-400';
         }
@@ -124,21 +125,10 @@ export default function ChefOrdersScreen() {
         { label: 'Declined', value: 'declined' },
     ];
 
-    if (loading && !refreshing) {
-        return (
-            <>
-                <Stack.Screen options={{ headerShown: false }} />
-                <View className="flex-1 justify-center items-center bg-base-100 dark:bg-base-dark-100">
-                    <LoadingIcon message="Loading bookings..." />
-                </View>
-            </>
-        );
-    }
-
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
-            <ScrollView 
+            <ScrollView
                 className="flex-1 bg-base-100 dark:bg-base-dark-100 p-5"
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -148,14 +138,11 @@ export default function ChefOrdersScreen() {
                     <Text className="text-3xl font-bold text-primary-400 dark:text-dark-400">
                         My Bookings
                     </Text>
-                    <TouchableOpacity onPress={onRefresh}>
-                        <Octicons name="sync" size={24} color="#4d7c0f" />
-                    </TouchableOpacity>
                 </View>
 
                 {/* Calendar Integration */}
-                <Card 
-                    title="Calendar Sync" 
+                <Card
+                    title="Calendar Sync"
                     headerIcon="calendar"
                     isCollapsible={true}
                     startExpanded={false}
@@ -165,7 +152,7 @@ export default function ChefOrdersScreen() {
                         <Text className="text-sm text-primary-400 dark:text-dark-400 mb-2">
                             Connect your Google Calendar to sync bookings automatically
                         </Text>
-                        <CalendarConnectButton 
+                        <CalendarConnectButton
                             onSynced={(data) => {
                                 Alert.alert('Success', `Synced ${data.count || 0} events from Google Calendar`);
                                 fetchBookings(); // Refresh bookings after sync
@@ -175,7 +162,7 @@ export default function ChefOrdersScreen() {
                         <Text className="text-sm text-primary-400 dark:text-dark-400 mb-2">
                             Or import bookings from an .ics calendar file
                         </Text>
-                        <CalendarIcsUploadButton 
+                        <CalendarIcsUploadButton
                             onUploaded={(count) => {
                                 Alert.alert('Success', `Imported ${count} events from .ics file`);
                                 fetchBookings(); // Refresh bookings after import
@@ -185,8 +172,8 @@ export default function ChefOrdersScreen() {
                 </Card>
 
                 {/* Status Filter */}
-                <ScrollView 
-                    horizontal 
+                <ScrollView
+                    horizontal
                     showsHorizontalScrollIndicator={false}
                     className="mb-4"
                 >
@@ -194,185 +181,41 @@ export default function ChefOrdersScreen() {
                         <TouchableOpacity
                             key={btn.value}
                             onPress={() => setSelectedStatus(btn.value)}
-                            className={`mr-2 px-4 py-2 rounded-full ${
-                                selectedStatus === btn.value 
-                                    ? 'bg-lime-600' 
+                            className={`mr-2 px-4 py-2 rounded-full ${selectedStatus === btn.value
+                                    ? 'bg-lime-600'
                                     : 'bg-gray-200 dark:bg-gray-700'
-                            }`}
+                                }`}
                         >
-                            <Text className={`${
-                                selectedStatus === btn.value 
-                                    ? 'text-white font-bold' 
+                            <Text className={`${selectedStatus === btn.value
+                                    ? 'text-white font-bold'
                                     : 'text-primary-400 dark:text-dark-400'
-                            }`}>
+                                }`}>
                                 {btn.label}
                             </Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
 
-                {/* Bookings List */}
-                {bookings.length === 0 ? (
-                    <Card title="No Bookings">
-                        <Text className="text-center text-primary-400 dark:text-dark-400">
-                            No bookings found for this status.
-                        </Text>
-                    </Card>
-                ) : (
-                    bookings.map((booking) => {
-                        // Format the title as "Customer Name - Date"
-                        // Parse date as local time to avoid timezone issues
-                        const parts = booking.booking_date.split('-');
-                        const year = parseInt(parts[0], 10);
-                        const month = parseInt(parts[1], 10) - 1;
-                        const day = parseInt(parts[2], 10);
-                        const bookingDate = new Date(year, month, day);
-                        const formattedDate = bookingDate.toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
-                        });
-                        const displayTitle = booking.customer_name 
-                            ? `${booking.customer_name} - ${formattedDate}`
-                            : `Booking #${booking.booking_id}`;
-
-                        return (
-                        <Card
-                            key={booking.booking_id}
-                            title={displayTitle}
-                            isCollapsible={true}
-                            startExpanded={false}
-                        >
-                            <View className="space-y-2">
-                                {/* Customer Info */}
-                                <View className="bg-primary-50 dark:bg-dark-50 p-3 rounded-lg">
-                                    <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
-                                        Customer: {booking.customer_name}
-                                    </Text>
-                                </View>
-
-                                {/* Booking Details */}
-                                <View className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
-                                    <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
-                                        Booking Date & Time:
-                                    </Text>
-                                    <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                        {booking.booking_date} at {booking.booking_time}
-                                    </Text>
-                                </View>
-
-                                <View className="flex-row justify-between">
-                                    <View>
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            Cuisine: {booking.cuisine_type}
-                                        </Text>
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            Meal Type: {booking.meal_type}
-                                        </Text>
-                                    </View>
-                                    <View>
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            People: {booking.number_of_people}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                {/* Total Cost */}
-                                {booking.total_cost && (
-                                    <Text className="text-xl font-bold text-primary-400 dark:text-dark-400">
-                                        Total: ${booking.total_cost.toFixed(2)}
-                                    </Text>
-                                )}
-
-                                {/* Status Badge */}
-                                <View className="flex-row items-center justify-between">
-                                    <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                        Status:
-                                    </Text>
-                                    <View className={`${getStatusColor(booking.status)} px-3 py-1 rounded-full`}>
-                                        <Text className="text-white font-bold capitalize">
-                                            {booking.status}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                {/* Special Notes */}
-                                {booking.special_notes && (
-                                    <View className="bg-yellow-50 dark:bg-yellow-900 p-3 rounded-lg">
-                                        <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
-                                            Special Notes:
-                                        </Text>
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            {booking.special_notes.split('Payment ID:')[0].trim()}
-                                        </Text>
-                                    </View>
-                                )}
-
-                                {/* Pick Up Location (Chef's Address) */}
-                                <View className="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
-                                    <Text className="text-sm font-semibold text-primary-400 dark:text-dark-400">
-                                        Pick Up Address:
-                                    </Text>
-                                    {booking.chef_address_line1 ? (
-                                        <View>
-                                            <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                                {booking.chef_address_line1}
-                                            </Text>
-                                            {booking.chef_address_line2 && (
-                                                <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                                    {booking.chef_address_line2}
-                                                </Text>
-                                            )}
-                                            <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                                {booking.chef_city}, {booking.chef_state} {booking.chef_zip_code}
-                                            </Text>
-                                        </View>
-                                    ) : (
-                                        <Text className="text-sm text-primary-400 dark:text-dark-400">
-                                            Address not available - Please contact chef
-                                        </Text>
-                                    )}
-                                </View>
-
-                                {/* Action Buttons */}
-                                {booking.status === 'pending' && (
-                                    <View className="flex-row space-x-2 mt-2">
-                                        <View className="flex-1 mr-2">
-                                            <Button
-                                                title="Accept"
-                                                style="primary"
-                                                onPress={() => updateBookingStatus(booking.booking_id, 'accepted')}
-                                            />
-                                        </View>
-                                        <View className="flex-1">
-                                            <Button
-                                                title="Decline"
-                                                style="secondary"
-                                                onPress={() => updateBookingStatus(booking.booking_id, 'declined')}
-                                            />
-                                        </View>
-                                    </View>
-                                )}
-
-                                {booking.status === 'accepted' && (
-                                    <Button
-                                        title="Mark as Completed"
-                                        style="primary"
-                                        onPress={() => updateBookingStatus(booking.booking_id, 'completed')}
-                                    />
-                                )}
-                            </View>
+                {loading && !refreshing ? <LoadingIcon message="Loading bookings..." /> :
+                    bookings.length === 0 ? (
+                        <Card title="No Bookings">
+                            <Text className="text-center text-primary-400 dark:text-dark-400">
+                                No bookings found for this status.
+                            </Text>
                         </Card>
-                        );
-                    })
-                )}
-
-                <Button
-                    title="← Back to Profile"
-                    style="secondary"
-                    href="/(tabs)/BookingsScreen"
-                    customClasses="min-w-[60%]"
-                />
+                    ) : (
+                        bookings.map((booking) =>
+                            <BookingCard
+                                key={booking.booking_id}
+                                booking={booking}
+                                userType={userType}
+                                onStatusUpdate={updateBookingStatus}
+                                onReviewOpen={() => { }}
+                                getStatusColor={getStatusColor}
+                            />
+                        )
+                    )
+                }
 
                 <View className="h-8" />
             </ScrollView>

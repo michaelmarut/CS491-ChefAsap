@@ -44,6 +44,11 @@ export default function Button({
             button: "bg-red-500 border-red-600 dark:bg-red-600 dark:border-red-400",
             text: "text-base-100 dark:text-base-dark-100",
             icon: manualTheme === 'light' ? getTailwindColor('primary.100') : getTailwindColor('dark.100')
+        },
+        custom: {
+            button: "",
+            text: "",
+            icon: getTailwindColor('warm-gray')
         }
     };
 
@@ -60,6 +65,10 @@ export default function Button({
             button: "py-2 px-4 bg-transparent",
             text: "text-center text-md underline",
         },
+        custom: {
+            button: "py-3 mb-2",
+            text: "text-center font-bold text-lg",
+        }
     };
 
     const styles = BUTTON_STYLES[style] || BUTTON_STYLES.primary;

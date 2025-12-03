@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, ScrollView, Modal, Pressable, RefreshCont
 import { useAuth } from '../context/AuthContext';
 import getEnvVars from '../../config';
 import Button from '../components/Button';
+import CustomerBookingsScreen from '../CustomerBookingsScreen';
+import ChefOrdersScreen from '../ChefOrdersScreen';
 
 const START_HOUR = 6;
 const END_HOUR = 23;
@@ -120,6 +122,8 @@ export default function BookingsScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [showCalendar, setShowCalendar] = useState(true);
 
   const weekDays = useMemo(() => buildWeekDays(baseDate), [baseDate]);
 
@@ -273,283 +277,290 @@ export default function BookingsScreen() {
 
   return (
     <View className='flex-1 bg-base-100 dark:bg-base-dark-100'>
-      {/* Week controls */}
-      <View className='bg-base-100 dark:bg-dark-100 flex-row items-center justify-between px-3 pt-2 border-b border-[#e5e7eb] dark:border-gray-500'>
-        <Text className="text-primary-400 dark:text-dark-400 text-lg font-bold pb-2">
-          Week of {formatHeader(weekDays[0])}
-        </Text>
-        <View className='flex-row'>
-          <Button
-            onPress={onPrevWeek}
-            title={'Prev'}
-            style='secondary'
-            customClasses='px-3 mr-1 pt-1 pb-1 mb-0'
-            customTextClasses='text-sm'
-          />
-          <Button
-            onPress={onToday}
-            title={'Today'}
-            customClasses='px-3 mr-1 pt-2 pb-2 mb-0'
-            customTextClasses='text-md'
-          />
-          <Button
-            onPress={onNextWeek}
-            style='secondary'
-            title={'Next'}
-            customClasses='px-3 pt-1 pb-1 mb-0'
-            customTextClasses='text-sm'
-          />
-        </View>
-      </View>
-
-      {/* Fixed day header that scrolls horizontally with the grid */}
-      <View className='flex-row bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700'>
-        {/* Left spacer so header aligns with the grid (time column) */}
-        <View
-          style={{ width: TIME_COL_WIDTH, height: HEADER_HEIGHT }}
-          className='border-r-2 border-gray-200 dark:border-gray-700'
-        />
-        <ScrollView
-          ref={headerHScrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          scrollEnabled={true}             // allow dragging header
-          bounces={false}
-          overScrollMode="never"
-          scrollEventThrottle={16}
-          onScroll={(e) => {
-            const x = e.nativeEvent.contentOffset.x;
-            if (syncSourceRef.current === 'grid') return;
-            syncSourceRef.current = 'header';
-            gridHScrollRef.current?.scrollTo({ x, animated: false });
-          }}
-          onScrollEndDrag={() => { syncSourceRef.current = null; }}
-          onMomentumScrollEnd={() => { syncSourceRef.current = null; }}
-        >
-          <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
-            <View style={{ height: HEADER_HEIGHT }} className='flex-row bg-white dark:bg-gray-800'>
-              {weekDays.map((d, i) => (
-                <View
-                  key={i}
-                  style={{ width: DAY_COLUMN_WIDTH }}
-                  className={`items-center justify-center border-gray-200 dark:border-gray-700 ${i === 0 ? '' : 'border-l'}`}
-                >
-                  <Text style={DATE_HEADER_TEXT_STYLE} className="text-primary-400 dark:text-dark-400">{formatHeader(d)} </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* One vertical scroller for both time and grid; right side is the only horizontal scroller */}
-      <ScrollView
-        nestedScrollEnabled
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator
-        contentContainerStyle={{ paddingBottom: FOOTER_PADDING }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={triggerRefresh} />
-        }
-      >
-        <View className='flex-row'>
-          {/* LEFT: fixed time column */}
-          <View
-            style={{ width: TIME_COL_WIDTH }}
-            className='border-r-2 border-gray-200 dark:border-gray-700'
-          >
-            {/* Time grid background + hour labels aligned to hour lines */}
-            {(() => {
-              const timeSlots = buildTimeSlotsForDay(weekDays[0]);
-              const gridHeight = timeSlots.length * SLOT_HEIGHT;
-
-              return (
-                <View style={{ position: 'relative', height: gridHeight }} className='bg-white dark:bg-gray-800'>
-                  {/* Background: hour lines */}
-                  {timeSlots.map((slot, idx) => {
-                    const isHour = slot.start.getMinutes() === 0;
-                    return (
-                      <View
-                        key={idx}
-                        style={{ height: SLOT_HEIGHT }}
-                        className={`bg-white dark:bg-gray-800 ${isHour ? 'border-t-2' : ''} border-t-gray-200 dark:border-t-gray-700`}
-                      />
-                    );
-                  })}
-
-                  {/* Hour labels overlay on the hour lines */}
-                  <View style={{ position: 'absolute', top: 8, left: 0, right: 0, height: gridHeight, pointerEvents: 'none' }}>
-                    {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => {
-                      const hour = START_HOUR + i;
-                      if (hour > END_HOUR) return null;
-                      const labelDate = new Date(weekDays[0]);
-                      labelDate.setHours(hour, 0, 0, 0);
-                      const top = i * 60 * PX_PER_MIN;
-                      return (
-                        <Text
-                          key={hour}
-                          style={{
-                            position: 'absolute',
-                            top: Math.max(top - 8, 0),
-                            right: 8,
-                            fontSize: 13,
-                            fontWeight: '600',
-                            textAlign: 'right',
-                          }}
-                          className="text-primary-400 dark:text-dark-400"
-                        >
-                          {formatHourLabel(labelDate)}
-                        </Text>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            })()}
-          </View>
-
-          {/* RIGHT: grid inside a horizontal scroller; sync its x with the fixed header above */}
-          <ScrollView
-            ref={gridHScrollRef}
-            horizontal
-            showsHorizontalScrollIndicator
-            bounces={false}
-            overScrollMode="never"
-            scrollEventThrottle={16}
-            onScroll={(e) => {
-              const x = e.nativeEvent.contentOffset.x;
-              if (syncSourceRef.current === 'header') return;
-              syncSourceRef.current = 'grid';
-              headerHScrollRef.current?.scrollTo({ x, animated: false });
-            }}
-            onScrollEndDrag={() => { syncSourceRef.current = null; }}
-            onMomentumScrollEnd={() => { syncSourceRef.current = null; }}
-          >
-            <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
-
-              {/* Grid: background + events overlay */}
-              <View className='flex-row'>
-                {weekDays.map((day, dayIdx) => {
-                  const daySlots = buildTimeSlotsForDay(day);
-                  const dayEvents = eventsByDay[dayIdx] || [];
-
-                  // Bounds for clipping events to visible day window
-                  const dayStart = new Date(day);
-                  dayStart.setHours(START_HOUR, 0, 0, 0);
-                  const dayEnd = new Date(day);
-                  dayEnd.setHours(END_HOUR, 0, 0, 0);
-
-                  const gridHeight = daySlots.length * SLOT_HEIGHT;
-
-                  return (
-                    <View
-                      key={dayIdx}
-                      style={{ width: DAY_COLUMN_WIDTH, position: 'relative' }}
-                      className={`border-gray-200 dark:border-gray-700 ${dayIdx === 0 ? '' : 'border-l'}`}
-                    >
-                      {/* Background grid (hour line on top, thin half-hour line) */}
-                      {daySlots.map((slot, sIdx) => {
-                        const isHour = slot.start.getMinutes() === 0;
-                        return (
-                          <View
-                            key={sIdx}
-                            style={{ height: SLOT_HEIGHT }}
-                            className={`border-b border-gray-100 dark:border-gray-900 ${isHour ? 'border-t-2 border-t-gray-200 dark:border-t-gray-700 bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'} `}
-                          />
-                        );
-                      })}
-
-                      {/* Events overlay: single block spans multi-slots */}
-                      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: gridHeight }} pointerEvents="box-none">
-                        {dayEvents.map((evt) => {
-                          const start = new Date(evt.startDate);
-                          const end = new Date(evt.endDate);
-                          const clippedStart = start < dayStart ? dayStart : start;
-                          const clippedEnd = end > dayEnd ? dayEnd : end;
-
-                          // Skip if outside visible window
-                          if (clippedEnd <= clippedStart) return null;
-
-                          // Position and size in the grid
-                          const minutesFromDayStart = (clippedStart - dayStart) / 60000;
-                          const durationMin = (clippedEnd - clippedStart) / 60000;
-                          const top = minutesFromDayStart * PX_PER_MIN;
-                          const height = Math.max(durationMin * PX_PER_MIN - 4, 24); // keep a minimum height
-
-                          // Simple status color mapping
-                          const status = evt.status || 'scheduled';
-                          const bg =
-                            status === 'cancelled' ? 'bg-red-100 dark:bg-red-900' :
-                              status === 'completed' ? 'bg-green-100 dark:bg-green-900' : 
-                                'bg-primary-400 dark:bg-primary-300';
-                          const border =
-                            status === 'cancelled' ? 'border-red-500 dark:border-red-400' : 
-                              status === 'completed' ? 'border-green-600 dark:border-green-400' :
-                                'border-blue-500 dark:border-blue-400';
-
-                          return (
-                            <TouchableOpacity
-                              key={evt.id || `${start.getTime()}-${end.getTime()}`}
-                              onPress={() => openEvent(evt)}
-                              activeOpacity={0.8}
-                              style={{
-                                position: 'absolute',
-                                top,
-                                height,
-                              }}
-                              className={`left-1 right-1 mt-1 ${bg} border-l-3 ${border} rounded-lg overflow-hidden justify-center items-center`}
-                            >
-                              <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
-                                {formatTime(clippedStart)} – {formatTime(clippedEnd)}
-                              </Text>
-                              {evt.chef_name &&
-                                <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
-                                  {evt.chef_name}
-                                </Text>
-                              }
-                              <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
-                                {evt.title || 'Booking'}
-                              </Text>
-                              {/*!!evt.notes && (
-                                <Text numberOfLines={1} className='text-primary-100 dark:text-primary-100 text-xs mt-0.5'>
-                                  {evt.notes}
-                                </Text>
-                              )*/}
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </ScrollView>
-
-      {/* Footer actions */}
-      <View className="bg-base-100 dark:bg-dark-100 p-3 border-t border-gray-200 dark:border-gray-700 gap-2">
+      <View className="flex-row bg-base-100 dark:bg-dark-100">
         {/*<Button
           title={loading ? 'Refreshing…' : 'Refresh'}
           style="primary"
           onPress={triggerRefresh}
         />*/}
-        {userType === 'customer' && (
-          <Button
-            title="View My Bookings"
-            style="secondary"
-            href="/CustomerBookingsScreen"
-          />
-        )}
-        {userType === 'chef' && (
-          <Button
-            title="View My Orders"
-            style="secondary"
-            href="/ChefOrdersScreen"
-          />
-        )}
+        <Button
+          title="Calendar"
+          style="custom"
+          base='custom'
+          onPress={() => { setShowCalendar(true) }}
+          customClasses={`w-1/2 rounded-b-xl ${showCalendar ? 'bg-primary-100 dark:bg-dark-100' : 'bg-base-100 dark:bg-base-dark-100'}`}
+          customTextClasses='text-primary-400 dark:text-dark-400'
+        />
+        <Button
+          title="Bookings"
+          style="custom"
+          base='custom'
+          onPress={() => { setShowCalendar(false) }}
+          customClasses={`w-1/2 rounded-b-xl ${showCalendar ? 'bg-base-100 dark:bg-base-dark-100' : 'bg-primary-100 dark:bg-dark-100'}`}
+          customTextClasses='text-primary-400 dark:text-dark-400'
+        />
       </View>
+
+      {!showCalendar && (userType === 'customer' ? <CustomerBookingsScreen /> : <ChefOrdersScreen />)}
+
+      {showCalendar && <>{/* Week controls */}
+        <View className='bg-base-100 dark:bg-dark-100 flex-row items-center justify-between px-3 pt-2 border-b border-[#e5e7eb] dark:border-gray-500'>
+          <Text className="text-primary-400 dark:text-dark-400 text-lg font-bold pb-2">
+            Week of {formatHeader(weekDays[0])}
+          </Text>
+          <View className='flex-row'>
+            <Button
+              onPress={onPrevWeek}
+              title={'Prev'}
+              style='secondary'
+              customClasses='px-3 mr-1 pt-1 pb-1 mb-0'
+              customTextClasses='text-sm'
+            />
+            <Button
+              onPress={onToday}
+              title={'Today'}
+              customClasses='px-3 mr-1 pt-2 pb-2 mb-0'
+              customTextClasses='text-md'
+            />
+            <Button
+              onPress={onNextWeek}
+              style='secondary'
+              title={'Next'}
+              customClasses='px-3 pt-1 pb-1 mb-0'
+              customTextClasses='text-sm'
+            />
+          </View>
+        </View>
+
+        {/* Fixed day header that scrolls horizontally with the grid */}
+        <View className='flex-row bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700'>
+          {/* Left spacer so header aligns with the grid (time column) */}
+          <View
+            style={{ width: TIME_COL_WIDTH, height: HEADER_HEIGHT }}
+            className='border-r-2 border-gray-200 dark:border-gray-700'
+          />
+          <ScrollView
+            ref={headerHScrollRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={true}             // allow dragging header
+            bounces={false}
+            overScrollMode="never"
+            scrollEventThrottle={16}
+            onScroll={(e) => {
+              const x = e.nativeEvent.contentOffset.x;
+              if (syncSourceRef.current === 'grid') return;
+              syncSourceRef.current = 'header';
+              gridHScrollRef.current?.scrollTo({ x, animated: false });
+            }}
+            onScrollEndDrag={() => { syncSourceRef.current = null; }}
+            onMomentumScrollEnd={() => { syncSourceRef.current = null; }}
+          >
+            <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
+              <View style={{ height: HEADER_HEIGHT }} className='flex-row bg-white dark:bg-gray-800'>
+                {weekDays.map((d, i) => (
+                  <View
+                    key={i}
+                    style={{ width: DAY_COLUMN_WIDTH }}
+                    className={`items-center justify-center border-gray-200 dark:border-gray-700 ${i === 0 ? '' : 'border-l'}`}
+                  >
+                    <Text style={DATE_HEADER_TEXT_STYLE} className="text-primary-400 dark:text-dark-400">{formatHeader(d)} </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* One vertical scroller for both time and grid; right side is the only horizontal scroller */}
+        <ScrollView
+          nestedScrollEnabled
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator
+          contentContainerStyle={{ paddingBottom: FOOTER_PADDING }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={triggerRefresh} />
+          }
+        >
+          <View className='flex-row'>
+            {/* LEFT: fixed time column */}
+            <View
+              style={{ width: TIME_COL_WIDTH }}
+              className='border-r-2 border-gray-200 dark:border-gray-700'
+            >
+              {/* Time grid background + hour labels aligned to hour lines */}
+              {(() => {
+                const timeSlots = buildTimeSlotsForDay(weekDays[0]);
+                const gridHeight = timeSlots.length * SLOT_HEIGHT;
+
+                return (
+                  <View style={{ position: 'relative', height: gridHeight }} className='bg-white dark:bg-gray-800'>
+                    {/* Background: hour lines */}
+                    {timeSlots.map((slot, idx) => {
+                      const isHour = slot.start.getMinutes() === 0;
+                      return (
+                        <View
+                          key={idx}
+                          style={{ height: SLOT_HEIGHT }}
+                          className={`bg-white dark:bg-gray-800 ${isHour ? 'border-t-2' : ''} border-t-gray-200 dark:border-t-gray-700`}
+                        />
+                      );
+                    })}
+
+                    {/* Hour labels overlay on the hour lines */}
+                    <View style={{ position: 'absolute', top: 8, left: 0, right: 0, height: gridHeight, pointerEvents: 'none' }}>
+                      {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => {
+                        const hour = START_HOUR + i;
+                        if (hour > END_HOUR) return null;
+                        const labelDate = new Date(weekDays[0]);
+                        labelDate.setHours(hour, 0, 0, 0);
+                        const top = i * 60 * PX_PER_MIN;
+                        return (
+                          <Text
+                            key={hour}
+                            style={{
+                              position: 'absolute',
+                              top: Math.max(top - 8, 0),
+                              right: 8,
+                              fontSize: 13,
+                              fontWeight: '600',
+                              textAlign: 'right',
+                            }}
+                            className="text-primary-400 dark:text-dark-400"
+                          >
+                            {formatHourLabel(labelDate)}
+                          </Text>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })()}
+            </View>
+
+            {/* RIGHT: grid inside a horizontal scroller; sync its x with the fixed header above */}
+            <ScrollView
+              ref={gridHScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator
+              bounces={false}
+              overScrollMode="never"
+              scrollEventThrottle={16}
+              onScroll={(e) => {
+                const x = e.nativeEvent.contentOffset.x;
+                if (syncSourceRef.current === 'header') return;
+                syncSourceRef.current = 'grid';
+                headerHScrollRef.current?.scrollTo({ x, animated: false });
+              }}
+              onScrollEndDrag={() => { syncSourceRef.current = null; }}
+              onMomentumScrollEnd={() => { syncSourceRef.current = null; }}
+            >
+              <View style={{ width: DAY_COLUMN_WIDTH * 7 }}>
+
+                {/* Grid: background + events overlay */}
+                <View className='flex-row'>
+                  {weekDays.map((day, dayIdx) => {
+                    const daySlots = buildTimeSlotsForDay(day);
+                    const dayEvents = eventsByDay[dayIdx] || [];
+
+                    // Bounds for clipping events to visible day window
+                    const dayStart = new Date(day);
+                    dayStart.setHours(START_HOUR, 0, 0, 0);
+                    const dayEnd = new Date(day);
+                    dayEnd.setHours(END_HOUR, 0, 0, 0);
+
+                    const gridHeight = daySlots.length * SLOT_HEIGHT;
+
+                    return (
+                      <View
+                        key={dayIdx}
+                        style={{ width: DAY_COLUMN_WIDTH, position: 'relative' }}
+                        className={`border-gray-200 dark:border-gray-700 ${dayIdx === 0 ? '' : 'border-l'}`}
+                      >
+                        {/* Background grid (hour line on top, thin half-hour line) */}
+                        {daySlots.map((slot, sIdx) => {
+                          const isHour = slot.start.getMinutes() === 0;
+                          return (
+                            <View
+                              key={sIdx}
+                              style={{ height: SLOT_HEIGHT }}
+                              className={`border-b border-gray-100 dark:border-gray-900 ${isHour ? 'border-t-2 border-t-gray-200 dark:border-t-gray-700 bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'} `}
+                            />
+                          );
+                        })}
+
+                        {/* Events overlay: single block spans multi-slots */}
+                        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: gridHeight }} pointerEvents="box-none">
+                          {dayEvents.map((evt) => {
+                            const start = new Date(evt.startDate);
+                            const end = new Date(evt.endDate);
+                            const clippedStart = start < dayStart ? dayStart : start;
+                            const clippedEnd = end > dayEnd ? dayEnd : end;
+
+                            // Skip if outside visible window
+                            if (clippedEnd <= clippedStart) return null;
+
+                            // Position and size in the grid
+                            const minutesFromDayStart = (clippedStart - dayStart) / 60000;
+                            const durationMin = (clippedEnd - clippedStart) / 60000;
+                            const top = minutesFromDayStart * PX_PER_MIN;
+                            const height = Math.max(durationMin * PX_PER_MIN - 4, 24); // keep a minimum height
+
+                            // Simple status color mapping
+                            const status = evt.status || 'scheduled';
+                            const bg =
+                              status === 'cancelled' ? 'bg-red-100 dark:bg-red-900' :
+                                status === 'completed' ? 'bg-green-100 dark:bg-green-900' :
+                                  'bg-primary-400 dark:bg-primary-300';
+                            const border =
+                              status === 'cancelled' ? 'border-red-500 dark:border-red-400' :
+                                status === 'completed' ? 'border-green-600 dark:border-green-400' :
+                                  'border-blue-500 dark:border-blue-400';
+
+                            return (
+                              <TouchableOpacity
+                                key={evt.id || `${start.getTime()}-${end.getTime()}`}
+                                onPress={() => openEvent(evt)}
+                                activeOpacity={0.8}
+                                style={{
+                                  position: 'absolute',
+                                  top,
+                                  height,
+                                }}
+                                className={`left-1 right-1 mt-1 ${bg} border-l-3 ${border} rounded-lg overflow-hidden justify-center items-center`}
+                              >
+                                <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
+                                  {formatTime(clippedStart)} – {formatTime(clippedEnd)}
+                                </Text>
+                                {evt.chef_name &&
+                                  <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
+                                    {evt.chef_name}
+                                  </Text>
+                                }
+                                <Text className='text-primary-100 dark:text-primary-100 text-xs font-semibold text-center'>
+                                  {evt.title || 'Booking'}
+                                </Text>
+                                {/*!!evt.notes && (
+                                <Text numberOfLines={1} className='text-primary-100 dark:text-primary-100 text-xs mt-0.5'>
+                                  {evt.notes}
+                                </Text>
+                              )*/}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </ScrollView>
+      </>}
+
+      {/* Footer actions */}
+
 
       {/* Event details modal (read-only) */}
       <Modal

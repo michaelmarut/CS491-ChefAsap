@@ -616,7 +616,7 @@ export default function ChefMenu() {
         return 'dinner';
     };
 
-    /*if (loading) {
+    if (loading) {
         return (
             <>
                 <Stack.Screen options={{ headerShown: false }} />
@@ -625,7 +625,7 @@ export default function ChefMenu() {
                 </View>
             </>
         );
-    }*/
+    }
 
     return (
         <>

@@ -410,8 +410,8 @@ def get_unread_count(user_type, profile_id):
             group by {user_type}_id
         """)
         
-        print("Executed unread count query")
-        print(f"Query: {cursor.query}")
+        #print("Executed unread count query")
+        #rint(f"Query: {cursor.query}")
 
         unread_count = cursor.fetchone()
         
