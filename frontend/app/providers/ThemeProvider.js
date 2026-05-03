@@ -8,7 +8,7 @@ import { getTailwindColor } from '../utils/getTailwindColor';
 const THEME_STORAGE_KEY = 'user-color-theme';
 
 export const ThemeContext = createContext({
-    manualTheme: 'system',
+    manualTheme: 'light',
     setManualTheme: () => { },
     isOnAuthPage: false,
     setIsOnAuthPage: () => { },
@@ -18,7 +18,7 @@ export const useTheme = () => useContext(ThemeContext);
 
 export default function ThemeProvider({ children }) {
     const { colorScheme, setColorScheme } = useColorScheme();
-    const [manualTheme, setManualTheme] = useState('system');
+    const [manualTheme, setManualTheme] = useState('light');
     const [isOnAuthPage, setIsOnAuthPage] = useState(false);
 
     /*const activeBackground = colorScheme === 'light'
@@ -32,10 +32,9 @@ export default function ThemeProvider({ children }) {
     useEffect(() => {
         const loadTheme = async () => {
             const storedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-            if (storedTheme) {
-                setManualTheme(storedTheme);
-                setColorScheme(storedTheme);
-            }
+            const normalizedTheme = storedTheme === 'dark' ? 'dark' : 'light';
+            setManualTheme(normalizedTheme);
+            setColorScheme(normalizedTheme);
         };
         loadTheme();
     }, []);
@@ -59,9 +58,7 @@ export default function ThemeProvider({ children }) {
         <ThemeContext.Provider value={contextValue}>
             <View style={{
                 flex: 1, backgroundColor: colorScheme === 'light'
-                    ? isOnAuthPage
-                        ? getTailwindColor('base.100')
-                        : getTailwindColor('primary.300')
+                    ? getTailwindColor('base.100')
                     : isOnAuthPage
                         ? getTailwindColor('base.dark.100')
                         : getTailwindColor('dark.200')

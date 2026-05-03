@@ -1,4 +1,4 @@
-import { View, Modal } from "react-native";
+import { View, Modal, Platform } from "react-native";
 import { Tabs, useGlobalSearchParams, useRouter } from 'expo-router';
 import Octicons from '@expo/vector-icons/Octicons';
 import { TransitionPresets } from '@react-navigation/bottom-tabs';
@@ -55,23 +55,42 @@ export default function TabLayout() {
     }, [isLoading, isAuthenticated, router]);
 
     const iconSize = 24;
+    const isIOS = Platform.OS === 'ios';
 
     const tabBarOptions = {
         headerShown: false,
-        tabBarActiveTintColor: manualTheme === 'light' ? getTailwindColor('primary.100') : getTailwindColor('dark.100'),
-        tabBarInactiveTintColor: manualTheme === 'light' ? getTailwindColor('dark.100') : getTailwindColor('primary.100'),
+        tabBarActiveTintColor: manualTheme === 'light' ? getTailwindColor('primary.400') : getTailwindColor('dark.100'),
+        tabBarInactiveTintColor: manualTheme === 'light' ? getTailwindColor('base.200') : getTailwindColor('primary.100'),
         //tabBarActiveBackgroundColor: '#BEF264', // primary-200
         //tabBarInactiveBackgroundColor: '#65A30D', // primary-300
         //tabBarShowLabels: false, //doesnt seem to do anything, should show/hide label
         tabBarHideOnKeyboard: true,
+        sceneStyle: {
+            backgroundColor: manualTheme === 'light' ? getTailwindColor('base.100') : getTailwindColor('base.dark.100'),
+        },
         // other options: tabBarIcon (notifications), tabBarAccessibilityLabel (accessibility (out of scope))
         tabBarStyle: {
-            backgroundColor: manualTheme === 'light' ? getTailwindColor('primary.300') : getTailwindColor('primary.400'), // primary-300
-            height: 75, //if height needs to be defined
+            backgroundColor: manualTheme === 'light'
+                ? getTailwindColor('surface.nav')
+                : getTailwindColor('primary.400'),
+            height: isIOS ? 62 : 70,
+            paddingTop: isIOS ? 6 : 4,
+            paddingBottom: isIOS ? 6 : 8,
+            borderTopWidth: 0,
+            borderTopColor: 'transparent',
+            borderLeftWidth: 0,
+            borderRightWidth: 0,
+            borderBottomWidth: 0,
+            borderColor: 'transparent',
+            elevation: 0,
+            shadowOpacity: 0,
+            shadowRadius: 0,
+            shadowOffset: { width: 0, height: 0 },
         },
         tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '600',
+            marginTop: isIOS ? 0 : 2,
         },
         screenOptions: {
             animation: 'shift', //doesnt seem to work
@@ -117,7 +136,7 @@ export default function TabLayout() {
                         tabBarBadge: 5,
                         tabBarBadgeStyle: {
                             backgroundColor: 'red',
-                            color: manualTheme === 'light' ? getTailwindColor('primary.300') : getTailwindColor('primary.400'),
+                            color: '#ffffff',
                             fontSize: 10,
                         },
                         ...TransitionPresets.ShiftTransition,
@@ -196,7 +215,7 @@ export default function TabLayout() {
                         tabBarBadge: 5,
                         tabBarBadgeStyle: {
                             backgroundColor: 'red',
-                            color: manualTheme === 'light' ? getTailwindColor('primary.500') : getTailwindColor('dark.500'),
+                            color: '#ffffff',
                             fontSize: 10,
                         },
                         ...TransitionPresets.ShiftTransition,
